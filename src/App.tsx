@@ -1,12 +1,12 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Provider as JotaiProvider } from 'jotai';
+import { Provider as JotaiProvider } from 'jotai'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
-import { Layout } from './components/layout/Layout';
-import { BatchListPage } from './pages/BatchListPage';
-import { BatchCreatePage } from './pages/BatchCreatePage';
-import { BatchDetailPage } from './pages/BatchDetailPage';
-import { PromptDetailPage } from './pages/PromptDetailPage';
-import { ThemeProvider } from './components/theme-provider';
+import { Layout } from './components/layout/Layout'
+import { ThemeProvider } from './components/theme-provider'
+import { BatchCreatePage } from './pages/BatchCreatePage'
+import { BatchDetailPage } from './pages/BatchDetailPage'
+import { BatchListPage } from './pages/BatchListPage'
+import { PromptDetailPage } from './pages/PromptDetailPage'
 
 function App() {
   return (
@@ -25,7 +25,7 @@ function App() {
         </BrowserRouter>
       </ThemeProvider>
     </JotaiProvider>
-  );
+  )
 }
 
-export default App;
+export default App

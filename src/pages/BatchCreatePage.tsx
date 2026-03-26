@@ -1,34 +1,36 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Loader2, 
-  ChevronDown, 
-  ChevronUp, 
-  Send 
-} from 'lucide-react';
+import { ArrowLeft, Loader2, ChevronDown, ChevronUp, Send } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
-import { batchService, modelService } from '@/services/api';
-import type { Model } from '@/types/api';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import type { Model } from '@/types/api'
+
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from '@/components/ui/select'
+import { Textarea } from '@/components/ui/textarea'
+import { batchService, modelService } from '@/services/api'
 
 export function BatchCreatePage() {
-  const navigate = useNavigate();
-  const [models, setModels] = useState<Model[]>([]);
-  const [loadingModels, setLoadingModels] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [showSystemPrompt, setShowSystemPrompt] = useState(false);
+  const navigate = useNavigate()
+  const [models, setModels] = useState<Model[]>([])
+  const [loadingModels, setLoadingModels] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [showSystemPrompt, setShowSystemPrompt] = useState(false)
 
   const [formData, setFormData] = useState({
     batchLabel: '',
@@ -36,7 +38,7 @@ export function BatchCreatePage() {
     promptLabel: '',
     systemPrompt: '',
     userPrompt: '',
-  });
+  })
 
   useEffect(() => {
     const fetchModels = async () => {
@@ -46,23 +48,23 @@ export function BatchCreatePage() {
         if (response.success) {
           setModels(response.data)
           if (response.data.length > 0) {
-            setFormData((prev) => ({ ...prev, model: response.data[0].id }))
+            setFormData(prev => ({ ...prev, model: response.data[0].id }))
           }
         }
       } catch (error) {
-        console.error("Failed to fetch models:", error)
+        console.error('Failed to fetch models:', error)
       } finally {
         setLoadingModels(false)
       }
     }
     fetchModels()
-  }, []);
+  }, [])
 
   const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    if (!formData.model || !formData.userPrompt) return;
+    e.preventDefault()
+    if (!formData.model || !formData.userPrompt) return
 
-    setSubmitting(true);
+    setSubmitting(true)
     try {
       const response = await batchService.createBatch({
         label: formData.batchLabel || undefined,
@@ -72,20 +74,20 @@ export function BatchCreatePage() {
           systemPrompt: formData.systemPrompt || undefined,
           userPrompt: formData.userPrompt,
         },
-      });
+      })
 
       if (response.success) {
-        navigate(`/batches/${response.data.id}`);
+        navigate(`/batches/${response.data.id}`)
       }
     } catch (error) {
-      console.error('Failed to create batch:', error);
+      console.error('Failed to create batch:', error)
     } finally {
-      setSubmitting(false);
+      setSubmitting(false)
     }
-  };
+  }
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
@@ -102,15 +104,17 @@ export function BatchCreatePage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="model">대상 모델 (필수)</Label>
-              <Select 
-                value={formData.model} 
-                onValueChange={(value) => setFormData({ ...formData, model: value })}
+              <Select
+                value={formData.model}
+                onValueChange={value => setFormData({ ...formData, model: value })}
               >
                 <SelectTrigger id="model">
-                  <SelectValue placeholder={loadingModels ? "모델을 불러오는 중..." : "모델 선택"} />
+                  <SelectValue
+                    placeholder={loadingModels ? '모델을 불러오는 중...' : '모델 선택'}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  {models.map((model) => (
+                  {models.map(model => (
                     <SelectItem key={model.id} value={model.id}>
                       {model.displayName}
                     </SelectItem>
@@ -124,7 +128,7 @@ export function BatchCreatePage() {
                 id="batchLabel"
                 placeholder="배치를 구분할 이름을 입력하세요 (미입력 시 자동 생성)"
                 value={formData.batchLabel}
-                onChange={(e) => setFormData({ ...formData, batchLabel: e.target.value })}
+                onChange={e => setFormData({ ...formData, batchLabel: e.target.value })}
               />
             </div>
           </CardContent>
@@ -142,7 +146,7 @@ export function BatchCreatePage() {
                 id="promptLabel"
                 placeholder="프롬프트 라벨 (미입력 시 자동 생성)"
                 value={formData.promptLabel}
-                onChange={(e) => setFormData({ ...formData, promptLabel: e.target.value })}
+                onChange={e => setFormData({ ...formData, promptLabel: e.target.value })}
               />
             </div>
 
@@ -151,10 +155,14 @@ export function BatchCreatePage() {
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="p-0 h-auto hover:bg-transparent"
+                className="h-auto p-0 hover:bg-transparent"
                 onClick={() => setShowSystemPrompt(!showSystemPrompt)}
               >
-                {showSystemPrompt ? <ChevronUp className="h-4 w-4 mr-1" /> : <ChevronDown className="h-4 w-4 mr-1" />}
+                {showSystemPrompt ? (
+                  <ChevronUp className="mr-1 h-4 w-4" />
+                ) : (
+                  <ChevronDown className="mr-1 h-4 w-4" />
+                )}
                 System Prompt (선택)
               </Button>
               {showSystemPrompt && (
@@ -163,7 +171,7 @@ export function BatchCreatePage() {
                   placeholder="System Prompt를 입력하세요"
                   className="min-h-[100px]"
                   value={formData.systemPrompt}
-                  onChange={(e) => setFormData({ ...formData, systemPrompt: e.target.value })}
+                  onChange={e => setFormData({ ...formData, systemPrompt: e.target.value })}
                 />
               )}
             </div>
@@ -176,12 +184,14 @@ export function BatchCreatePage() {
                 className="min-h-[200px]"
                 required
                 value={formData.userPrompt}
-                onChange={(e) => setFormData({ ...formData, userPrompt: e.target.value })}
+                onChange={e => setFormData({ ...formData, userPrompt: e.target.value })}
               />
             </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-2 border-t pt-6">
-            <Button type="button" variant="outline" onClick={() => navigate(-1)}>취소</Button>
+            <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+              취소
+            </Button>
             <Button type="submit" disabled={submitting || !formData.model || !formData.userPrompt}>
               {submitting ? (
                 <>
@@ -199,5 +209,5 @@ export function BatchCreatePage() {
         </Card>
       </form>
     </div>
-  );
+  )
 }

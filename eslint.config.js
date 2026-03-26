@@ -1,13 +1,13 @@
 import js from '@eslint/js'
-import globals from 'globals'
+import { defineConfig, globalIgnores } from 'eslint/config'
+import prettier from 'eslint-config-prettier'
+import importPlugin from 'eslint-plugin-import'
+import jsxA11y from 'eslint-plugin-jsx-a11y'
+import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
-import react from 'eslint-plugin-react'
+import globals from 'globals'
 import tseslint from 'typescript-eslint'
-import jsxA11y from 'eslint-plugin-jsx-a11y'
-import importPlugin from 'eslint-plugin-import'
-import prettier from 'eslint-config-prettier'
-import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
   globalIgnores(['dist', 'build', '.next', 'node_modules']),
@@ -33,12 +33,6 @@ export default defineConfig([
     languageOptions: {
       ecmaVersion: 2020,
       globals: globals.browser,
-    },
-  },
-  {
-    rules: {
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn'
     },
   },
   {

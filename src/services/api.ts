@@ -1,4 +1,5 @@
-import axios from 'axios';
+import axios from 'axios'
+
 import type {
   ApiResponse,
   Batch,
@@ -11,7 +12,7 @@ import type {
 
 const api = axios.create({
   baseURL: 'http://localhost:8080/api',
-});
+})
 
 export const batchService = {
   getBatches: async (
@@ -19,9 +20,7 @@ export const batchService = {
     _p0?: { signal: AbortSignal | undefined },
     config?: { signal?: AbortSignal }
   ) => {
-    const response = await api.get<
-      ApiResponse<PaginatedResponse<BatchListItem>>
-    >("/batches", {
+    const response = await api.get<ApiResponse<PaginatedResponse<BatchListItem>>>('/batches', {
       params,
       ...config,
     })
@@ -37,7 +36,7 @@ export const batchService = {
       userPrompt: string
     }
   }) => {
-    const response = await api.post<ApiResponse<Batch>>("/batches", data)
+    const response = await api.post<ApiResponse<Batch>>('/batches', data)
     return response.data
   },
 
@@ -64,17 +63,12 @@ export const batchService = {
       userPrompt: string
     }
   ) => {
-    const response = await api.post<ApiResponse<Prompt>>(
-      `/batches/${batchId}/prompts`,
-      data
-    )
+    const response = await api.post<ApiResponse<Prompt>>(`/batches/${batchId}/prompts`, data)
     return response.data
   },
 
   getPrompt: async (batchId: number, promptId: number) => {
-    const response = await api.get<ApiResponse<Prompt>>(
-      `/batches/${batchId}/prompts/${promptId}`
-    )
+    const response = await api.get<ApiResponse<Prompt>>(`/batches/${batchId}/prompts/${promptId}`)
     return response.data
   },
 
@@ -95,20 +89,18 @@ export const batchService = {
   },
 
   deletePrompt: async (batchId: number, promptId: number): Promise<void> => {
-    await api.delete(`/batches/${batchId}/prompts/${promptId}`);
+    await api.delete(`/batches/${batchId}/prompts/${promptId}`)
   },
 
   syncPrompts: async (id: number) => {
-    const response = await api.post<ApiResponse<SyncPromptsResponse>>(
-      `/batches/${id}/sync-prompts`
-    )
+    const response = await api.post<ApiResponse<SyncPromptsResponse>>(`/batches/${id}/sync-prompts`)
     return response.data
   },
 }
 
 export const modelService = {
   getModels: async () => {
-    const response = await api.get<ApiResponse<Model[]>>('/models');
-    return response.data;
+    const response = await api.get<ApiResponse<Model[]>>('/models')
+    return response.data
   },
-};
+}
