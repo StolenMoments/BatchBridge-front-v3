@@ -40,25 +40,25 @@ export function BatchCreatePage() {
 
   useEffect(() => {
     const fetchModels = async () => {
-      setLoadingModels(true);
+      setLoadingModels(true)
       try {
-        const response = await modelService.getModels();
+        const response = await modelService.getModels()
         if (response.success) {
-          setModels(response.data);
+          setModels(response.data)
           if (response.data.length > 0) {
-            setFormData(prev => ({ ...prev, model: response.data[0].id }));
+            setFormData((prev) => ({ ...prev, model: response.data[0].id }))
           }
         }
       } catch (error) {
-        console.error('Failed to fetch models:', error);
+        console.error("Failed to fetch models:", error)
       } finally {
-        setLoadingModels(false);
+        setLoadingModels(false)
       }
-    };
-    fetchModels();
+    }
+    fetchModels()
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!formData.model || !formData.userPrompt) return;
 

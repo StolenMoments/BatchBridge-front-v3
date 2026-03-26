@@ -6,6 +6,7 @@ import type {
   Model,
   PaginatedResponse,
   Prompt,
+  SyncPromptsResponse,
 } from '../types/api'
 
 const api = axios.create({
@@ -95,6 +96,13 @@ export const batchService = {
 
   deletePrompt: async (batchId: number, promptId: number): Promise<void> => {
     await api.delete(`/batches/${batchId}/prompts/${promptId}`);
+  },
+
+  syncPrompts: async (id: number) => {
+    const response = await api.post<ApiResponse<SyncPromptsResponse>>(
+      `/batches/${id}/sync-prompts`
+    )
+    return response.data
   },
 }
 

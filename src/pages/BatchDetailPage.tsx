@@ -53,6 +53,7 @@ export function BatchDetailPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [resyncing, setResyncing] = useState(false);
 
   // New Prompt Form (for DRAFT status)
   const [newPrompt, setNewPrompt] = useState({
@@ -65,7 +66,7 @@ export function BatchDetailPage() {
     if (!id) return;
     if (showLoading) setLoading(true);
     try {
-      const response = await batchService.getBatch(parseInt(id));
+      const response = await batchService.getBatch(Number.parseInt(id));
       if (response.success) {
         // Ensure the batch state is actually updated with fresh data
         setBatch({ ...response.data });
@@ -111,7 +112,37 @@ export function BatchDetailPage() {
     }
   };
 
-  const handleAddPrompt = async (e: React.FormEvent) => {
+  const handleResyncPrompts = async () => {
+    if (!batch) return;
+    setResyncing(true);
+    try {
+      const response = await batchService.syncPrompts(batch.id);
+      if (response.success) {
+        const { resynced, stillFailed } = response.data;
+        
+        // UI Feedback (Using alert since Toast is not implemented in this project)
+        if (resynced > 0) {
+          alert(`${resynced}개 프롬프트가 복구되었습니다.`);
+        }
+        if (stillFailed > 0) {
+          alert(`${stillFailed}개 프롬프트는 여전히 실패 상태입니다.`);
+        }
+        if (resynced === 0 && stillFailed === 0) {
+          alert('재동기화할 프롬프트가 없습니다.');
+        }
+
+        // Refresh batch details
+        fetchBatch(false);
+      }
+    } catch (error) {
+      console.error('Failed to resync prompts:', error);
+      alert("프롬프트 재동기화 중 오류가 발생했습니다.")
+    } finally {
+      setResyncing(false);
+    }
+  };
+
+  const handleAddPrompt = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!batch || !newPrompt.userPrompt) return;
 
@@ -212,7 +243,13 @@ export function BatchDetailPage() {
           </div>
         </div>
         <div className="flex items-center gap-2 md:mt-1">
-          <Badge className={`${status.color} text-white px-3 py-1`}>
+          {batch.status === 'COMPLETED' && batch.prompts?.some(p => p.status === 'PENDING' || p.status === 'FAILED') && (
+            <Button variant="outline" size="sm" onClick={handleResyncPrompts} disabled={resyncing}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${resyncing ? 'animate-spin' : ''}`} />
+              프롬프트 재동기화
+            </Button>
+          )}
+          <Badge className={`${status.color} text-white px-3 py-1.5 h-8 text-sm font-medium flex items-center`}>
             <StatusIcon className={`mr-2 h-4 w-4 ${batch.status === 'IN_PROGRESS' ? 'animate-spin' : ''}`} />
             {status.label}
           </Badge>

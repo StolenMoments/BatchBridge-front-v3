@@ -37,7 +37,7 @@ export function PromptDetailPage() {
       if (!batchId || !promptId) return;
       setLoading(true);
       try {
-        const response = await batchService.getPrompt(parseInt(batchId), parseInt(promptId));
+        const response = await batchService.getPrompt(Number.parseInt(batchId), Number.parseInt(promptId));
         if (response.success) {
           setPrompt(response.data);
           setEditLabel(response.data.label || "");
@@ -56,7 +56,7 @@ export function PromptDetailPage() {
     if (!batchId || !promptId || !prompt) return;
     setIsUpdating(true);
     try {
-      const response = await batchService.updatePrompt(parseInt(batchId), parseInt(promptId), {
+      const response = await batchService.updatePrompt(Number.parseInt(batchId), Number.parseInt(promptId), {
         label: editLabel,
         userPrompt: editUserPrompt,
       });
@@ -75,7 +75,7 @@ export function PromptDetailPage() {
     if (!batchId || !promptId) return;
     setIsDeleting(true);
     try {
-      await batchService.deletePrompt(parseInt(batchId), parseInt(promptId))
+      await batchService.deletePrompt(Number.parseInt(batchId), Number.parseInt(promptId))
       navigate(`/batches/${batchId}`);
     } catch (error) {
       console.error('Failed to delete prompt:', error);

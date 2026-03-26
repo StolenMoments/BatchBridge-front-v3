@@ -56,3 +56,9 @@ export interface PaginatedResponse<T> {
   page: number;
   size: number;
 }
+
+export interface SyncPromptsResponse {
+  id: number;
+  resynced: number;
+  stillFailed: number;
+}
