@@ -1,28 +1,30 @@
 import {
   ArrowLeft,
-  Loader2,
-  MessageSquare,
   Bot,
   Edit,
-  Trash2,
   FileText,
   Layout,
+  Loader2,
+  MessageSquare,
+  Paperclip,
+  Trash2,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
-import type { Prompt } from '@/types/api'
+import type { Attachment, Prompt } from '@/types/api'
 
+import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -39,8 +41,23 @@ export function PromptDetailPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [editLabel, setEditLabel] = useState('')
   const [editUserPrompt, setEditUserPrompt] = useState('')
+  const [editAttachments, setEditAttachments] = useState<Attachment[]>([])
+  const [attachmentError, setAttachmentError] = useState<string | null>(null)
+  const [isAttachmentPending, setIsAttachmentPending] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  const haveAttachmentsChanged = (current: Attachment[], next: Attachment[]) => {
+    if (current.length !== next.length) return true
+
+    return current.some((attachment, index) => {
+      const nextAttachment = next[index]
+      return (
+        attachment.fileName !== nextAttachment?.fileName ||
+        attachment.fileContent !== nextAttachment?.fileContent
+      )
+    })
+  }
 
   useEffect(() => {
     const fetchPrompt = async () => {
@@ -55,6 +72,7 @@ export function PromptDetailPage() {
           setPrompt(response.data)
           setEditLabel(response.data.label || '')
           setEditUserPrompt(response.data.userPrompt || '')
+          setEditAttachments(response.data.attachments ?? [])
         }
       } catch (error) {
         console.error('Failed to fetch prompt:', error)
@@ -62,23 +80,62 @@ export function PromptDetailPage() {
         setLoading(false)
       }
     }
+
     fetchPrompt()
   }, [batchId, promptId])
 
+  const resetEditState = (nextPrompt: Prompt) => {
+    setEditLabel(nextPrompt.label || '')
+    setEditUserPrompt(nextPrompt.userPrompt || '')
+    setEditAttachments(nextPrompt.attachments ?? [])
+    setAttachmentError(null)
+    setIsAttachmentPending(false)
+  }
+
+  const handleEditDialogChange = (open: boolean) => {
+    setIsEditDialogOpen(open)
+
+    if (open && prompt) {
+      resetEditState(prompt)
+    }
+  }
+
   const handleUpdate = async () => {
-    if (!batchId || !promptId || !prompt) return
+    if (!batchId || !promptId || !prompt || isAttachmentPending) return
+
     setIsUpdating(true)
     try {
-      const response = await batchService.updatePrompt(
-        Number.parseInt(batchId),
-        Number.parseInt(promptId),
-        {
+      const batchIdNumber = Number.parseInt(batchId)
+      const promptIdNumber = Number.parseInt(promptId)
+      const attachmentsChanged = haveAttachmentsChanged(prompt.attachments ?? [], editAttachments)
+
+      if (attachmentsChanged) {
+        const createResponse = await batchService.addPrompt(batchIdNumber, {
           label: editLabel,
+          systemPrompt: prompt.systemPrompt,
           userPrompt: editUserPrompt,
+          attachments: editAttachments,
+        })
+
+        if (createResponse.success) {
+          await batchService.deletePrompt(batchIdNumber, promptIdNumber)
+          setPrompt(createResponse.data)
+          resetEditState(createResponse.data)
+          setIsEditDialogOpen(false)
+          navigate(`/batches/${batchId}/prompts/${createResponse.data.id}`, { replace: true })
         }
-      )
-      if (response.success) {
-        setPrompt(response.data)
+        return
+      }
+
+      const updateResponse = await batchService.updatePrompt(batchIdNumber, promptIdNumber, {
+        label: editLabel,
+        userPrompt: editUserPrompt,
+        attachments: editAttachments,
+      })
+
+      if (updateResponse.success) {
+        setPrompt(updateResponse.data)
+        resetEditState(updateResponse.data)
         setIsEditDialogOpen(false)
       }
     } catch (error) {
@@ -90,6 +147,7 @@ export function PromptDetailPage() {
 
   const handleDelete = async () => {
     if (!batchId || !promptId) return
+
     setIsDeleting(true)
     try {
       await batchService.deletePrompt(Number.parseInt(batchId), Number.parseInt(promptId))
@@ -113,9 +171,9 @@ export function PromptDetailPage() {
   if (!prompt) {
     return (
       <div className="py-20 text-center">
-        <p className="text-muted-foreground">프롬프트를 찾을 수 없습니다.</p>
+        <p className="text-muted-foreground">Prompt not found.</p>
         <Button variant="link" onClick={() => navigate(`/batches/${batchId}`)}>
-          배치로 돌아가기
+          Back to batch
         </Button>
       </div>
     )
@@ -129,29 +187,29 @@ export function PromptDetailPage() {
         </Button>
         <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight">{prompt.label}</h1>
-          <p className="text-muted-foreground">프롬프트 상세 내용</p>
+          <p className="text-muted-foreground">Prompt details</p>
         </div>
         {prompt.status === 'PENDING' && (
           <div className="flex gap-2">
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <Dialog open={isEditDialogOpen} onOpenChange={handleEditDialogChange}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
                   <Edit className="h-4 w-4" />
-                  수정
+                  Edit
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-150">
                 <DialogHeader>
-                  <DialogTitle>프롬프트 수정</DialogTitle>
+                  <DialogTitle>Edit prompt</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="label">라벨</Label>
+                    <Label htmlFor="label">Label</Label>
                     <Input
                       id="label"
                       value={editLabel}
-                      onChange={e => setEditLabel(e.target.value)}
-                      placeholder="프롬프트 라벨을 입력하세요"
+                      onChange={event => setEditLabel(event.target.value)}
+                      placeholder="Enter a prompt label"
                     />
                   </div>
                   <div className="grid gap-2">
@@ -159,23 +217,32 @@ export function PromptDetailPage() {
                     <Textarea
                       id="userPrompt"
                       value={editUserPrompt}
-                      onChange={e => setEditUserPrompt(e.target.value)}
-                      placeholder="프롬프트 내용을 입력하세요"
+                      onChange={event => setEditUserPrompt(event.target.value)}
+                      placeholder="Enter prompt content"
                       rows={10}
                     />
                   </div>
+                  <PromptAttachmentsField
+                    attachments={editAttachments}
+                    errorMessage={attachmentError}
+                    onChange={setEditAttachments}
+                    onErrorChange={setAttachmentError}
+                    onPendingChange={setIsAttachmentPending}
+                  />
                 </div>
                 <DialogFooter>
                   <Button
                     variant="outline"
                     onClick={() => setIsEditDialogOpen(false)}
-                    disabled={isUpdating}
+                    disabled={isUpdating || isAttachmentPending}
                   >
-                    취소
+                    Cancel
                   </Button>
-                  <Button onClick={handleUpdate} disabled={isUpdating}>
-                    {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    저장
+                  <Button onClick={handleUpdate} disabled={isUpdating || isAttachmentPending}>
+                    {(isUpdating || isAttachmentPending) && (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    Save
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -189,15 +256,15 @@ export function PromptDetailPage() {
                   className="gap-2 text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
-                  삭제
+                  Delete
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>프롬프트 삭제</DialogTitle>
+                  <DialogTitle>Delete prompt</DialogTitle>
                 </DialogHeader>
                 <div className="py-4 text-muted-foreground">
-                  정말로 이 프롬프트를 삭제하시겠습니까? 삭제된 프롬프트는 복구할 수 없습니다.
+                  This action permanently deletes the prompt.
                 </div>
                 <DialogFooter>
                   <Button
@@ -205,11 +272,11 @@ export function PromptDetailPage() {
                     onClick={() => setIsDeleteDialogOpen(false)}
                     disabled={isDeleting}
                   >
-                    취소
+                    Cancel
                   </Button>
                   <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
                     {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    삭제
+                    Delete
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -255,6 +322,23 @@ export function PromptDetailPage() {
         </Tabs>
 
         <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="flex items-center gap-2">
+              <Paperclip className="h-5 w-5 text-muted-foreground" />
+              <CardTitle className="text-lg">Attachments</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <PromptAttachmentsField
+              attachments={prompt.attachments ?? []}
+              disabled
+              helperText="Attached file contents are shown below."
+              onChange={() => undefined}
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
           {prompt.status === 'COMPLETED' ? (
             <Tabs defaultValue="text" className="flex w-full flex-col gap-0">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -282,7 +366,7 @@ export function PromptDetailPage() {
                   </TabsContent>
                   <TabsContent value="text" className="col-start-1 row-start-1 mt-0 min-w-0">
                     <div className="h-full p-6 font-mono text-sm break-words whitespace-pre-wrap">
-                      {prompt.responseContent || '응답 내용이 없습니다.'}
+                      {prompt.responseContent || 'No response content.'}
                     </div>
                   </TabsContent>
                 </div>
@@ -299,7 +383,7 @@ export function PromptDetailPage() {
               <CardContent>
                 <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
                   <Loader2 className="mb-2 h-10 w-10 animate-spin opacity-20" />
-                  <p>모델 응답을 기다리는 중입니다... (상태: {prompt.status})</p>
+                  <p>Waiting for model response. (status: {prompt.status})</p>
                 </div>
               </CardContent>
             </>
@@ -309,7 +393,7 @@ export function PromptDetailPage() {
 
       <div className="flex justify-center pt-4">
         <Button variant="outline" onClick={() => navigate(`/batches/${batchId}`)}>
-          배치 상세 페이지로 돌아가기
+          Back to batch
         </Button>
       </div>
     </div>

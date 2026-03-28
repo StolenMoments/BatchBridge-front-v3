@@ -13,6 +13,7 @@ import {
   MessageSquare,
   AlertTriangle,
   FileText,
+  Paperclip,
   Trash2,
   type LucideIcon,
 } from 'lucide-react'
@@ -20,8 +21,9 @@ import { useEffect, useState, useCallback } from 'react'
 import ReactMarkdown from 'react-markdown'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 
-import type { Batch, BatchStatus } from '@/types/api'
+import type { Attachment, Batch, BatchStatus } from '@/types/api'
 
+import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import {
   Accordion,
   AccordionContent,
@@ -64,7 +66,10 @@ export function BatchDetailPage() {
     label: '',
     systemPrompt: '',
     userPrompt: '',
+    attachments: [] as Attachment[],
   })
+  const [attachmentError, setAttachmentError] = useState<string | null>(null)
+  const [isAttachmentPending, setIsAttachmentPending] = useState(false)
 
   const fetchBatch = useCallback(
     async (showLoading = true) => {
@@ -151,17 +156,19 @@ export function BatchDetailPage() {
 
   const handleAddPrompt = async (e: React.SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!batch || !newPrompt.userPrompt) return
+    if (!batch || !newPrompt.userPrompt || isAttachmentPending) return
 
     try {
       const response = await batchService.addPrompt(batch.id, {
         label: newPrompt.label || undefined,
         systemPrompt: newPrompt.systemPrompt || undefined,
         userPrompt: newPrompt.userPrompt,
+        attachments: newPrompt.attachments,
       })
 
       if (response.success) {
-        setNewPrompt({ label: '', systemPrompt: '', userPrompt: '' })
+        setNewPrompt({ label: '', systemPrompt: '', userPrompt: '', attachments: [] })
+        setAttachmentError(null)
         // Update local state directly to ensure immediate UI update
         if (response.data) {
           setBatch(prev => {
@@ -346,6 +353,12 @@ export function BatchDetailPage() {
                     <div className="text-sm">
                       <p className="line-clamp-3 whitespace-pre-wrap">{prompt.userPrompt}</p>
                     </div>
+                    {(prompt.attachments?.length ?? 0) > 0 && (
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Paperclip className="h-3.5 w-3.5" />
+                        첨부 파일 {prompt.attachments?.length}개
+                      </div>
+                    )}
                   </CardContent>
                   <CardFooter className="flex justify-end px-4 py-2">
                     <Button
@@ -411,9 +424,20 @@ export function BatchDetailPage() {
                         onChange={e => setNewPrompt({ ...newPrompt, userPrompt: e.target.value })}
                       />
                     </div>
+                    <PromptAttachmentsField
+                      attachments={newPrompt.attachments}
+                      errorMessage={attachmentError}
+                      onChange={attachments => setNewPrompt({ ...newPrompt, attachments })}
+                      onErrorChange={setAttachmentError}
+                      onPendingChange={setIsAttachmentPending}
+                    />
                   </CardContent>
                   <CardFooter className="border-t pt-4">
-                    <Button type="submit" className="w-full" disabled={!newPrompt.userPrompt}>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      disabled={!newPrompt.userPrompt || isAttachmentPending}
+                    >
                       <Plus className="mr-2 h-4 w-4" /> 프롬프트 추가
                     </Button>
                   </CardFooter>
@@ -457,6 +481,32 @@ export function BatchDetailPage() {
                         </div>
                       </AccordionContent>
                     </AccordionItem>
+
+                    {(prompt.attachments?.length ?? 0) > 0 && (
+                      <AccordionItem value="attachments" className="border-none">
+                        <AccordionTrigger className="px-4 py-2 text-xs tracking-wider text-muted-foreground uppercase hover:no-underline">
+                          첨부 파일 ({prompt.attachments?.length})
+                        </AccordionTrigger>
+                        <AccordionContent className="px-4 pb-4">
+                          <div className="space-y-3">
+                            {prompt.attachments?.map((attachment, index) => (
+                              <div
+                                key={`${attachment.fileName}-${index}`}
+                                className="rounded-md border bg-muted/30 p-3"
+                              >
+                                <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+                                  <Paperclip className="h-4 w-4 text-muted-foreground" />
+                                  {attachment.fileName}
+                                </div>
+                                <div className="max-h-[200px] overflow-y-auto rounded-md border bg-background p-3 font-mono text-xs break-all whitespace-pre-wrap">
+                                  {attachment.fileContent}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    )}
 
                     {prompt.status === 'COMPLETED' && prompt.responseContent && (
                       <AccordionItem value="output" className="border-none">

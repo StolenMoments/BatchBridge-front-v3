@@ -1,6 +1,7 @@
 import axios from 'axios'
 
 import type {
+  Attachment,
   ApiResponse,
   Batch,
   BatchListItem,
@@ -61,6 +62,7 @@ export const batchService = {
       label?: string
       systemPrompt?: string
       userPrompt: string
+      attachments?: Attachment[]
     }
   ) => {
     const response = await api.post<ApiResponse<Prompt>>(`/batches/${batchId}/prompts`, data)
@@ -79,6 +81,7 @@ export const batchService = {
       label?: string
       systemPrompt?: string
       userPrompt: string
+      attachments?: Attachment[]
     }
   ) => {
     const response = await api.put<ApiResponse<Prompt>>(
