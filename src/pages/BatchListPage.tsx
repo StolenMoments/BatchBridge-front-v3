@@ -19,6 +19,7 @@ import { Link } from 'react-router-dom'
 import type { BatchStatus } from '@/types/api'
 
 import { batchesAtom, batchesParamsAtom } from '@/atoms/batches'
+import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -38,6 +39,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { getApiErrorMessage } from '@/lib/api-error'
 import { batchService } from '@/services/api'
 
 const statusAppearanceMap: Record<
@@ -63,6 +65,7 @@ export function BatchListPage() {
   const [batches, setBatches] = useAtom(batchesAtom)
   const [params, setParams] = useAtom(batchesParamsAtom)
   const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const statusLabelMap: Record<BatchStatus, string> = {
     DRAFT: t('status.draft', { ns: 'common' }),
@@ -86,10 +89,12 @@ export function BatchListPage() {
 
         if (response.success) {
           setBatches(response.data)
+          setErrorMessage(null)
         }
       } catch (error: unknown) {
         if (error instanceof Error && error.name === 'AbortError') return
         console.error('Failed to fetch batches:', error)
+        setErrorMessage(getApiErrorMessage(error))
       } finally {
         setLoading(false)
       }
@@ -262,6 +267,8 @@ export function BatchListPage() {
           </Select>
         </div>
       </div>
+
+      {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
 
       {renderContent()}
 

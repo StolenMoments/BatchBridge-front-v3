@@ -18,7 +18,6 @@ const api = axios.create({
 export const batchService = {
   getBatches: async (
     params?: { status?: string; page?: number; size?: number },
-    _p0?: { signal: AbortSignal | undefined },
     config?: { signal?: AbortSignal }
   ) => {
     const response = await api.get<ApiResponse<PaginatedResponse<BatchListItem>>>('/batches', {

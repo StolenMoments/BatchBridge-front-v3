@@ -16,6 +16,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 
 import type { Attachment, Prompt } from '@/types/api'
 
+import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import { Button } from '@/components/ui/button'
@@ -32,6 +33,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
+import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
 import { batchService } from '@/services/api'
 
 export function PromptDetailPage() {
@@ -49,6 +51,7 @@ export function PromptDetailPage() {
   const [isAttachmentPending, setIsAttachmentPending] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const statusLabelMap: Record<Prompt['status'], string> = {
     DRAFT: t('status.draft', { ns: 'common' }),
@@ -85,9 +88,11 @@ export function PromptDetailPage() {
           setEditLabel(response.data.label || '')
           setEditUserPrompt(response.data.userPrompt || '')
           setEditAttachments(response.data.attachments ?? [])
+          setErrorMessage(null)
         }
       } catch (error) {
         console.error('Failed to fetch prompt:', error)
+        setErrorMessage(getApiErrorMessage(error))
       } finally {
         setLoading(false)
       }
@@ -133,6 +138,7 @@ export function PromptDetailPage() {
           setPrompt(createResponse.data)
           resetEditState(createResponse.data)
           setIsEditDialogOpen(false)
+          setErrorMessage(null)
           navigate(`/batches/${batchId}/prompts/${createResponse.data.id}`, { replace: true })
         }
         return
@@ -148,9 +154,11 @@ export function PromptDetailPage() {
         setPrompt(updateResponse.data)
         resetEditState(updateResponse.data)
         setIsEditDialogOpen(false)
+        setErrorMessage(null)
       }
     } catch (error) {
       console.error('Failed to update prompt:', error)
+      showApiErrorAlert(error)
     } finally {
       setIsUpdating(false)
     }
@@ -162,9 +170,11 @@ export function PromptDetailPage() {
     setIsDeleting(true)
     try {
       await batchService.deletePrompt(Number.parseInt(batchId, 10), Number.parseInt(promptId, 10))
+      setErrorMessage(null)
       navigate(`/batches/${batchId}`)
     } catch (error) {
       console.error('Failed to delete prompt:', error)
+      showApiErrorAlert(error)
     } finally {
       setIsDeleting(false)
       setIsDeleteDialogOpen(false)
@@ -192,6 +202,8 @@ export function PromptDetailPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
+      {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
+
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(`/batches/${batchId}`)}>
           <ArrowLeft className="h-5 w-5" />

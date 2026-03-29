@@ -24,6 +24,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import type { Attachment, Batch, BatchStatus } from '@/types/api'
 
+import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import {
@@ -45,6 +46,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
 import { batchService } from '@/services/api'
 
 const statusAppearanceMap: Record<BatchStatus, { color: string; icon: LucideIcon }> = {
@@ -71,6 +73,7 @@ export function BatchDetailPage() {
   })
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const [isAttachmentPending, setIsAttachmentPending] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const batchStatusLabelMap: Record<BatchStatus, string> = {
     DRAFT: t('status.draft', { ns: 'common' }),
@@ -96,9 +99,11 @@ export function BatchDetailPage() {
         const response = await batchService.getBatch(Number.parseInt(id, 10))
         if (response.success) {
           setBatch({ ...response.data })
+          setErrorMessage(null)
         }
       } catch (error) {
         console.error('Failed to fetch batch:', error)
+        setErrorMessage(getApiErrorMessage(error))
       } finally {
         if (showLoading) {
           setLoading(false)
@@ -119,10 +124,12 @@ export function BatchDetailPage() {
     try {
       const response = await batchService.submitBatch(batch.id)
       if (response.success) {
+        setErrorMessage(null)
         navigate('/batches')
       }
     } catch (error) {
       console.error('Failed to submit batch:', error)
+      showApiErrorAlert(error)
     } finally {
       setSubmitting(false)
     }
@@ -136,9 +143,11 @@ export function BatchDetailPage() {
       const response = await batchService.syncBatch(batch.id)
       if (response.success) {
         setBatch(response.data)
+        setErrorMessage(null)
       }
     } catch (error) {
       console.error('Failed to sync batch:', error)
+      showApiErrorAlert(error)
     } finally {
       setSyncing(false)
     }
@@ -163,11 +172,12 @@ export function BatchDetailPage() {
           alert(t('detail.alerts.none', { ns: 'batch' }))
         }
 
+        setErrorMessage(null)
         void fetchBatch(false)
       }
     } catch (error) {
       console.error('Failed to resync prompts:', error)
-      alert(t('detail.alerts.error', { ns: 'batch' }))
+      showApiErrorAlert(error)
     } finally {
       setResyncing(false)
     }
@@ -188,6 +198,7 @@ export function BatchDetailPage() {
       if (response.success) {
         setNewPrompt({ label: '', systemPrompt: '', userPrompt: '', attachments: [] })
         setAttachmentError(null)
+        setErrorMessage(null)
 
         if (response.data) {
           setBatch(prev => {
@@ -203,6 +214,7 @@ export function BatchDetailPage() {
       }
     } catch (error) {
       console.error('Failed to add prompt:', error)
+      showApiErrorAlert(error)
     }
   }
 
@@ -218,9 +230,11 @@ export function BatchDetailPage() {
           prompts: prev.prompts?.filter(prompt => prompt.id !== promptId) || [],
         }
       })
+      setErrorMessage(null)
       void fetchBatch(false)
     } catch (error) {
       console.error('Failed to delete prompt:', error)
+      showApiErrorAlert(error)
     }
   }
 
@@ -248,6 +262,8 @@ export function BatchDetailPage() {
 
   return (
     <div className="space-y-8 pb-20">
+      {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
+
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
