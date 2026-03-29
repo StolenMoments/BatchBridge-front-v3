@@ -1,1 +1,14 @@
-{}
+{
+  "UNKNOWN_ERROR": "Something went wrong. Please try again shortly.",
+  "NETWORK_ERROR": "Unable to reach the server. Check your network connection.",
+  "BATCH_NOT_FOUND": "The batch could not be found.",
+  "BATCH_NOT_EDITABLE": "This batch can no longer be edited in its current state.",
+  "BATCH_NOT_SYNCED": "Only completed batches can resync prompts.",
+  "BATCH_EMPTY": "Add at least one prompt before submitting the batch.",
+  "PROMPT_NOT_FOUND": "The prompt could not be found.",
+  "BATCH_RESULT_NOT_FOUND": "The batch result could not be found yet.",
+  "UNSUPPORTED_MODEL": "The selected model is not supported.",
+  "EXTERNAL_API_ERROR": "An error occurred while calling the external AI service.",
+  "INVALID_REQUEST": "The request is invalid. Please review the entered values.",
+  "INTERNAL_SERVER_ERROR": "An internal server error occurred."
+}

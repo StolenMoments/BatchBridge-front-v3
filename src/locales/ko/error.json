@@ -1,1 +1,14 @@
-{}
+{
+  "UNKNOWN_ERROR": "요청을 처리하지 못했습니다. 잠시 후 다시 시도해 주세요.",
+  "NETWORK_ERROR": "서버에 연결할 수 없습니다. 네트워크 상태를 확인해 주세요.",
+  "BATCH_NOT_FOUND": "배치를 찾을 수 없습니다.",
+  "BATCH_NOT_EDITABLE": "현재 상태에서는 배치를 수정할 수 없습니다.",
+  "BATCH_NOT_SYNCED": "완료된 배치만 프롬프트를 재동기화할 수 있습니다.",
+  "BATCH_EMPTY": "프롬프트를 하나 이상 추가한 뒤 배치를 제출해 주세요.",
+  "PROMPT_NOT_FOUND": "프롬프트를 찾을 수 없습니다.",
+  "BATCH_RESULT_NOT_FOUND": "배치 결과를 아직 찾을 수 없습니다.",
+  "UNSUPPORTED_MODEL": "선택한 모델은 지원하지 않습니다.",
+  "EXTERNAL_API_ERROR": "외부 AI 서비스 호출 중 오류가 발생했습니다.",
+  "INVALID_REQUEST": "요청 값이 올바르지 않습니다. 입력값을 다시 확인해 주세요.",
+  "INTERNAL_SERVER_ERROR": "서버 내부 오류가 발생했습니다."
+}

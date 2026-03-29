@@ -50,13 +50,15 @@ export interface Model {
   displayName: string
 }
 
+export interface ApiErrorPayload {
+  code: string
+  message: string
+}
+
 export interface ApiResponse<T> {
   success: boolean
   data: T
-  error?: {
-    code: string
-    message: string
-  }
+  error?: ApiErrorPayload
 }
 
 export interface PaginatedResponse<T> {
