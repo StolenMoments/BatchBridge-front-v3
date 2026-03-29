@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import type { Attachment, Prompt } from '@/types/api'
+import type { Attachment, BatchStatus, Prompt } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
@@ -47,6 +47,7 @@ export function PromptDetailPage() {
   const { batchId, promptId } = useParams<{ batchId: string; promptId: string }>()
   const navigate = useNavigate()
   const [prompt, setPrompt] = useState<Prompt | null>(null)
+  const [batchStatus, setBatchStatus] = useState<BatchStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -88,31 +89,36 @@ export function PromptDetailPage() {
   }
 
   useEffect(() => {
-    const fetchPrompt = async () => {
+    const fetchData = async () => {
       if (!batchId || !promptId) return
 
       setLoading(true)
       try {
-        const response = await batchService.getPrompt(
-          Number.parseInt(batchId, 10),
-          Number.parseInt(promptId, 10)
-        )
-        if (response.success) {
-          setPrompt(response.data)
-          setEditLabel(response.data.label || '')
-          setEditUserPrompt(response.data.userPrompt || '')
-          setEditAttachments(response.data.attachments ?? [])
+        const [promptResponse, batchResponse] = await Promise.all([
+          batchService.getPrompt(Number.parseInt(batchId, 10), Number.parseInt(promptId, 10)),
+          batchService.getBatch(Number.parseInt(batchId, 10)),
+        ])
+
+        if (promptResponse.success) {
+          setPrompt(promptResponse.data)
+          setEditLabel(promptResponse.data.label || '')
+          setEditUserPrompt(promptResponse.data.userPrompt || '')
+          setEditAttachments(promptResponse.data.attachments ?? [])
           setErrorMessage(null)
         }
+
+        if (batchResponse.success) {
+          setBatchStatus(batchResponse.data.status)
+        }
       } catch (error) {
-        console.error('Failed to fetch prompt:', error)
+        console.error('Failed to fetch prompt details:', error)
         setErrorMessage(getApiErrorMessage(error))
       } finally {
         setLoading(false)
       }
     }
 
-    void fetchPrompt()
+    void fetchData()
   }, [batchId, promptId])
 
   const resetEditState = (nextPrompt: Prompt) => {
@@ -214,8 +220,9 @@ export function PromptDetailPage() {
     )
   }
 
-  const appearance = statusAppearanceMap[prompt.status]
-  const StatusIcon = appearance.icon
+  const currentStatusAppearance =
+    batchStatus === 'DRAFT' ? statusAppearanceMap.DRAFT : statusAppearanceMap[prompt.status]
+  const StatusIcon = currentStatusAppearance.icon
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -229,18 +236,25 @@ export function PromptDetailPage() {
           <div className="flex items-center gap-3">
             <h1 className="text-3xl font-bold tracking-tight">{prompt.label}</h1>
             <Badge
-              className={`${appearance.color} flex h-6 items-center px-2 py-0.5 text-[10px] font-medium text-white`}
+              variant={batchStatus === 'DRAFT' ? 'outline' : 'default'}
+              className={`${
+                batchStatus === 'DRAFT' ? '' : currentStatusAppearance.color
+              } flex h-6 items-center px-2 py-0.5 text-[10px] font-medium ${
+                batchStatus === 'DRAFT' ? '' : 'text-white'
+              }`}
             >
               <StatusIcon
                 className={`mr-1.5 h-3 w-3 ${prompt.status === 'IN_PROGRESS' ? 'animate-spin' : ''}`}
               />
-              {statusLabelMap[prompt.status]}
+              {batchStatus === 'DRAFT'
+                ? t('detail.draftBadge', { ns: 'batch' })
+                : statusLabelMap[prompt.status]}
             </Badge>
           </div>
           <p className="text-muted-foreground">{t('detail.subtitle', { ns: 'prompt' })}</p>
         </div>
 
-        {prompt.status === 'DRAFT' ? (
+        {batchStatus === 'DRAFT' && prompt.status === 'PENDING' ? (
           <div className="flex gap-2">
             <Dialog open={isEditDialogOpen} onOpenChange={handleEditDialogChange}>
               <DialogTrigger asChild>
