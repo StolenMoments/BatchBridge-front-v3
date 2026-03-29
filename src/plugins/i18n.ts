@@ -1,5 +1,4 @@
 import i18n from 'i18next'
-import LanguageDetector from 'i18next-browser-languagedetector'
 import { initReactI18next } from 'react-i18next'
 
 import batchEn from '../locales/en/batch.json'
@@ -10,6 +9,8 @@ import batchKo from '../locales/ko/batch.json'
 import commonKo from '../locales/ko/common.json'
 import errorKo from '../locales/ko/error.json'
 import promptTemplateKo from '../locales/ko/prompt_template.json'
+
+import { getStoredLocale } from '@/atoms/localeAtom'
 
 const resources = {
   ko: {
@@ -26,22 +27,15 @@ const resources = {
   },
 }
 
-i18n
-  .use(LanguageDetector)
-  .use(initReactI18next)
-  .init({
-    resources,
-    lng: 'ko',
-    fallbackLng: 'ko',
-    ns: ['common', 'batch', 'error', 'prompt_template'],
-    defaultNS: 'common',
-    interpolation: {
-      escapeValue: false,
-    },
-    detection: {
-      order: ['querystring', 'cookie', 'localStorage', 'navigator', 'path', 'subdomain'],
-      caches: ['localStorage', 'cookie'],
-    },
-  })
+i18n.use(initReactI18next).init({
+  resources,
+  lng: getStoredLocale(),
+  fallbackLng: 'ko',
+  ns: ['common', 'batch', 'error', 'prompt_template'],
+  defaultNS: 'common',
+  interpolation: {
+    escapeValue: false,
+  },
+})
 
 export default i18n
