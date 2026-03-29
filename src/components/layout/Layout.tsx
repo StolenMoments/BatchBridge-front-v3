@@ -1,12 +1,13 @@
 import { Layers } from 'lucide-react'
 import { Link, Outlet } from 'react-router-dom'
 
+import { LocaleToggle } from '@/components/LocaleToggle'
 import { ModeToggle } from '@/components/mode-toggle'
 
 export function Layout() {
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
-      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
         <div className="container mx-auto flex h-14 max-w-7xl items-center px-4">
           <div className="mr-4 flex flex-1">
             <Link to="/batches" className="mr-6 flex items-center space-x-2">
@@ -14,7 +15,8 @@ export function Layout() {
               <span className="inline-block font-bold">BatchBridge</span>
             </Link>
           </div>
-          <div className="flex items-center justify-end">
+          <div className="flex items-center justify-end gap-2">
+            <LocaleToggle />
             <ModeToggle />
           </div>
         </div>
