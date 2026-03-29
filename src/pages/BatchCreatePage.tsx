@@ -3,9 +3,10 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
-import type { Model } from '@/types/api'
+import type { Attachment, Model } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert.tsx'
+import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import { Button } from '@/components/ui/button'
 import {
@@ -37,12 +38,15 @@ export function BatchCreatePage() {
   const [submitting, setSubmitting] = useState(false)
   const [showSystemPrompt, setShowSystemPrompt] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [attachmentsErrorMessage, setAttachmentsErrorMessage] = useState<string | null>(null)
+  const [attachmentsPending, setAttachmentsPending] = useState(false)
   const [formData, setFormData] = useState({
     batchLabel: '',
     model: '',
     promptLabel: '',
     systemPrompt: '',
     userPrompt: '',
+    attachments: [] as Attachment[],
   })
 
   useEffect(() => {
@@ -70,7 +74,7 @@ export function BatchCreatePage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!formData.model || !formData.userPrompt) return
+    if (!formData.model || !formData.userPrompt || attachmentsPending) return
 
     setSubmitting(true)
     try {
@@ -81,6 +85,7 @@ export function BatchCreatePage() {
           label: formData.promptLabel || undefined,
           systemPrompt: formData.systemPrompt || undefined,
           userPrompt: formData.userPrompt,
+          attachments: formData.attachments.length > 0 ? formData.attachments : undefined,
         },
       })
 
@@ -209,12 +214,24 @@ export function BatchCreatePage() {
                 onChange={event => setFormData({ ...formData, userPrompt: event.target.value })}
               />
             </div>
+
+            <PromptAttachmentsField
+              attachments={formData.attachments}
+              disabled={submitting}
+              errorMessage={attachmentsErrorMessage}
+              onChange={attachments => setFormData(prev => ({ ...prev, attachments }))}
+              onErrorChange={setAttachmentsErrorMessage}
+              onPendingChange={setAttachmentsPending}
+            />
           </CardContent>
           <CardFooter className="flex justify-end gap-2 border-t pt-6">
             <Button type="button" variant="outline" onClick={() => navigate(-1)}>
               {t('actions.cancel', { ns: 'common' })}
             </Button>
-            <Button type="submit" disabled={submitting || !formData.model || !formData.userPrompt}>
+            <Button
+              type="submit"
+              disabled={submitting || !formData.model || !formData.userPrompt || attachmentsPending}
+            >
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
