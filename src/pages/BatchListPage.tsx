@@ -13,6 +13,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { useEffect, useState, useCallback } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
 import type { BatchStatus } from '@/types/api'
@@ -70,6 +71,7 @@ const statusMap: Record<
 }
 
 export function BatchListPage() {
+  const { t } = useTranslation('common')
   const [batches, setBatches] = useAtom(batchesAtom)
   const [params, setParams] = useAtom(batchesParamsAtom)
   const [loading, setLoading] = useState(false)
@@ -208,8 +210,8 @@ export function BatchListPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">배치 목록</h1>
-          <p className="text-muted-foreground">생성된 배치들의 상태와 결과를 한눈에 확인하세요.</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('batch_list')}</h1>
+          <p className="text-muted-foreground">{t('batch_description')}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => fetchBatches()} disabled={loading}>
