@@ -1,5 +1,6 @@
 import { FileText, Upload, X } from 'lucide-react'
 import { useId, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import type { Attachment } from '@/types/api'
 import type { ChangeEvent, DragEvent, KeyboardEvent } from 'react'
@@ -60,7 +61,7 @@ function readFileAsText(file: File): Promise<Attachment> {
     }
 
     reader.onerror = () => {
-      reject(new Error(`Failed to read ${file.name}.`))
+      reject(new Error(`READ_ERROR:${file.name}`))
     }
 
     reader.readAsText(file)
@@ -68,13 +69,6 @@ function readFileAsText(file: File): Promise<Attachment> {
 }
 
 async function buildAttachments(files: File[]): Promise<Attachment[]> {
-  const invalidFile = files.find(file => !isAllowedFile(file.name))
-  if (invalidFile) {
-    throw new Error(
-      `Unsupported file extension: ${invalidFile.name}. Only ${allowedExtensions.map(ext => `.${ext}`).join(', ')} files are allowed.`
-    )
-  }
-
   return Promise.all(files.map(readFileAsText))
 }
 
@@ -82,21 +76,34 @@ export function PromptAttachmentsField({
   attachments,
   disabled = false,
   errorMessage,
-  helperText = 'Click or drag and drop files to attach them.',
+  helperText,
   onChange,
   onErrorChange,
   onPendingChange,
 }: PromptAttachmentsFieldProps) {
+  const { t } = useTranslation('prompt')
   const inputId = useId()
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [isDragging, setIsDragging] = useState(false)
   const acceptedTypes = allowedExtensions.map(ext => `.${ext}`).join(',')
+  const allowedTypesText = allowedExtensions.map(ext => `.${ext}`).join(', ')
+  const resolvedHelperText = helperText ?? t('attachments.helper')
 
   const updateAttachments = async (files: File[]) => {
     if (files.length === 0 || disabled) return
 
     onPendingChange?.(true)
     try {
+      const invalidFile = files.find(file => !isAllowedFile(file.name))
+      if (invalidFile) {
+        throw new Error(
+          t('attachments.errors.unsupportedExtension', {
+            fileName: invalidFile.name,
+            types: allowedTypesText,
+          })
+        )
+      }
+
       const nextAttachments = await buildAttachments(files)
       const mergedAttachments = [...attachments]
 
@@ -116,8 +123,14 @@ export function PromptAttachmentsField({
       onChange(mergedAttachments)
       onErrorChange?.(null)
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : 'Failed to process the selected files.'
+      let message = t('attachments.errors.processFailed')
+      if (error instanceof Error) {
+        message = error.message.startsWith('READ_ERROR:')
+          ? t('attachments.errors.readFailed', {
+              fileName: error.message.replace('READ_ERROR:', ''),
+            })
+          : error.message
+      }
       onErrorChange?.(message)
     } finally {
       onPendingChange?.(false)
@@ -168,7 +181,7 @@ export function PromptAttachmentsField({
     <div className="space-y-3">
       <div className="space-y-2">
         <Label htmlFor={inputId} className="text-sm font-medium text-foreground">
-          Attachments
+          {t('attachments.label')}
         </Label>
         <input
           id={inputId}
@@ -206,10 +219,10 @@ export function PromptAttachmentsField({
               <Upload className="h-5 w-5" />
             </div>
             <div className="space-y-1">
-              <p className="text-sm font-medium">Select files or drag and drop</p>
-              <p className="text-xs text-muted-foreground">{helperText}</p>
+              <p className="text-sm font-medium">{t('attachments.selectOrDrop')}</p>
+              <p className="text-xs text-muted-foreground">{resolvedHelperText}</p>
               <p className="text-xs text-muted-foreground">
-                Allowed types: {allowedExtensions.map(ext => `.${ext}`).join(', ')}
+                {t('attachments.allowedTypes', { types: allowedTypesText })}
               </p>
             </div>
           </div>
@@ -219,12 +232,14 @@ export function PromptAttachmentsField({
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <p className="text-sm font-medium text-foreground">Attached files</p>
-          <p className="text-xs text-muted-foreground">{attachments.length} files</p>
+          <p className="text-sm font-medium text-foreground">{t('attachments.attachedFiles')}</p>
+          <p className="text-xs text-muted-foreground">
+            {t('attachments.fileCount', { count: attachments.length })}
+          </p>
         </div>
         {attachments.length === 0 ? (
           <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-            No files attached.
+            {t('attachments.noFiles')}
           </div>
         ) : (
           <Accordion type="multiple" className="rounded-lg border">
@@ -240,7 +255,9 @@ export function PromptAttachmentsField({
                     <div className="flex min-w-0 flex-col">
                       <span className="truncate text-sm font-medium">{attachment.fileName}</span>
                       <span className="text-xs text-muted-foreground">
-                        {attachment.fileContent.length.toLocaleString()} chars
+                        {t('attachments.chars', {
+                          count: attachment.fileContent.length.toLocaleString(),
+                        })}
                       </span>
                     </div>
                   </AccordionTrigger>
@@ -251,7 +268,7 @@ export function PromptAttachmentsField({
                     className="mt-2 shrink-0 text-muted-foreground hover:text-destructive"
                     disabled={disabled}
                     onClick={() => handleRemoveAttachment(attachment.fileName)}
-                    aria-label={`Remove ${attachment.fileName}`}
+                    aria-label={t('attachments.removeAriaLabel', { fileName: attachment.fileName })}
                   >
                     <X className="h-4 w-4" />
                   </Button>

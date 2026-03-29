@@ -1,18 +1,18 @@
 import { format } from 'date-fns'
 import { useAtom } from 'jotai'
 import {
+  CheckCircle2,
+  Clock,
+  Cpu,
+  FileText,
+  Loader2,
   Plus,
   RefreshCw,
   Search,
-  Clock,
-  Cpu,
-  CheckCircle2,
   XCircle,
-  FileText,
-  Loader2,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 
@@ -40,41 +40,36 @@ import {
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { batchService } from '@/services/api'
 
-const statusMap: Record<
+const statusAppearanceMap: Record<
   BatchStatus,
-  { label: string; color: string; gradient: string; icon: LucideIcon }
+  { color: string; gradient: string; icon: LucideIcon }
 > = {
-  DRAFT: {
-    label: '초안',
-    color: 'bg-slate-500',
-    gradient: 'from-slate-500/10 to-transparent',
-    icon: FileText,
-  },
+  DRAFT: { color: 'bg-slate-500', gradient: 'from-slate-500/10 to-transparent', icon: FileText },
   IN_PROGRESS: {
-    label: '처리중',
     color: 'bg-blue-500',
     gradient: 'from-blue-500/10 to-transparent',
     icon: Loader2,
   },
   COMPLETED: {
-    label: '완료',
     color: 'bg-green-500',
     gradient: 'from-green-500/10 to-transparent',
     icon: CheckCircle2,
   },
-  FAILED: {
-    label: '실패',
-    color: 'bg-red-500',
-    gradient: 'from-red-500/10 to-transparent',
-    icon: XCircle,
-  },
+  FAILED: { color: 'bg-red-500', gradient: 'from-red-500/10 to-transparent', icon: XCircle },
 }
 
 export function BatchListPage() {
-  const { t } = useTranslation('common')
+  const { t } = useTranslation(['batch', 'common'])
   const [batches, setBatches] = useAtom(batchesAtom)
   const [params, setParams] = useAtom(batchesParamsAtom)
   const [loading, setLoading] = useState(false)
+
+  const statusLabelMap: Record<BatchStatus, string> = {
+    DRAFT: t('status.draft', { ns: 'common' }),
+    IN_PROGRESS: t('status.inProgress', { ns: 'common' }),
+    COMPLETED: t('status.completed', { ns: 'common' }),
+    FAILED: t('status.failed', { ns: 'common' }),
+  }
 
   const fetchBatches = useCallback(
     async (signal?: AbortSignal) => {
@@ -88,6 +83,7 @@ export function BatchListPage() {
           },
           { signal }
         )
+
         if (response.success) {
           setBatches(response.data)
         }
@@ -98,16 +94,15 @@ export function BatchListPage() {
         setLoading(false)
       }
     },
-    [params.status, params.page, params.size, setBatches]
+    [params.page, params.size, params.status, setBatches]
   )
 
   useEffect(() => {
     const controller = new AbortController()
-    fetchBatches(controller.signal)
+    void fetchBatches(controller.signal)
 
-    // 2분마다 자동 갱신
     const interval = setInterval(() => {
-      fetchBatches()
+      void fetchBatches()
     }, 120000)
 
     return () => {
@@ -125,7 +120,7 @@ export function BatchListPage() {
   }
 
   const handleSizeChange = (size: string) => {
-    setParams(prev => ({ ...prev, size: Number.parseInt(size), page: 1 }))
+    setParams(prev => ({ ...prev, size: Number.parseInt(size, 10), page: 1 }))
   }
 
   const renderContent = () => {
@@ -141,9 +136,9 @@ export function BatchListPage() {
       return (
         <div className="flex h-60 flex-col items-center justify-center rounded-lg border border-dashed">
           <Search className="mb-2 h-10 w-10 text-muted-foreground" />
-          <p className="text-muted-foreground">표시할 배치가 없습니다.</p>
+          <p className="text-muted-foreground">{t('list.empty', { ns: 'batch' })}</p>
           <Link to="/batches/new" className="mt-4">
-            <Button variant="link">첫 배치를 만들어보세요</Button>
+            <Button variant="link">{t('list.createFirst', { ns: 'batch' })}</Button>
           </Link>
         </div>
       )
@@ -152,17 +147,17 @@ export function BatchListPage() {
     return (
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {batches?.content.map(batch => {
-          const status = statusMap[batch.status]
+          const status = statusAppearanceMap[batch.status]
           const StatusIcon = status.icon
 
           return (
             <Link key={batch.id} to={`/batches/${batch.id}`}>
               <Card
-                className={`h-full bg-linear-to-br transition-all hover:border-primary/80 hover:shadow-[0_0_15px_rgba(var(--primary),0.1)] dark:hover:bg-accent/10 dark:hover:shadow-[0_0_15px_rgba(var(--primary),0.2)] ${status.gradient} group`}
+                className={`group h-full bg-linear-to-br transition-all hover:border-primary/80 hover:shadow-[0_0_15px_rgba(var(--primary),0.1)] dark:hover:bg-accent/10 dark:hover:shadow-[0_0_15px_rgba(var(--primary),0.2)] ${status.gradient}`}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle
-                    className={`truncate px-2 py-1 text-lg font-bold ${status.color} rounded-md text-white transition-all group-hover:ring-2 group-hover:ring-primary/30`}
+                    className={`truncate rounded-md px-2 py-1 text-lg font-bold text-white transition-all group-hover:ring-2 group-hover:ring-primary/30 ${status.color}`}
                   >
                     {batch.label}
                   </CardTitle>
@@ -173,7 +168,7 @@ export function BatchListPage() {
                     <StatusIcon
                       className={`mr-2 h-4 w-4 ${batch.status === 'IN_PROGRESS' ? 'animate-spin' : ''}`}
                     />
-                    {status.label}
+                    {statusLabelMap[batch.status]}
                   </Badge>
                 </CardHeader>
                 <CardContent>
@@ -185,7 +180,9 @@ export function BatchListPage() {
                     </div>
                     <div className="flex items-center text-sm">
                       <FileText className="mr-2 h-4 w-4 text-muted-foreground" />
-                      <span>프롬프트 {batch.promptCount}개</span>
+                      <span>
+                        {t('list.promptCount', { ns: 'batch', count: batch.promptCount })}
+                      </span>
                     </div>
                     <div className="flex items-center text-sm">
                       <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -195,7 +192,7 @@ export function BatchListPage() {
                 </CardContent>
                 <CardFooter className="pt-2">
                   <Button variant="ghost" size="sm" className="w-full text-xs">
-                    자세히 보기
+                    {t('list.viewDetails', { ns: 'batch' })}
                   </Button>
                 </CardFooter>
               </Card>
@@ -210,17 +207,23 @@ export function BatchListPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('batch_list')}</h1>
-          <p className="text-muted-foreground">{t('batch_description')}</p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('list.title', { ns: 'batch' })}</h1>
+          <p className="text-muted-foreground">{t('list.description', { ns: 'batch' })}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => fetchBatches()} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void fetchBatches()}
+            disabled={loading}
+          >
             <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            새로고침
+            {t('actions.refresh', { ns: 'common' })}
           </Button>
           <Link to="/batches/new">
             <Button size="sm">
-              <Plus className="mr-2 h-4 w-4" />새 배치 만들기
+              <Plus className="mr-2 h-4 w-4" />
+              {t('list.newBatch', { ns: 'batch' })}
             </Button>
           </Link>
         </div>
@@ -233,16 +236,20 @@ export function BatchListPage() {
           onValueChange={handleStatusChange}
         >
           <TabsList>
-            <TabsTrigger value="ALL">전체</TabsTrigger>
-            <TabsTrigger value="DRAFT">초안</TabsTrigger>
-            <TabsTrigger value="IN_PROGRESS">처리중</TabsTrigger>
-            <TabsTrigger value="COMPLETED">완료</TabsTrigger>
-            <TabsTrigger value="FAILED">실패</TabsTrigger>
+            <TabsTrigger value="ALL">{t('status.all', { ns: 'common' })}</TabsTrigger>
+            <TabsTrigger value="DRAFT">{t('status.draft', { ns: 'common' })}</TabsTrigger>
+            <TabsTrigger value="IN_PROGRESS">
+              {t('status.inProgress', { ns: 'common' })}
+            </TabsTrigger>
+            <TabsTrigger value="COMPLETED">{t('status.completed', { ns: 'common' })}</TabsTrigger>
+            <TabsTrigger value="FAILED">{t('status.failed', { ns: 'common' })}</TabsTrigger>
           </TabsList>
         </Tabs>
 
         <div className="flex items-center gap-2">
-          <span className="text-sm whitespace-nowrap text-muted-foreground">페이지 당 표시:</span>
+          <span className="text-sm whitespace-nowrap text-muted-foreground">
+            {t('labels.pageSize', { ns: 'common' })}
+          </span>
           <Select value={params.size.toString()} onValueChange={handleSizeChange}>
             <SelectTrigger className="w-[80px]">
               <SelectValue placeholder="Size" />
@@ -258,7 +265,7 @@ export function BatchListPage() {
 
       {renderContent()}
 
-      {batches && batches.totalPages > 1 && (
+      {batches && batches.totalPages > 1 ? (
         <Pagination>
           <PaginationContent>
             <PaginationItem>
@@ -267,14 +274,14 @@ export function BatchListPage() {
                 className={params.page === 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
               />
             </PaginationItem>
-            {Array.from({ length: batches.totalPages }).map((_, i) => (
-              <PaginationItem key={`page-${i + 1}`}>
+            {Array.from({ length: batches.totalPages }).map((_, index) => (
+              <PaginationItem key={`page-${index + 1}`}>
                 <PaginationLink
-                  isActive={params.page === i + 1}
-                  onClick={() => handlePageChange(i + 1)}
+                  isActive={params.page === index + 1}
+                  onClick={() => handlePageChange(index + 1)}
                   className="cursor-pointer"
                 >
-                  {i + 1}
+                  {index + 1}
                 </PaginationLink>
               </PaginationItem>
             ))}
@@ -290,7 +297,7 @@ export function BatchListPage() {
             </PaginationItem>
           </PaginationContent>
         </Pagination>
-      )}
+      ) : null}
     </div>
   )
 }

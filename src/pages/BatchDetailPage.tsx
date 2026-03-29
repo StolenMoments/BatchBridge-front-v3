@@ -1,25 +1,26 @@
 import { format } from 'date-fns'
 import {
+  AlertTriangle,
   ArrowLeft,
+  CheckCircle2,
+  Clock,
+  Cpu,
+  ExternalLink,
+  FileText,
+  Loader2,
+  MessageSquare,
+  Paperclip,
+  Plus,
   RefreshCw,
   Send,
-  CheckCircle2,
-  XCircle,
-  Loader2,
-  Plus,
-  Cpu,
-  Clock,
-  ExternalLink,
-  MessageSquare,
-  AlertTriangle,
-  FileText,
-  Paperclip,
   Trash2,
+  XCircle,
   type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useState, useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
-import { useParams, Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 
 import type { Attachment, Batch, BatchStatus } from '@/types/api'
 
@@ -45,14 +46,15 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { batchService } from '@/services/api'
 
-const statusMap: Record<BatchStatus, { label: string; color: string; icon: LucideIcon }> = {
-  DRAFT: { label: '초안', color: 'bg-slate-500', icon: FileText },
-  IN_PROGRESS: { label: '처리중', color: 'bg-blue-500', icon: Loader2 },
-  COMPLETED: { label: '완료', color: 'bg-green-500', icon: CheckCircle2 },
-  FAILED: { label: '실패', color: 'bg-red-500', icon: XCircle },
+const statusAppearanceMap: Record<BatchStatus, { color: string; icon: LucideIcon }> = {
+  DRAFT: { color: 'bg-slate-500', icon: FileText },
+  IN_PROGRESS: { color: 'bg-blue-500', icon: Loader2 },
+  COMPLETED: { color: 'bg-green-500', icon: CheckCircle2 },
+  FAILED: { color: 'bg-red-500', icon: XCircle },
 }
 
 export function BatchDetailPage() {
+  const { t } = useTranslation(['batch', 'common'])
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [batch, setBatch] = useState<Batch | null>(null)
@@ -60,8 +62,6 @@ export function BatchDetailPage() {
   const [submitting, setSubmitting] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [resyncing, setResyncing] = useState(false)
-
-  // New Prompt Form (for DRAFT status)
   const [newPrompt, setNewPrompt] = useState({
     label: '',
     systemPrompt: '',
@@ -71,31 +71,49 @@ export function BatchDetailPage() {
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const [isAttachmentPending, setIsAttachmentPending] = useState(false)
 
+  const batchStatusLabelMap: Record<BatchStatus, string> = {
+    DRAFT: t('status.draft', { ns: 'common' }),
+    IN_PROGRESS: t('status.inProgress', { ns: 'common' }),
+    COMPLETED: t('status.completed', { ns: 'common' }),
+    FAILED: t('status.failed', { ns: 'common' }),
+  }
+
+  const promptStatusLabelMap: Record<BatchStatus | 'PENDING', string> = {
+    DRAFT: t('status.draft', { ns: 'common' }),
+    IN_PROGRESS: t('status.inProgress', { ns: 'common' }),
+    COMPLETED: t('status.completed', { ns: 'common' }),
+    FAILED: t('status.failed', { ns: 'common' }),
+    PENDING: t('status.pending', { ns: 'common' }),
+  }
+
   const fetchBatch = useCallback(
     async (showLoading = true) => {
       if (!id) return
       if (showLoading) setLoading(true)
+
       try {
-        const response = await batchService.getBatch(Number.parseInt(id))
+        const response = await batchService.getBatch(Number.parseInt(id, 10))
         if (response.success) {
-          // Ensure the batch state is actually updated with fresh data
           setBatch({ ...response.data })
         }
       } catch (error) {
         console.error('Failed to fetch batch:', error)
       } finally {
-        if (showLoading) setLoading(false)
+        if (showLoading) {
+          setLoading(false)
+        }
       }
     },
     [id]
   )
 
   useEffect(() => {
-    fetchBatch()
+    void fetchBatch()
   }, [fetchBatch])
 
   const handleSubmitBatch = async () => {
     if (!batch) return
+
     setSubmitting(true)
     try {
       const response = await batchService.submitBatch(batch.id)
@@ -111,6 +129,7 @@ export function BatchDetailPage() {
 
   const handleSyncBatch = async () => {
     if (!batch) return
+
     setSyncing(true)
     try {
       const response = await batchService.syncBatch(batch.id)
@@ -126,36 +145,35 @@ export function BatchDetailPage() {
 
   const handleResyncPrompts = async () => {
     if (!batch) return
+
     setResyncing(true)
     try {
       const response = await batchService.syncPrompts(batch.id)
       if (response.success) {
         const { resynced, stillFailed } = response.data
 
-        // UI Feedback (Using alert since Toast is not implemented in this project)
         if (resynced > 0) {
-          alert(`${resynced}개 프롬프트가 복구되었습니다.`)
+          alert(t('detail.alerts.resynced', { ns: 'batch', count: resynced }))
         }
         if (stillFailed > 0) {
-          alert(`${stillFailed}개 프롬프트는 여전히 실패 상태입니다.`)
+          alert(t('detail.alerts.stillFailed', { ns: 'batch', count: stillFailed }))
         }
         if (resynced === 0 && stillFailed === 0) {
-          alert('재동기화할 프롬프트가 없습니다.')
+          alert(t('detail.alerts.none', { ns: 'batch' }))
         }
 
-        // Refresh batch details
-        fetchBatch(false)
+        void fetchBatch(false)
       }
     } catch (error) {
       console.error('Failed to resync prompts:', error)
-      alert('프롬프트 재동기화 중 오류가 발생했습니다.')
+      alert(t('detail.alerts.error', { ns: 'batch' }))
     } finally {
       setResyncing(false)
     }
   }
 
-  const handleAddPrompt = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const handleAddPrompt = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     if (!batch || !newPrompt.userPrompt || isAttachmentPending) return
 
     try {
@@ -169,7 +187,7 @@ export function BatchDetailPage() {
       if (response.success) {
         setNewPrompt({ label: '', systemPrompt: '', userPrompt: '', attachments: [] })
         setAttachmentError(null)
-        // Update local state directly to ensure immediate UI update
+
         if (response.data) {
           setBatch(prev => {
             if (!prev) return prev
@@ -179,7 +197,8 @@ export function BatchDetailPage() {
             }
           })
         }
-        fetchBatch(false)
+
+        void fetchBatch(false)
       }
     } catch (error) {
       console.error('Failed to add prompt:', error)
@@ -187,20 +206,18 @@ export function BatchDetailPage() {
   }
 
   const handleDeletePrompt = async (promptId: number) => {
-    if (!batch || !confirm('프롬프트를 삭제하시겠습니까?')) return
+    if (!batch || !confirm(t('detail.deletePromptConfirm', { ns: 'batch' }))) return
 
     try {
       await batchService.deletePrompt(batch.id, promptId)
-      // Optimistic update
       setBatch(prev => {
         if (!prev) return prev
         return {
           ...prev,
-          prompts: prev.prompts?.filter(p => p.id !== promptId) || [],
+          prompts: prev.prompts?.filter(prompt => prompt.id !== promptId) || [],
         }
       })
-      // Also refetch from server to ensure sync
-      fetchBatch(false)
+      void fetchBatch(false)
     } catch (error) {
       console.error('Failed to delete prompt:', error)
     }
@@ -217,20 +234,19 @@ export function BatchDetailPage() {
   if (!batch) {
     return (
       <div className="py-20 text-center">
-        <p className="text-muted-foreground">배치를 찾을 수 없습니다.</p>
+        <p className="text-muted-foreground">{t('detail.notFound', { ns: 'batch' })}</p>
         <Button variant="link" onClick={() => navigate('/batches')}>
-          목록으로 돌아가기
+          {t('actions.backToList', { ns: 'common' })}
         </Button>
       </div>
     )
   }
 
-  const status = statusMap[batch.status]
+  const status = statusAppearanceMap[batch.status]
   const StatusIcon = status.icon
 
   return (
     <div className="space-y-8 pb-20">
-      {/* Header */}
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
         <div className="space-y-2">
           <div className="flex items-center gap-2">
@@ -244,87 +260,88 @@ export function BatchDetailPage() {
               <Cpu className="h-4 w-4" /> {batch.model}
             </div>
             <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4" /> 생성:{' '}
+              <Clock className="h-4 w-4" /> {t('labels.createdAt', { ns: 'common' })}:{' '}
               {format(new Date(batch.createdAt), 'yyyy-MM-dd HH:mm')}
             </div>
-            {batch.submittedAt && (
+            {batch.submittedAt ? (
               <div className="flex items-center gap-1">
-                <Send className="h-4 w-4" /> 제출:{' '}
+                <Send className="h-4 w-4" /> {t('labels.submittedAt', { ns: 'common' })}:{' '}
                 {format(new Date(batch.submittedAt), 'yyyy-MM-dd HH:mm')}
               </div>
-            )}
-            {batch.completedAt && (
+            ) : null}
+            {batch.completedAt ? (
               <div className="flex items-center gap-1">
-                <CheckCircle2 className="h-4 w-4" /> 완료:{' '}
+                <CheckCircle2 className="h-4 w-4" /> {t('labels.completedAt', { ns: 'common' })}:{' '}
                 {format(new Date(batch.completedAt), 'yyyy-MM-dd HH:mm')}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
+
         <div className="flex items-center gap-2 md:mt-1">
           {batch.status === 'COMPLETED' &&
-            batch.prompts?.some(p => p.status === 'PENDING' || p.status === 'FAILED') && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleResyncPrompts}
-                disabled={resyncing}
-              >
-                <RefreshCw className={`mr-2 h-4 w-4 ${resyncing ? 'animate-spin' : ''}`} />
-                프롬프트 재동기화
-              </Button>
-            )}
+          batch.prompts?.some(
+            prompt => prompt.status === 'PENDING' || prompt.status === 'FAILED'
+          ) ? (
+            <Button variant="outline" size="sm" onClick={handleResyncPrompts} disabled={resyncing}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${resyncing ? 'animate-spin' : ''}`} />
+              {t('detail.resyncPrompts', { ns: 'batch' })}
+            </Button>
+          ) : null}
+
           <Badge
             className={`${status.color} flex h-8 items-center px-3 py-1.5 text-sm font-medium text-white`}
           >
             <StatusIcon
               className={`mr-2 h-4 w-4 ${batch.status === 'IN_PROGRESS' ? 'animate-spin' : ''}`}
             />
-            {status.label}
+            {batchStatusLabelMap[batch.status]}
           </Badge>
-          {batch.status === 'IN_PROGRESS' && (
+
+          {batch.status === 'IN_PROGRESS' ? (
             <Button variant="outline" size="sm" onClick={handleSyncBatch} disabled={syncing}>
               <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-              상태 업데이트
+              {t('detail.syncStatus', { ns: 'batch' })}
             </Button>
-          )}
-          {batch.status === 'DRAFT' && (
+          ) : null}
+
+          {batch.status === 'DRAFT' ? (
             <Button size="sm" onClick={handleSubmitBatch} disabled={submitting}>
               {submitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Send className="mr-2 h-4 w-4" />
               )}
-              배치 제출하기
+              {t('detail.submitBatch', { ns: 'batch' })}
             </Button>
-          )}
+          ) : null}
         </div>
       </div>
 
-      {batch.errorMessage && (
+      {batch.errorMessage ? (
         <Card className="border-red-200 bg-red-50 dark:bg-red-950/20">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-lg text-red-700 dark:text-red-400">
-              <AlertTriangle className="h-5 w-5" /> 오류 발생
+              <AlertTriangle className="h-5 w-5" />
+              {t('detail.errorTitle', { ns: 'batch' })}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-red-600 dark:text-red-300">{batch.errorMessage}</p>
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
-      {/* Prompts Section */}
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 text-xl font-semibold">
-            <MessageSquare className="h-5 w-5" /> 프롬프트 목록 ({batch.prompts?.length || 0})
+            <MessageSquare className="h-5 w-5" />
+            {t('detail.promptList', { ns: 'batch', count: batch.prompts?.length || 0 })}
           </h2>
         </div>
 
         {batch.status === 'DRAFT' ? (
           <div className="grid gap-6 lg:grid-cols-12">
-            {/* Prompt List (Left) */}
             <div className="space-y-4 lg:col-span-7">
               {batch.prompts?.map((prompt, index) => (
                 <Card key={prompt.id} className="transition-colors hover:border-primary/50">
@@ -338,27 +355,30 @@ export function BatchDetailPage() {
                       </Link>
                     </CardTitle>
                     <Badge variant="outline" className="text-xs">
-                      DRAFT
+                      {t('detail.draftBadge', { ns: 'batch' })}
                     </Badge>
                   </CardHeader>
                   <CardContent className="space-y-2 px-4 py-2">
-                    {prompt.systemPrompt && (
+                    {prompt.systemPrompt ? (
                       <div className="rounded border bg-muted p-2 text-xs">
                         <span className="mb-1 block font-semibold text-foreground">
-                          System Prompt:
+                          {t('detail.systemPrompt', { ns: 'batch' })}:
                         </span>
                         <p className="line-clamp-2 text-muted-foreground">{prompt.systemPrompt}</p>
                       </div>
-                    )}
+                    ) : null}
                     <div className="text-sm">
                       <p className="line-clamp-3 whitespace-pre-wrap">{prompt.userPrompt}</p>
                     </div>
-                    {(prompt.attachments?.length ?? 0) > 0 && (
+                    {(prompt.attachments?.length ?? 0) > 0 ? (
                       <div className="flex items-center gap-1 text-xs text-muted-foreground">
                         <Paperclip className="h-3.5 w-3.5" />
-                        첨부 파일 {prompt.attachments?.length}개
+                        {t('detail.attachmentCount', {
+                          ns: 'batch',
+                          count: prompt.attachments?.length ?? 0,
+                        })}
                       </div>
-                    )}
+                    ) : null}
                   </CardContent>
                   <CardFooter className="flex justify-end px-4 py-2">
                     <Button
@@ -372,58 +392,71 @@ export function BatchDetailPage() {
                   </CardFooter>
                 </Card>
               ))}
-              {batch.prompts?.length === 0 && (
+
+              {batch.prompts?.length === 0 ? (
                 <div className="rounded-lg border border-dashed py-10 text-center">
-                  <p className="text-muted-foreground">추가된 프롬프트가 없습니다.</p>
+                  <p className="text-muted-foreground">{t('detail.noPrompts', { ns: 'batch' })}</p>
                 </div>
-              )}
+              ) : null}
             </div>
 
-            {/* Add Prompt Form (Right) */}
             <div className="lg:col-span-5">
               <Card className="sticky top-20">
                 <CardHeader>
-                  <CardTitle className="text-lg">프롬프트 추가</CardTitle>
-                  <CardDescription>배치에 새로운 프롬프트를 추가합니다.</CardDescription>
+                  <CardTitle className="text-lg">
+                    {t('detail.addPromptTitle', { ns: 'batch' })}
+                  </CardTitle>
+                  <CardDescription>
+                    {t('detail.addPromptDescription', { ns: 'batch' })}
+                  </CardDescription>
                 </CardHeader>
                 <form onSubmit={handleAddPrompt}>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="p-label" className="text-sm font-medium text-foreground">
-                        라벨 (선택)
+                        {t('detail.labelField', { ns: 'batch' })}
                       </Label>
                       <Input
                         id="p-label"
-                        placeholder="프롬프트 구분용 라벨"
+                        placeholder={t('detail.labelPlaceholder', { ns: 'batch' })}
                         value={newPrompt.label}
-                        onChange={e => setNewPrompt({ ...newPrompt, label: e.target.value })}
+                        onChange={event =>
+                          setNewPrompt({ ...newPrompt, label: event.target.value })
+                        }
                       />
                     </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="p-system" className="text-sm font-medium text-foreground">
-                        System Prompt (선택)
+                        {t('create.systemPromptLabel', { ns: 'batch' })}
                       </Label>
                       <Textarea
                         id="p-system"
-                        placeholder="System Prompt"
+                        placeholder={t('create.systemPromptPlaceholder', { ns: 'batch' })}
                         className="min-h-[80px] text-sm"
                         value={newPrompt.systemPrompt}
-                        onChange={e => setNewPrompt({ ...newPrompt, systemPrompt: e.target.value })}
+                        onChange={event =>
+                          setNewPrompt({ ...newPrompt, systemPrompt: event.target.value })
+                        }
                       />
                     </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="p-user" className="text-sm font-medium text-foreground">
-                        User Prompt (필수)
+                        {t('create.userPromptLabel', { ns: 'batch' })}
                       </Label>
                       <Textarea
                         id="p-user"
-                        placeholder="User Prompt"
+                        placeholder={t('create.userPromptPlaceholder', { ns: 'batch' })}
                         required
                         className="min-h-[150px] text-sm"
                         value={newPrompt.userPrompt}
-                        onChange={e => setNewPrompt({ ...newPrompt, userPrompt: e.target.value })}
+                        onChange={event =>
+                          setNewPrompt({ ...newPrompt, userPrompt: event.target.value })
+                        }
                       />
                     </div>
+
                     <PromptAttachmentsField
                       attachments={newPrompt.attachments}
                       errorMessage={attachmentError}
@@ -438,7 +471,8 @@ export function BatchDetailPage() {
                       className="w-full"
                       disabled={!newPrompt.userPrompt || isAttachmentPending}
                     >
-                      <Plus className="mr-2 h-4 w-4" /> 프롬프트 추가
+                      <Plus className="mr-2 h-4 w-4" />
+                      {t('detail.addPromptAction', { ns: 'batch' })}
                     </Button>
                   </CardFooter>
                 </form>
@@ -446,7 +480,6 @@ export function BatchDetailPage() {
             </div>
           </div>
         ) : (
-          /* Non-DRAFT Status Prompt List */
           <div className="space-y-4">
             {batch.prompts?.map(prompt => (
               <Card
@@ -465,7 +498,7 @@ export function BatchDetailPage() {
                       variant={prompt.status === 'COMPLETED' ? 'default' : 'secondary'}
                       className="h-5 text-[10px]"
                     >
-                      {prompt.status}
+                      {promptStatusLabelMap[prompt.status]}
                     </Badge>
                   </div>
                 </CardHeader>
@@ -473,7 +506,7 @@ export function BatchDetailPage() {
                   <Accordion type="multiple" defaultValue={['input', 'output']} className="w-full">
                     <AccordionItem value="input" className="border-none">
                       <AccordionTrigger className="px-4 py-2 text-xs tracking-wider text-muted-foreground uppercase hover:no-underline">
-                        입력 내용 (User Prompt)
+                        {t('detail.userPromptInput', { ns: 'batch' })}
                       </AccordionTrigger>
                       <AccordionContent className="px-4 pb-4">
                         <div className="max-h-[200px] overflow-y-auto rounded-md border bg-muted/50 p-4 text-sm whitespace-pre-wrap">
@@ -482,10 +515,13 @@ export function BatchDetailPage() {
                       </AccordionContent>
                     </AccordionItem>
 
-                    {(prompt.attachments?.length ?? 0) > 0 && (
+                    {(prompt.attachments?.length ?? 0) > 0 ? (
                       <AccordionItem value="attachments" className="border-none">
                         <AccordionTrigger className="px-4 py-2 text-xs tracking-wider text-muted-foreground uppercase hover:no-underline">
-                          첨부 파일 ({prompt.attachments?.length})
+                          {t('detail.attachmentsSection', {
+                            ns: 'batch',
+                            count: prompt.attachments?.length ?? 0,
+                          })}
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-4">
                           <div className="space-y-3">
@@ -506,12 +542,12 @@ export function BatchDetailPage() {
                           </div>
                         </AccordionContent>
                       </AccordionItem>
-                    )}
+                    ) : null}
 
-                    {prompt.status === 'COMPLETED' && prompt.responseContent && (
+                    {prompt.status === 'COMPLETED' && prompt.responseContent ? (
                       <AccordionItem value="output" className="border-none">
                         <AccordionTrigger className="px-4 py-2 text-xs font-semibold tracking-wider text-green-600 uppercase hover:no-underline dark:text-green-400">
-                          모델 응답 (Answer)
+                          {t('detail.answerSection', { ns: 'batch' })}
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-4">
                           <div className="prose prose-sm dark:prose-invert max-h-[400px] max-w-none overflow-y-auto rounded-md border bg-background p-4 shadow-sm">
@@ -519,16 +555,18 @@ export function BatchDetailPage() {
                           </div>
                         </AccordionContent>
                       </AccordionItem>
-                    )}
+                    ) : null}
 
-                    {prompt.errorMessage && (
+                    {prompt.errorMessage ? (
                       <div className="px-4 pb-4">
                         <div className="rounded border border-red-200 bg-red-50 p-3 text-sm text-red-600 dark:bg-red-950/30 dark:text-red-400">
-                          <span className="mb-1 block font-bold">에러:</span>
+                          <span className="mb-1 block font-bold">
+                            {t('detail.errorLabel', { ns: 'batch' })}
+                          </span>
                           {prompt.errorMessage}
                         </div>
                       </div>
-                    )}
+                    ) : null}
                   </Accordion>
                 </CardContent>
               </Card>
@@ -539,7 +577,7 @@ export function BatchDetailPage() {
 
       <div className="flex justify-center pt-8">
         <Button variant="outline" onClick={() => navigate('/batches')}>
-          목록으로 돌아가기
+          {t('actions.backToList', { ns: 'common' })}
         </Button>
       </div>
     </div>

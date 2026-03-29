@@ -1,5 +1,25 @@
 {
-  "welcome": "Welcome",
-  "batch_list": "Batch List",
-  "batch_description": "Check the status and results of created batches at a glance."
+  "actions": {
+    "cancel": "Cancel",
+    "create": "Create",
+    "refresh": "Refresh",
+    "backToList": "Back to list",
+    "edit": "Edit",
+    "save": "Save",
+    "delete": "Delete"
+  },
+  "status": {
+    "all": "All",
+    "draft": "Draft",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "failed": "Failed",
+    "pending": "Pending"
+  },
+  "labels": {
+    "createdAt": "Created",
+    "submittedAt": "Submitted",
+    "completedAt": "Completed",
+    "pageSize": "Items per page:"
+  }
 }

@@ -1,1 +1,58 @@
-{}
+{
+  "list": {
+    "title": "배치 목록",
+    "description": "생성된 배치의 상태와 결과를 한눈에 확인하세요.",
+    "empty": "표시할 배치가 없습니다.",
+    "createFirst": "첫 배치를 만들어보세요",
+    "promptCount": "프롬프트 {{count}}개",
+    "viewDetails": "자세히 보기",
+    "newBatch": "새 배치 만들기"
+  },
+  "create": {
+    "title": "새 배치 만들기",
+    "batchInfoTitle": "배치 정보",
+    "batchInfoDescription": "배치의 대상 모델과 이름을 설정합니다.",
+    "modelLabel": "대상 모델 (필수)",
+    "modelLoading": "모델을 불러오는 중...",
+    "modelPlaceholder": "모델 선택",
+    "batchLabel": "배치 이름 (선택)",
+    "batchLabelPlaceholder": "배치를 구분할 이름을 입력하세요 (미입력 시 자동 생성)",
+    "firstPromptTitle": "첫 번째 프롬프트",
+    "firstPromptDescription": "배치에 포함될 첫 번째 프롬프트를 입력하세요.",
+    "promptLabel": "프롬프트 라벨 (선택)",
+    "promptLabelPlaceholder": "프롬프트 라벨 (미입력 시 자동 생성)",
+    "systemPromptLabel": "System Prompt (선택)",
+    "systemPromptPlaceholder": "System Prompt를 입력하세요",
+    "userPromptLabel": "User Prompt (필수)",
+    "userPromptPlaceholder": "AI에게 전달할 요청 내용을 입력하세요",
+    "creating": "생성 중..."
+  },
+  "detail": {
+    "notFound": "배치를 찾을 수 없습니다.",
+    "resyncPrompts": "프롬프트 재동기화",
+    "syncStatus": "상태 업데이트",
+    "submitBatch": "배치 제출하기",
+    "errorTitle": "오류 발생",
+    "promptList": "프롬프트 목록 ({{count}})",
+    "draftBadge": "초안",
+    "systemPrompt": "System Prompt",
+    "attachmentCount": "첨부 파일 {{count}}개",
+    "noPrompts": "추가된 프롬프트가 없습니다.",
+    "addPromptTitle": "프롬프트 추가",
+    "addPromptDescription": "배치에 새로운 프롬프트를 추가합니다.",
+    "labelField": "라벨 (선택)",
+    "labelPlaceholder": "프롬프트 구분용 라벨",
+    "userPromptInput": "입력 내용 (User Prompt)",
+    "attachmentsSection": "첨부 파일 ({{count}})",
+    "answerSection": "모델 응답 (Answer)",
+    "errorLabel": "에러:",
+    "addPromptAction": "프롬프트 추가",
+    "deletePromptConfirm": "프롬프트를 삭제하시겠습니까?",
+    "alerts": {
+      "resynced": "{{count}}개 프롬프트가 복구되었습니다.",
+      "stillFailed": "{{count}}개 프롬프트는 여전히 실패 상태입니다.",
+      "none": "재동기화할 프롬프트가 없습니다.",
+      "error": "프롬프트 재동기화 중 오류가 발생했습니다."
+    }
+  }
+}

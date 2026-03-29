@@ -1,1 +1,58 @@
-{}
+{
+  "list": {
+    "title": "Batch List",
+    "description": "Check the status and results of created batches at a glance.",
+    "empty": "There are no batches to display.",
+    "createFirst": "Create your first batch",
+    "promptCount": "{{count}} prompts",
+    "viewDetails": "View details",
+    "newBatch": "Create new batch"
+  },
+  "create": {
+    "title": "Create New Batch",
+    "batchInfoTitle": "Batch Information",
+    "batchInfoDescription": "Set the target model and name for the batch.",
+    "modelLabel": "Target Model (Required)",
+    "modelLoading": "Loading models...",
+    "modelPlaceholder": "Select a model",
+    "batchLabel": "Batch Name (Optional)",
+    "batchLabelPlaceholder": "Enter a name to identify the batch (auto-generated if empty)",
+    "firstPromptTitle": "First Prompt",
+    "firstPromptDescription": "Enter the first prompt to include in the batch.",
+    "promptLabel": "Prompt Label (Optional)",
+    "promptLabelPlaceholder": "Prompt label (auto-generated if empty)",
+    "systemPromptLabel": "System Prompt (Optional)",
+    "systemPromptPlaceholder": "Enter a system prompt",
+    "userPromptLabel": "User Prompt (Required)",
+    "userPromptPlaceholder": "Enter the request content to send to the AI",
+    "creating": "Creating..."
+  },
+  "detail": {
+    "notFound": "Batch not found.",
+    "resyncPrompts": "Resync prompts",
+    "syncStatus": "Update status",
+    "submitBatch": "Submit batch",
+    "errorTitle": "Error occurred",
+    "promptList": "Prompts ({{count}})",
+    "draftBadge": "Draft",
+    "systemPrompt": "System Prompt",
+    "attachmentCount": "{{count}} attachments",
+    "noPrompts": "No prompts have been added.",
+    "addPromptTitle": "Add Prompt",
+    "addPromptDescription": "Add a new prompt to the batch.",
+    "labelField": "Label (Optional)",
+    "labelPlaceholder": "Label to identify the prompt",
+    "userPromptInput": "Input Content (User Prompt)",
+    "attachmentsSection": "Attachments ({{count}})",
+    "answerSection": "Model Answer",
+    "errorLabel": "Error:",
+    "addPromptAction": "Add prompt",
+    "deletePromptConfirm": "Delete this prompt?",
+    "alerts": {
+      "resynced": "{{count}} prompts were restored.",
+      "stillFailed": "{{count}} prompts are still in failed status.",
+      "none": "There are no prompts to resync.",
+      "error": "An error occurred while resyncing prompts."
+    }
+  }
+}

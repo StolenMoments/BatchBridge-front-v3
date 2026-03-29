@@ -1,5 +1,6 @@
-import { ArrowLeft, Loader2, ChevronDown, ChevronUp, Send } from 'lucide-react'
+import { ArrowLeft, ChevronDown, ChevronUp, Loader2, Send } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
 import type { Model } from '@/types/api'
@@ -26,12 +27,12 @@ import { Textarea } from '@/components/ui/textarea'
 import { batchService, modelService } from '@/services/api'
 
 export function BatchCreatePage() {
+  const { t } = useTranslation(['batch', 'common'])
   const navigate = useNavigate()
   const [models, setModels] = useState<Model[]>([])
   const [loadingModels, setLoadingModels] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [showSystemPrompt, setShowSystemPrompt] = useState(false)
-
   const [formData, setFormData] = useState({
     batchLabel: '',
     model: '',
@@ -57,11 +58,12 @@ export function BatchCreatePage() {
         setLoadingModels(false)
       }
     }
-    fetchModels()
+
+    void fetchModels()
   }, [])
 
-  const handleSubmit = async (e: React.SubmitEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
     if (!formData.model || !formData.userPrompt) return
 
     setSubmitting(true)
@@ -92,25 +94,29 @@ export function BatchCreatePage() {
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-3xl font-bold tracking-tight">새 배치 만들기</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{t('create.title', { ns: 'batch' })}</h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle>배치 정보</CardTitle>
-            <CardDescription>배치의 대상 모델과 이름을 설정합니다.</CardDescription>
+            <CardTitle>{t('create.batchInfoTitle', { ns: 'batch' })}</CardTitle>
+            <CardDescription>{t('create.batchInfoDescription', { ns: 'batch' })}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="model">대상 모델 (필수)</Label>
+              <Label htmlFor="model">{t('create.modelLabel', { ns: 'batch' })}</Label>
               <Select
                 value={formData.model}
                 onValueChange={value => setFormData({ ...formData, model: value })}
               >
                 <SelectTrigger id="model">
                   <SelectValue
-                    placeholder={loadingModels ? '모델을 불러오는 중...' : '모델 선택'}
+                    placeholder={
+                      loadingModels
+                        ? t('create.modelLoading', { ns: 'batch' })
+                        : t('create.modelPlaceholder', { ns: 'batch' })
+                    }
                   />
                 </SelectTrigger>
                 <SelectContent>
@@ -122,13 +128,14 @@ export function BatchCreatePage() {
                 </SelectContent>
               </Select>
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="batchLabel">배치 이름 (선택)</Label>
+              <Label htmlFor="batchLabel">{t('create.batchLabel', { ns: 'batch' })}</Label>
               <Input
                 id="batchLabel"
-                placeholder="배치를 구분할 이름을 입력하세요 (미입력 시 자동 생성)"
+                placeholder={t('create.batchLabelPlaceholder', { ns: 'batch' })}
                 value={formData.batchLabel}
-                onChange={e => setFormData({ ...formData, batchLabel: e.target.value })}
+                onChange={event => setFormData({ ...formData, batchLabel: event.target.value })}
               />
             </div>
           </CardContent>
@@ -136,17 +143,17 @@ export function BatchCreatePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>첫 번째 프롬프트</CardTitle>
-            <CardDescription>배치에 포함될 첫 번째 프롬프트를 입력하세요.</CardDescription>
+            <CardTitle>{t('create.firstPromptTitle', { ns: 'batch' })}</CardTitle>
+            <CardDescription>{t('create.firstPromptDescription', { ns: 'batch' })}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="promptLabel">프롬프트 라벨 (선택)</Label>
+              <Label htmlFor="promptLabel">{t('create.promptLabel', { ns: 'batch' })}</Label>
               <Input
                 id="promptLabel"
-                placeholder="프롬프트 라벨 (미입력 시 자동 생성)"
+                placeholder={t('create.promptLabelPlaceholder', { ns: 'batch' })}
                 value={formData.promptLabel}
-                onChange={e => setFormData({ ...formData, promptLabel: e.target.value })}
+                onChange={event => setFormData({ ...formData, promptLabel: event.target.value })}
               />
             </div>
 
@@ -156,52 +163,52 @@ export function BatchCreatePage() {
                 variant="ghost"
                 size="sm"
                 className="h-auto p-0 hover:bg-transparent"
-                onClick={() => setShowSystemPrompt(!showSystemPrompt)}
+                onClick={() => setShowSystemPrompt(prev => !prev)}
               >
                 {showSystemPrompt ? (
                   <ChevronUp className="mr-1 h-4 w-4" />
                 ) : (
                   <ChevronDown className="mr-1 h-4 w-4" />
                 )}
-                System Prompt (선택)
+                {t('create.systemPromptLabel', { ns: 'batch' })}
               </Button>
-              {showSystemPrompt && (
+              {showSystemPrompt ? (
                 <Textarea
                   id="systemPrompt"
-                  placeholder="System Prompt를 입력하세요"
+                  placeholder={t('create.systemPromptPlaceholder', { ns: 'batch' })}
                   className="min-h-[100px]"
                   value={formData.systemPrompt}
-                  onChange={e => setFormData({ ...formData, systemPrompt: e.target.value })}
+                  onChange={event => setFormData({ ...formData, systemPrompt: event.target.value })}
                 />
-              )}
+              ) : null}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="userPrompt">User Prompt (필수)</Label>
+              <Label htmlFor="userPrompt">{t('create.userPromptLabel', { ns: 'batch' })}</Label>
               <Textarea
                 id="userPrompt"
-                placeholder="AI에게 전달할 요청 내용을 입력하세요"
+                placeholder={t('create.userPromptPlaceholder', { ns: 'batch' })}
                 className="min-h-[200px]"
                 required
                 value={formData.userPrompt}
-                onChange={e => setFormData({ ...formData, userPrompt: e.target.value })}
+                onChange={event => setFormData({ ...formData, userPrompt: event.target.value })}
               />
             </div>
           </CardContent>
           <CardFooter className="flex justify-end gap-2 border-t pt-6">
             <Button type="button" variant="outline" onClick={() => navigate(-1)}>
-              취소
+              {t('actions.cancel', { ns: 'common' })}
             </Button>
             <Button type="submit" disabled={submitting || !formData.model || !formData.userPrompt}>
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  생성 중...
+                  {t('create.creating', { ns: 'batch' })}
                 </>
               ) : (
                 <>
                   <Send className="mr-2 h-4 w-4" />
-                  생성하기
+                  {t('actions.create', { ns: 'common' })}
                 </>
               )}
             </Button>

@@ -10,6 +10,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
 import { useNavigate, useParams } from 'react-router-dom'
 
@@ -33,6 +34,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { batchService } from '@/services/api'
 
 export function PromptDetailPage() {
+  const { t } = useTranslation(['prompt', 'common'])
   const { batchId, promptId } = useParams<{ batchId: string; promptId: string }>()
   const navigate = useNavigate()
   const [prompt, setPrompt] = useState<Prompt | null>(null)
@@ -46,6 +48,14 @@ export function PromptDetailPage() {
   const [isAttachmentPending, setIsAttachmentPending] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
+
+  const statusLabelMap: Record<Prompt['status'], string> = {
+    DRAFT: t('status.draft', { ns: 'common' }),
+    IN_PROGRESS: t('status.inProgress', { ns: 'common' }),
+    COMPLETED: t('status.completed', { ns: 'common' }),
+    FAILED: t('status.failed', { ns: 'common' }),
+    PENDING: t('status.pending', { ns: 'common' }),
+  }
 
   const haveAttachmentsChanged = (current: Attachment[], next: Attachment[]) => {
     if (current.length !== next.length) return true
@@ -62,11 +72,12 @@ export function PromptDetailPage() {
   useEffect(() => {
     const fetchPrompt = async () => {
       if (!batchId || !promptId) return
+
       setLoading(true)
       try {
         const response = await batchService.getPrompt(
-          Number.parseInt(batchId),
-          Number.parseInt(promptId)
+          Number.parseInt(batchId, 10),
+          Number.parseInt(promptId, 10)
         )
         if (response.success) {
           setPrompt(response.data)
@@ -81,7 +92,7 @@ export function PromptDetailPage() {
       }
     }
 
-    fetchPrompt()
+    void fetchPrompt()
   }, [batchId, promptId])
 
   const resetEditState = (nextPrompt: Prompt) => {
@@ -94,7 +105,6 @@ export function PromptDetailPage() {
 
   const handleEditDialogChange = (open: boolean) => {
     setIsEditDialogOpen(open)
-
     if (open && prompt) {
       resetEditState(prompt)
     }
@@ -105,8 +115,8 @@ export function PromptDetailPage() {
 
     setIsUpdating(true)
     try {
-      const batchIdNumber = Number.parseInt(batchId)
-      const promptIdNumber = Number.parseInt(promptId)
+      const batchIdNumber = Number.parseInt(batchId, 10)
+      const promptIdNumber = Number.parseInt(promptId, 10)
       const attachmentsChanged = haveAttachmentsChanged(prompt.attachments ?? [], editAttachments)
 
       if (attachmentsChanged) {
@@ -150,7 +160,7 @@ export function PromptDetailPage() {
 
     setIsDeleting(true)
     try {
-      await batchService.deletePrompt(Number.parseInt(batchId), Number.parseInt(promptId))
+      await batchService.deletePrompt(Number.parseInt(batchId, 10), Number.parseInt(promptId, 10))
       navigate(`/batches/${batchId}`)
     } catch (error) {
       console.error('Failed to delete prompt:', error)
@@ -171,9 +181,9 @@ export function PromptDetailPage() {
   if (!prompt) {
     return (
       <div className="py-20 text-center">
-        <p className="text-muted-foreground">Prompt not found.</p>
+        <p className="text-muted-foreground">{t('detail.notFound', { ns: 'prompt' })}</p>
         <Button variant="link" onClick={() => navigate(`/batches/${batchId}`)}>
-          Back to batch
+          {t('detail.backToBatch', { ns: 'prompt' })}
         </Button>
       </div>
     )
@@ -187,38 +197,39 @@ export function PromptDetailPage() {
         </Button>
         <div className="flex-1">
           <h1 className="text-3xl font-bold tracking-tight">{prompt.label}</h1>
-          <p className="text-muted-foreground">Prompt details</p>
+          <p className="text-muted-foreground">{t('detail.subtitle', { ns: 'prompt' })}</p>
         </div>
-        {prompt.status === 'PENDING' && (
+
+        {prompt.status === 'PENDING' ? (
           <div className="flex gap-2">
             <Dialog open={isEditDialogOpen} onOpenChange={handleEditDialogChange}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-2">
                   <Edit className="h-4 w-4" />
-                  Edit
+                  {t('actions.edit', { ns: 'common' })}
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-150">
                 <DialogHeader>
-                  <DialogTitle>Edit prompt</DialogTitle>
+                  <DialogTitle>{t('detail.editTitle', { ns: 'prompt' })}</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="label">Label</Label>
+                    <Label htmlFor="label">{t('detail.label', { ns: 'prompt' })}</Label>
                     <Input
                       id="label"
                       value={editLabel}
                       onChange={event => setEditLabel(event.target.value)}
-                      placeholder="Enter a prompt label"
+                      placeholder={t('detail.labelPlaceholder', { ns: 'prompt' })}
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="userPrompt">User Prompt</Label>
+                    <Label htmlFor="userPrompt">{t('detail.userPrompt', { ns: 'prompt' })}</Label>
                     <Textarea
                       id="userPrompt"
                       value={editUserPrompt}
                       onChange={event => setEditUserPrompt(event.target.value)}
-                      placeholder="Enter prompt content"
+                      placeholder={t('detail.userPromptPlaceholder', { ns: 'prompt' })}
                       rows={10}
                     />
                   </div>
@@ -236,13 +247,13 @@ export function PromptDetailPage() {
                     onClick={() => setIsEditDialogOpen(false)}
                     disabled={isUpdating || isAttachmentPending}
                   >
-                    Cancel
+                    {t('actions.cancel', { ns: 'common' })}
                   </Button>
                   <Button onClick={handleUpdate} disabled={isUpdating || isAttachmentPending}>
-                    {(isUpdating || isAttachmentPending) && (
+                    {isUpdating || isAttachmentPending ? (
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    )}
-                    Save
+                    ) : null}
+                    {t('actions.save', { ns: 'common' })}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -256,15 +267,15 @@ export function PromptDetailPage() {
                   className="gap-2 text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
-                  Delete
+                  {t('actions.delete', { ns: 'common' })}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Delete prompt</DialogTitle>
+                  <DialogTitle>{t('detail.deleteTitle', { ns: 'prompt' })}</DialogTitle>
                 </DialogHeader>
                 <div className="py-4 text-muted-foreground">
-                  This action permanently deletes the prompt.
+                  {t('detail.deleteDescription', { ns: 'prompt' })}
                 </div>
                 <DialogFooter>
                   <Button
@@ -272,17 +283,17 @@ export function PromptDetailPage() {
                     onClick={() => setIsDeleteDialogOpen(false)}
                     disabled={isDeleting}
                   >
-                    Cancel
+                    {t('actions.cancel', { ns: 'common' })}
                   </Button>
                   <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-                    {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Delete
+                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {t('actions.delete', { ns: 'common' })}
                   </Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="grid gap-6">
@@ -291,16 +302,18 @@ export function PromptDetailPage() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-muted-foreground" />
-                <CardTitle className="text-lg">User Prompt</CardTitle>
+                <CardTitle className="text-lg">
+                  {t('detail.userPrompt', { ns: 'prompt' })}
+                </CardTitle>
               </div>
               <TabsList variant="line" className="h-8">
                 <TabsTrigger value="markdown" className="gap-1 px-3 py-1 text-xs">
                   <Layout className="h-3 w-3" />
-                  Markdown
+                  {t('detail.markdown', { ns: 'prompt' })}
                 </TabsTrigger>
                 <TabsTrigger value="text" className="gap-1 px-3 py-1 text-xs">
                   <FileText className="h-3 w-3" />
-                  Text
+                  {t('detail.text', { ns: 'prompt' })}
                 </TabsTrigger>
               </TabsList>
             </CardHeader>
@@ -325,14 +338,14 @@ export function PromptDetailPage() {
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <div className="flex items-center gap-2">
               <Paperclip className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-lg">Attachments</CardTitle>
+              <CardTitle className="text-lg">{t('detail.attachments', { ns: 'prompt' })}</CardTitle>
             </div>
           </CardHeader>
           <CardContent>
             <PromptAttachmentsField
               attachments={prompt.attachments ?? []}
               disabled
-              helperText="Attached file contents are shown below."
+              helperText={t('detail.attachmentsHelper', { ns: 'prompt' })}
               onChange={() => undefined}
             />
           </CardContent>
@@ -344,16 +357,18 @@ export function PromptDetailPage() {
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div className="flex items-center gap-2">
                   <Bot className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Model Answer</CardTitle>
+                  <CardTitle className="text-lg">
+                    {t('detail.modelAnswer', { ns: 'prompt' })}
+                  </CardTitle>
                 </div>
                 <TabsList variant="line" className="h-8">
                   <TabsTrigger value="markdown" className="gap-1 px-3 py-1 text-xs">
                     <Layout className="h-3 w-3" />
-                    Markdown
+                    {t('detail.markdown', { ns: 'prompt' })}
                   </TabsTrigger>
                   <TabsTrigger value="text" className="gap-1 px-3 py-1 text-xs">
                     <FileText className="h-3 w-3" />
-                    Text
+                    {t('detail.text', { ns: 'prompt' })}
                   </TabsTrigger>
                 </TabsList>
               </CardHeader>
@@ -366,7 +381,7 @@ export function PromptDetailPage() {
                   </TabsContent>
                   <TabsContent value="text" className="col-start-1 row-start-1 mt-0 min-w-0">
                     <div className="h-full p-6 font-mono text-sm break-words whitespace-pre-wrap">
-                      {prompt.responseContent || 'No response content.'}
+                      {prompt.responseContent || t('detail.noResponseContent', { ns: 'prompt' })}
                     </div>
                   </TabsContent>
                 </div>
@@ -377,13 +392,20 @@ export function PromptDetailPage() {
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <div className="flex items-center gap-2">
                   <Bot className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Model Answer</CardTitle>
+                  <CardTitle className="text-lg">
+                    {t('detail.modelAnswer', { ns: 'prompt' })}
+                  </CardTitle>
                 </div>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
                   <Loader2 className="mb-2 h-10 w-10 animate-spin opacity-20" />
-                  <p>Waiting for model response. (status: {prompt.status})</p>
+                  <p>
+                    {t('detail.waitingResponse', {
+                      ns: 'prompt',
+                      status: statusLabelMap[prompt.status],
+                    })}
+                  </p>
                 </div>
               </CardContent>
             </>
@@ -393,7 +415,7 @@ export function PromptDetailPage() {
 
       <div className="flex justify-center pt-4">
         <Button variant="outline" onClick={() => navigate(`/batches/${batchId}`)}>
-          Back to batch
+          {t('detail.backToBatch', { ns: 'prompt' })}
         </Button>
       </div>
     </div>
