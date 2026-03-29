@@ -26,6 +26,7 @@ import type { Attachment, Batch, BatchStatus } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
+import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import {
   Accordion,
   AccordionContent,
@@ -461,6 +462,11 @@ export function BatchDetailPage() {
                       <Label htmlFor="p-user" className="text-sm font-medium text-foreground">
                         {t('create.userPromptLabel', { ns: 'batch' })}
                       </Label>
+                      <PromptTemplateSelect
+                        onSelectTemplate={template =>
+                          setNewPrompt(prev => ({ ...prev, userPrompt: template }))
+                        }
+                      />
                       <Textarea
                         id="p-user"
                         placeholder={t('create.userPromptPlaceholder', { ns: 'batch' })}

@@ -1,1 +1,20 @@
-{}
+{
+  "label": "프롬프트 템플릿",
+  "placeholder": "템플릿을 선택하세요",
+  "description": "현재 언어에 맞는 템플릿으로 User Prompt를 채웁니다.",
+  "replaceNotice": "템플릿을 선택하면 기존 User Prompt 내용이 템플릿으로 대체됩니다.",
+  "templates": {
+    "codeReview": {
+      "label": "코드 리뷰 요청",
+      "content": "다음 코드를 리뷰하고 버그, 리스크, 개선 포인트를 정리해 주세요.\n\n```text\n{code}\n```"
+    },
+    "summarize": {
+      "label": "내용 요약",
+      "content": "다음 내용을 핵심만 간결한 불릿 포인트로 요약해 주세요.\n\n{content}"
+    },
+    "translate": {
+      "label": "번역 요청",
+      "content": "다음 내용을 원문의 의미와 톤을 유지한 채 영어로 번역해 주세요.\n\n{content}"
+    }
+  }
+}

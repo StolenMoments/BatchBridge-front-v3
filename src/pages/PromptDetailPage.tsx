@@ -18,6 +18,7 @@ import type { Attachment, Prompt } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
+import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -237,6 +238,9 @@ export function PromptDetailPage() {
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="userPrompt">{t('detail.userPrompt', { ns: 'prompt' })}</Label>
+                    <PromptTemplateSelect
+                      onSelectTemplate={template => setEditUserPrompt(template)}
+                    />
                     <Textarea
                       id="userPrompt"
                       value={editUserPrompt}
