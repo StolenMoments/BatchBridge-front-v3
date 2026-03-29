@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 import type { Model } from '@/types/api'
 
+import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -24,6 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { getApiErrorMessage } from '@/lib/api-error'
 import { batchService, modelService } from '@/services/api'
 
 export function BatchCreatePage() {
@@ -33,6 +35,7 @@ export function BatchCreatePage() {
   const [loadingModels, setLoadingModels] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [showSystemPrompt, setShowSystemPrompt] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     batchLabel: '',
     model: '',
@@ -48,12 +51,14 @@ export function BatchCreatePage() {
         const response = await modelService.getModels()
         if (response.success) {
           setModels(response.data)
+          setErrorMessage(null)
           if (response.data.length > 0) {
             setFormData(prev => ({ ...prev, model: response.data[0].id }))
           }
         }
       } catch (error) {
         console.error('Failed to fetch models:', error)
+        setErrorMessage(getApiErrorMessage(error))
       } finally {
         setLoadingModels(false)
       }
@@ -79,10 +84,12 @@ export function BatchCreatePage() {
       })
 
       if (response.success) {
+        setErrorMessage(null)
         navigate(`/batches/${response.data.id}`)
       }
     } catch (error) {
       console.error('Failed to create batch:', error)
+      setErrorMessage(getApiErrorMessage(error))
     } finally {
       setSubmitting(false)
     }
@@ -98,6 +105,8 @@ export function BatchCreatePage() {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
+        {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
+
         <Card>
           <CardHeader>
             <CardTitle>{t('create.batchInfoTitle', { ns: 'batch' })}</CardTitle>
