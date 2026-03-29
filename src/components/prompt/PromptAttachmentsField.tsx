@@ -93,17 +93,21 @@ export function PromptAttachmentsField({
     if (files.length === 0 || disabled) return
 
     onPendingChange?.(true)
-    try {
-      const invalidFile = files.find(file => !isAllowedFile(file.name))
-      if (invalidFile) {
-        throw new Error(
-          t('attachments.errors.unsupportedExtension', {
-            fileName: invalidFile.name,
-            types: allowedTypesText,
-          })
-        )
-      }
 
+    // 1. 유효성 검사 (try-catch 외부에서 먼저 처리)
+    const invalidFile = files.find(file => !isAllowedFile(file.name))
+    if (invalidFile) {
+      const message = t('attachments.errors.unsupportedExtension', {
+        fileName: invalidFile.name,
+        types: allowedTypesText,
+      })
+      onErrorChange?.(message)
+      onPendingChange?.(false)
+      return // 즉시 종료
+    }
+
+    // 2. 파일 읽기 및 상태 업데이트 (비동기 작업은 try-catch로 관리)
+    try {
       const nextAttachments = await buildAttachments(files)
       const mergedAttachments = [...attachments]
 
@@ -125,6 +129,7 @@ export function PromptAttachmentsField({
     } catch (error) {
       let message = t('attachments.errors.processFailed')
       if (error instanceof Error) {
+        // readFileAsText에서 던지는 READ_ERROR 처리
         message = error.message.startsWith('READ_ERROR:')
           ? t('attachments.errors.readFailed', {
               fileName: error.message.replace('READ_ERROR:', ''),
