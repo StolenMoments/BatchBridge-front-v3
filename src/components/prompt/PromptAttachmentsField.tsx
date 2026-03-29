@@ -184,56 +184,53 @@ export function PromptAttachmentsField({
 
   return (
     <div className="space-y-3">
-      <div className="space-y-2">
-        <Label htmlFor={inputId} className="text-sm font-medium text-foreground">
-          {t('attachments.label')}
-        </Label>
-        <input
-          id={inputId}
-          ref={inputRef}
-          type="file"
-          className="sr-only"
-          accept={acceptedTypes}
-          multiple
-          disabled={disabled}
-          onChange={handleInputChange}
-        />
-        <div
-          role="button"
-          tabIndex={disabled ? -1 : 0}
-          aria-disabled={disabled}
-          onClick={() => {
-            if (!disabled) {
+      {!disabled && (
+        <div className="space-y-2">
+          <Label htmlFor={inputId} className="text-sm font-medium text-foreground">
+            {t('attachments.label')}
+          </Label>
+          <input
+            id={inputId}
+            ref={inputRef}
+            type="file"
+            className="sr-only"
+            accept={acceptedTypes}
+            multiple
+            disabled={disabled}
+            onChange={handleInputChange}
+          />
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={() => {
               inputRef.current?.click()
-            }
-          }}
-          onDrop={handleDrop}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onKeyDown={handleKeyDown}
-          className={`rounded-xl border border-dashed p-5 transition-colors ${
-            disabled
-              ? 'cursor-not-allowed bg-muted/40 opacity-60'
-              : isDragging
+            }}
+            onDrop={handleDrop}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onKeyDown={handleKeyDown}
+            className={`rounded-xl border border-dashed p-5 transition-colors ${
+              isDragging
                 ? 'border-primary bg-primary/5'
                 : 'cursor-pointer hover:border-primary/60 hover:bg-muted/40'
-          }`}
-        >
-          <div className="flex flex-col items-center justify-center gap-2 text-center">
-            <div className="rounded-full bg-muted p-3 text-muted-foreground">
-              <Upload className="h-5 w-5" />
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium">{t('attachments.selectOrDrop')}</p>
-              <p className="text-xs text-muted-foreground">{resolvedHelperText}</p>
-              <p className="text-xs text-muted-foreground">
-                {t('attachments.allowedTypes', { types: allowedTypesText })}
-              </p>
+            }`}
+          >
+            <div className="flex flex-col items-center justify-center gap-2 text-center">
+              <div className="rounded-full bg-muted p-3 text-muted-foreground">
+                <Upload className="h-5 w-5" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">{t('attachments.selectOrDrop')}</p>
+                <p className="text-xs text-muted-foreground">{resolvedHelperText}</p>
+                <p className="text-xs text-muted-foreground">
+                  {t('attachments.allowedTypes', { types: allowedTypesText })}
+                </p>
+              </div>
             </div>
           </div>
+          {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
         </div>
-        {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
-      </div>
+      )}
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -266,17 +263,20 @@ export function PromptAttachmentsField({
                       </span>
                     </div>
                   </AccordionTrigger>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-sm"
-                    className="mt-2 shrink-0 text-muted-foreground hover:text-destructive"
-                    disabled={disabled}
-                    onClick={() => handleRemoveAttachment(attachment.fileName)}
-                    aria-label={t('attachments.removeAriaLabel', { fileName: attachment.fileName })}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  {!disabled && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-sm"
+                      className="mt-2 shrink-0 text-muted-foreground hover:text-destructive"
+                      onClick={() => handleRemoveAttachment(attachment.fileName)}
+                      aria-label={t('attachments.removeAriaLabel', {
+                        fileName: attachment.fileName,
+                      })}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
                 <AccordionContent className="pb-4">
                   <div className="rounded-md border bg-muted/30 p-3 font-mono text-xs break-all whitespace-pre-wrap">
