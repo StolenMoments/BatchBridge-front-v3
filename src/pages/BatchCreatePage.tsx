@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 import type { Model } from '@/types/api'
 
+import { ErrorAlert } from '@/components/feedback/ErrorAlert.tsx'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import { Button } from '@/components/ui/button'
 import {
@@ -185,7 +186,7 @@ export function BatchCreatePage() {
                 <Textarea
                   id="systemPrompt"
                   placeholder={t('create.systemPromptPlaceholder', { ns: 'batch' })}
-                  className="min-h-[100px]"
+                  className="min-h-25"
                   value={formData.systemPrompt}
                   onChange={event => setFormData({ ...formData, systemPrompt: event.target.value })}
                 />
@@ -202,7 +203,7 @@ export function BatchCreatePage() {
               <Textarea
                 id="userPrompt"
                 placeholder={t('create.userPromptPlaceholder', { ns: 'batch' })}
-                className="min-h-[200px]"
+                className="min-h-50"
                 required
                 value={formData.userPrompt}
                 onChange={event => setFormData({ ...formData, userPrompt: event.target.value })}
