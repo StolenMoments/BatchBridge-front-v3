@@ -1,0 +1,37 @@
+{
+  "detail": {
+    "notFound": "Prompt not found.",
+    "backToBatch": "Back to batch",
+    "subtitle": "Prompt details",
+    "editTitle": "Edit prompt",
+    "deleteTitle": "Delete prompt",
+    "deleteDescription": "This action permanently deletes the prompt.",
+    "label": "Label",
+    "labelPlaceholder": "Enter a prompt label",
+    "userPrompt": "User Prompt",
+    "userPromptPlaceholder": "Enter prompt content",
+    "attachments": "Attachments",
+    "attachmentsHelper": "Attached file contents are shown below.",
+    "modelAnswer": "Model Answer",
+    "waitingResponse": "Waiting for model response. (status: {{status}})",
+    "markdown": "Markdown",
+    "text": "Text",
+    "noResponseContent": "No response content."
+  },
+  "attachments": {
+    "label": "Attachments",
+    "helper": "Click or drag and drop files to attach them.",
+    "selectOrDrop": "Select files or drag and drop",
+    "allowedTypes": "Allowed types: {{types}}",
+    "attachedFiles": "Attached files",
+    "fileCount": "{{count}} files",
+    "noFiles": "No files attached.",
+    "chars": "{{count}} chars",
+    "removeAriaLabel": "Remove {{fileName}}",
+    "errors": {
+      "readFailed": "Failed to read {{fileName}}.",
+      "unsupportedExtension": "Unsupported file extension: {{fileName}}. Only {{types}} files are allowed.",
+      "processFailed": "Failed to process the selected files."
+    }
+  }
+}

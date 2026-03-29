@@ -1,5 +1,25 @@
 {
-  "welcome": "환영합니다",
-  "batch_list": "배치 목록",
-  "batch_description": "생성된 배치들의 상태와 결과를 한눈에 확인하세요."
+  "actions": {
+    "cancel": "취소",
+    "create": "생성하기",
+    "refresh": "새로고침",
+    "backToList": "목록으로 돌아가기",
+    "edit": "수정",
+    "save": "저장",
+    "delete": "삭제"
+  },
+  "status": {
+    "all": "전체",
+    "draft": "초안",
+    "inProgress": "처리중",
+    "completed": "완료",
+    "failed": "실패",
+    "pending": "대기중"
+  },
+  "labels": {
+    "createdAt": "생성",
+    "submittedAt": "제출",
+    "completedAt": "완료",
+    "pageSize": "페이지 당 표시:"
+  }
 }
