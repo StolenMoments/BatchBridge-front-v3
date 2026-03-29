@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 import type { Model } from '@/types/api'
 
+import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -185,6 +186,11 @@ export function BatchCreatePage() {
 
             <div className="space-y-2">
               <Label htmlFor="userPrompt">{t('create.userPromptLabel', { ns: 'batch' })}</Label>
+              <PromptTemplateSelect
+                onSelectTemplate={template =>
+                  setFormData(prev => ({ ...prev, userPrompt: template }))
+                }
+              />
               <Textarea
                 id="userPrompt"
                 placeholder={t('create.userPromptPlaceholder', { ns: 'batch' })}
