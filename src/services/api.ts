@@ -34,6 +34,7 @@ export const batchService = {
       label?: string
       systemPrompt?: string
       userPrompt: string
+      attachments?: Attachment[]
     }
   }) => {
     const response = await api.post<ApiResponse<Batch>>('/batches', data)
