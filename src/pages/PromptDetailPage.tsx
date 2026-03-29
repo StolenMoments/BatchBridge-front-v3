@@ -1,6 +1,9 @@
 import {
+  AlertTriangle,
   ArrowLeft,
   Bot,
+  CheckCircle2,
+  Clock,
   Edit,
   FileText,
   Layout,
@@ -8,17 +11,20 @@ import {
   MessageSquare,
   Paperclip,
   Trash2,
+  XCircle,
+  type LucideIcon,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import type { Attachment, Prompt } from '@/types/api'
+import type { Attachment, BatchStatus, Prompt } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -37,10 +43,11 @@ import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
 import { batchService } from '@/services/api'
 
 export function PromptDetailPage() {
-  const { t } = useTranslation(['prompt', 'common'])
+  const { t } = useTranslation(['prompt', 'common', 'batch'])
   const { batchId, promptId } = useParams<{ batchId: string; promptId: string }>()
   const navigate = useNavigate()
   const [prompt, setPrompt] = useState<Prompt | null>(null)
+  const [batchStatus, setBatchStatus] = useState<BatchStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -61,6 +68,14 @@ export function PromptDetailPage() {
     PENDING: t('status.pending', { ns: 'common' }),
   }
 
+  const statusAppearanceMap: Record<Prompt['status'], { color: string; icon: LucideIcon }> = {
+    DRAFT: { color: 'bg-slate-500', icon: FileText },
+    IN_PROGRESS: { color: 'bg-blue-500', icon: Loader2 },
+    COMPLETED: { color: 'bg-green-500', icon: CheckCircle2 },
+    FAILED: { color: 'bg-red-500', icon: XCircle },
+    PENDING: { color: 'bg-amber-500', icon: Clock },
+  }
+
   const haveAttachmentsChanged = (current: Attachment[], next: Attachment[]) => {
     if (current.length !== next.length) return true
 
@@ -74,31 +89,36 @@ export function PromptDetailPage() {
   }
 
   useEffect(() => {
-    const fetchPrompt = async () => {
+    const fetchData = async () => {
       if (!batchId || !promptId) return
 
       setLoading(true)
       try {
-        const response = await batchService.getPrompt(
-          Number.parseInt(batchId, 10),
-          Number.parseInt(promptId, 10)
-        )
-        if (response.success) {
-          setPrompt(response.data)
-          setEditLabel(response.data.label || '')
-          setEditUserPrompt(response.data.userPrompt || '')
-          setEditAttachments(response.data.attachments ?? [])
+        const [promptResponse, batchResponse] = await Promise.all([
+          batchService.getPrompt(Number.parseInt(batchId, 10), Number.parseInt(promptId, 10)),
+          batchService.getBatch(Number.parseInt(batchId, 10)),
+        ])
+
+        if (promptResponse.success) {
+          setPrompt(promptResponse.data)
+          setEditLabel(promptResponse.data.label || '')
+          setEditUserPrompt(promptResponse.data.userPrompt || '')
+          setEditAttachments(promptResponse.data.attachments ?? [])
           setErrorMessage(null)
         }
+
+        if (batchResponse.success) {
+          setBatchStatus(batchResponse.data.status)
+        }
       } catch (error) {
-        console.error('Failed to fetch prompt:', error)
+        console.error('Failed to fetch prompt details:', error)
         setErrorMessage(getApiErrorMessage(error))
       } finally {
         setLoading(false)
       }
     }
 
-    void fetchPrompt()
+    void fetchData()
   }, [batchId, promptId])
 
   const resetEditState = (nextPrompt: Prompt) => {
@@ -200,6 +220,10 @@ export function PromptDetailPage() {
     )
   }
 
+  const currentStatusAppearance =
+    batchStatus === 'DRAFT' ? statusAppearanceMap.DRAFT : statusAppearanceMap[prompt.status]
+  const StatusIcon = currentStatusAppearance.icon
+
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
@@ -209,11 +233,28 @@ export function PromptDetailPage() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold tracking-tight">{prompt.label}</h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-bold tracking-tight">{prompt.label}</h1>
+            <Badge
+              variant={batchStatus === 'DRAFT' ? 'outline' : 'default'}
+              className={`${
+                batchStatus === 'DRAFT' ? '' : currentStatusAppearance.color
+              } flex h-6 items-center px-2 py-0.5 text-[10px] font-medium ${
+                batchStatus === 'DRAFT' ? '' : 'text-white'
+              }`}
+            >
+              <StatusIcon
+                className={`mr-1.5 h-3 w-3 ${prompt.status === 'IN_PROGRESS' ? 'animate-spin' : ''}`}
+              />
+              {batchStatus === 'DRAFT'
+                ? t('detail.draftBadge', { ns: 'batch' })
+                : statusLabelMap[prompt.status]}
+            </Badge>
+          </div>
           <p className="text-muted-foreground">{t('detail.subtitle', { ns: 'prompt' })}</p>
         </div>
 
-        {prompt.status === 'PENDING' ? (
+        {batchStatus === 'DRAFT' && prompt.status === 'PENDING' ? (
           <div className="flex gap-2">
             <Dialog open={isEditDialogOpen} onOpenChange={handleEditDialogChange}>
               <DialogTrigger asChild>
@@ -403,6 +444,39 @@ export function PromptDetailPage() {
                 </div>
               </CardContent>
             </Tabs>
+          ) : prompt.status === 'FAILED' ? (
+            <>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <div className="flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-destructive" />
+                  <CardTitle className="text-lg text-destructive">
+                    {t('detail.errorTitle', { ns: 'batch' })}
+                  </CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col gap-4">
+                  <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive shadow-sm">
+                    <div className="mb-2 flex items-center gap-2 font-bold">
+                      <AlertTriangle className="h-4 w-4" />
+                      {t('detail.errorLabel', { ns: 'batch' })}
+                    </div>
+                    <div className="whitespace-pre-wrap opacity-90">
+                      {prompt.errorMessage || t('detail.unknownError', { ns: 'batch' })}
+                    </div>
+                  </div>
+                  <div className="flex justify-center">
+                    <p className="text-xs text-muted-foreground">
+                      {t('detail.failedHelper', {
+                        ns: 'prompt',
+                        defaultValue:
+                          '프롬프트 처리 중 오류가 발생했습니다. 배치 상세 페이지에서 재동기화를 시도할 수 있습니다.',
+                      })}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </>
           ) : (
             <>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
