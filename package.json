@@ -11,7 +11,7 @@
     "check": "eslint . && prettier --check .",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "prepare": "husky"
+    "prepare": "husky && husky install"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
@@ -63,6 +63,7 @@
     "prettier-plugin-tailwindcss": "^0.7.2",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.57.1",
-    "vite": "^7.3.1"
+    "vite": "^7.3.1",
+    "husky": "^8.0.0"
   }
 }
