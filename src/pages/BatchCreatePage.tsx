@@ -218,8 +218,8 @@ export function BatchCreatePage() {
 
             <ExternalContextImportSection
               disabled={submitting || attachmentsPending}
-              userPrompt={formData.userPrompt}
-              onUserPromptChange={userPrompt => setFormData(prev => ({ ...prev, userPrompt }))}
+              attachments={formData.attachments}
+              onAttachmentsChange={attachments => setFormData(prev => ({ ...prev, attachments }))}
             />
 
             <PromptAttachmentsField

@@ -482,9 +482,9 @@ export function BatchDetailPage() {
 
                     <ExternalContextImportSection
                       disabled={isAttachmentPending}
-                      userPrompt={newPrompt.userPrompt}
-                      onUserPromptChange={userPrompt =>
-                        setNewPrompt(prev => ({ ...prev, userPrompt }))
+                      attachments={newPrompt.attachments}
+                      onAttachmentsChange={attachments =>
+                        setNewPrompt(prev => ({ ...prev, attachments }))
                       }
                     />
 

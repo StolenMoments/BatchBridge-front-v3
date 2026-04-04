@@ -1,422 +1,450 @@
-import { FileCode2, Loader2, Plus, Trash2, Ticket } from 'lucide-react'
-import { useState } from 'react'
+import { Check, ExternalLink, Loader2, Plus, Ticket, X } from 'lucide-react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
-import type {
-  ExternalContextPreviewResponse,
-  ExternalContextSourceType,
-  GithubPreviewRequest,
-} from '@/types/api'
+import type { Attachment, ContextPreviewResponse, ContextPreviewSource } from '@/types/api'
+import type { KeyboardEvent } from 'react'
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { cn } from '@/lib/utils'
 import { externalContextService } from '@/services/api'
 
-interface ExternalContextSource {
-  id: number
-  type?: ExternalContextSourceType
-  owner: string
-  repo: string
-  path: string
-  ref: string
-  issueKey: string
-  loading: boolean
-  selected: boolean
-  preview?: ExternalContextPreviewResponse
-  errorMessage?: string
-}
-
 interface ExternalContextImportSectionProps {
+  attachments: Attachment[]
   disabled?: boolean
-  userPrompt: string
-  onUserPromptChange: (nextPrompt: string) => void
+  onAttachmentsChange: (attachments: Attachment[]) => void
 }
 
-const createSource = (id: number): ExternalContextSource => ({
-  id,
-  owner: '',
-  repo: '',
-  path: '',
-  ref: '',
-  issueKey: '',
-  loading: false,
-  selected: false,
-})
+type ToastTone = 'success' | 'warning' | 'error'
 
-function buildContextBlock(preview: ExternalContextPreviewResponse): string {
-  return [`[Context] ${preview.label}`, preview.content].join('\n')
+interface ToastItem {
+  id: number
+  title: string
+  description: string
+  tone: ToastTone
+}
+
+function sanitizeToken(value: string): string {
+  return value.trim().replace(/\s+/g, '')
+}
+
+function buildAttachmentFileName(): string {
+  const timestamp = new Date().toISOString().replaceAll(':', '-')
+  return `context-preview-${timestamp}.md`
+}
+
+function getSourceTypeLabel(
+  t: ReturnType<typeof useTranslation>['t'],
+  source: ContextPreviewSource
+): string {
+  if (source.type === 'GITHUB_PR') return t('sources.github')
+  if (source.type === 'JIRA') return t('sources.jira')
+  return t('sources.confluence')
+}
+
+function getToastClasses(tone: ToastTone): string {
+  if (tone === 'success') return 'border-l-sky-500'
+  if (tone === 'warning') return 'border-l-amber-500'
+  return 'border-l-destructive'
+}
+
+function getBadgeClasses(source: ContextPreviewSource): string {
+  if (source.status === 'SUCCESS') {
+    return 'border-sky-200 bg-sky-50 text-sky-700'
+  }
+
+  return 'border-amber-200 bg-amber-50 text-amber-700'
 }
 
 export function ExternalContextImportSection({
+  attachments,
   disabled = false,
-  userPrompt,
-  onUserPromptChange,
+  onAttachmentsChange,
 }: ExternalContextImportSectionProps) {
   const { t } = useTranslation('external_context')
-  const [sources, setSources] = useState<ExternalContextSource[]>([createSource(1)])
-  const [nextSourceId, setNextSourceId] = useState(2)
+  const jiraInputId = useId()
+  const confluenceInputId = useId()
+  const toastIdRef = useRef(1)
+  const [githubPrUrl, setGithubPrUrl] = useState('')
+  const [jiraDraft, setJiraDraft] = useState('')
+  const [jiraKeys, setJiraKeys] = useState<string[]>([])
+  const [confluenceDraft, setConfluenceDraft] = useState('')
+  const [confluencePageIds, setConfluencePageIds] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [preview, setPreview] = useState<ContextPreviewResponse | null>(null)
+  const [toasts, setToasts] = useState<ToastItem[]>([])
 
-  const patchSource = (sourceId: number, patch: Partial<ExternalContextSource>) => {
-    setSources(prev =>
-      prev.map(source => (source.id === sourceId ? { ...source, ...patch } : source))
+  useEffect(() => {
+    if (toasts.length === 0) return
+
+    const timers = toasts.map(toast =>
+      window.setTimeout(() => {
+        setToasts(prev => prev.filter(item => item.id !== toast.id))
+      }, 3000)
     )
+
+    return () => {
+      timers.forEach(timer => window.clearTimeout(timer))
+    }
+  }, [toasts])
+
+  const pushToast = (tone: ToastTone, title: string, description: string) => {
+    const nextToast: ToastItem = {
+      id: toastIdRef.current,
+      tone,
+      title,
+      description,
+    }
+
+    toastIdRef.current += 1
+
+    setToasts(prev => [nextToast, ...prev].slice(0, 3))
   }
 
-  const addSource = () => {
-    setSources(prev => [...prev, createSource(nextSourceId)])
-    setNextSourceId(prev => prev + 1)
+  const addChip = (
+    value: string,
+    items: string[],
+    setter: (nextItems: string[]) => void,
+    invalidMessage: string
+  ) => {
+    const normalized = sanitizeToken(value)
+    if (!normalized) return false
+
+    if (items.includes(normalized)) {
+      pushToast('warning', t('messages.duplicateTitle'), invalidMessage)
+      return true
+    }
+
+    setter([...items, normalized])
+    return true
   }
 
-  const removeSource = (sourceId: number) => {
-    setSources(prev =>
-      prev.length === 1 ? [createSource(sourceId)] : prev.filter(source => source.id !== sourceId)
-    )
+  const handleChipKeyDown = (
+    event: KeyboardEvent<HTMLInputElement>,
+    value: string,
+    items: string[],
+    setter: (nextItems: string[]) => void,
+    reset: () => void,
+    invalidMessage: string
+  ) => {
+    if (event.key !== 'Enter') return
+
+    event.preventDefault()
+    const added = addChip(value, items, setter, invalidMessage)
+    if (added) {
+      reset()
+      setPreview(null)
+      setErrorMessage(null)
+    }
   }
 
-  const validateGithubSource = (source: ExternalContextSource): string | null => {
-    if (!source.type) return t('errors.sourceTypeRequired')
-    if (!source.owner.trim()) return t('errors.ownerRequired')
-    if (!source.repo.trim()) return t('errors.repoRequired')
-    if (!source.path.trim()) return t('errors.pathRequired')
-    return null
+  const removeChip = (value: string, items: string[], setter: (nextItems: string[]) => void) => {
+    setter(items.filter(item => item !== value))
+    setPreview(null)
+    setErrorMessage(null)
   }
 
-  const validateJiraSource = (source: ExternalContextSource): string | null => {
-    if (!source.type) return t('errors.sourceTypeRequired')
-    if (!source.issueKey.trim()) return t('errors.issueKeyRequired')
-    return null
-  }
-
-  const handlePreview = async (source: ExternalContextSource) => {
-    const validationMessage =
-      source.type === 'github' ? validateGithubSource(source) : validateJiraSource(source)
-
-    if (validationMessage) {
-      patchSource(source.id, {
-        errorMessage: validationMessage,
-        preview: undefined,
-        selected: false,
-      })
+  const handlePreview = async () => {
+    if (!githubPrUrl.trim() && jiraKeys.length === 0 && confluencePageIds.length === 0) {
+      setErrorMessage(t('errors.emptySources'))
+      setPreview(null)
       return
     }
 
-    patchSource(source.id, { loading: true, errorMessage: undefined })
+    setLoading(true)
+    setErrorMessage(null)
 
     try {
-      const response =
-        source.type === 'github'
-          ? await externalContextService.previewGithub({
-              owner: source.owner.trim(),
-              repo: source.repo.trim(),
-              path: source.path.trim(),
-              ref: source.ref.trim() || undefined,
-            } satisfies GithubPreviewRequest)
-          : await externalContextService.previewJira({
-              issueKey: source.issueKey.trim(),
-            })
+      const response = await externalContextService.preview({
+        githubPrUrl: githubPrUrl.trim() || undefined,
+        jiraKeys,
+        confluencePageIds,
+      })
 
-      if (response.success) {
-        patchSource(source.id, {
-          loading: false,
-          errorMessage: undefined,
-          preview: response.data,
-          selected: true,
-        })
+      if (!response.success) {
+        const message = response.error?.message || t('messages.requestFailedDescription')
+        setPreview(null)
+        setErrorMessage(message)
+        pushToast('error', t('messages.requestFailedTitle'), message)
+        return
+      }
+
+      setPreview(response.data)
+
+      const successCount = response.data.sources.filter(
+        source => source.status === 'SUCCESS'
+      ).length
+      const failedCount = response.data.sources.length - successCount
+
+      if (failedCount === 0) {
+        pushToast(
+          'success',
+          t('messages.successTitle'),
+          t('messages.successDescription', { count: successCount })
+        )
+      } else if (successCount > 0) {
+        pushToast(
+          'warning',
+          t('messages.partialTitle'),
+          t('messages.partialDescription', { successCount, failedCount })
+        )
+      } else {
+        pushToast('error', t('messages.requestFailedTitle'), t('messages.requestFailedDescription'))
       }
     } catch (error) {
-      patchSource(source.id, {
-        loading: false,
-        errorMessage: getApiErrorMessage(error),
-        preview: undefined,
-        selected: false,
-      })
+      const message = getApiErrorMessage(error)
+      setPreview(null)
+      setErrorMessage(message)
+      pushToast('error', t('messages.requestFailedTitle'), message)
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleImportSelected = () => {
-    const selectedSources = sources.filter(source => source.selected)
-    const successfulSources = selectedSources.filter(source => source.preview)
-    const failedCount = selectedSources.length - successfulSources.length
-
-    if (successfulSources.length === 0) {
-      window.alert(`${t('messages.failedTitle')}\n${t('messages.failedDescription')}`)
+  const handleConfirm = () => {
+    if (!preview?.contextText.trim()) {
+      pushToast('error', t('messages.confirmFailedTitle'), t('messages.confirmFailedDescription'))
       return
     }
 
-    const contextText = successfulSources
-      .map(source => buildContextBlock(source.preview as ExternalContextPreviewResponse))
-      .join('\n\n')
+    onAttachmentsChange([
+      ...attachments,
+      {
+        fileName: buildAttachmentFileName(),
+        fileContent: preview.contextText,
+      },
+    ])
 
-    const nextPrompt = userPrompt.trim() ? `${userPrompt.trim()}\n\n${contextText}` : contextText
-    onUserPromptChange(nextPrompt)
-
-    if (failedCount > 0) {
-      window.alert(
-        `${t('messages.partialTitle')}\n${t('messages.partialDescription', {
-          successCount: successfulSources.length,
-          failedCount,
-        })}`
-      )
-    } else {
-      window.alert(
-        `${t('messages.successTitle')}\n${t('messages.successDescription', {
-          count: successfulSources.length,
-        })}`
-      )
-    }
-
-    setSources(prev =>
-      prev.map(source =>
-        source.selected && source.preview
-          ? {
-              ...source,
-              selected: false,
-              preview: undefined,
-              errorMessage: undefined,
-            }
-          : source
-      )
-    )
+    setPreview(null)
+    pushToast('success', t('messages.savedTitle'), t('messages.savedDescription'))
   }
 
   return (
-    <Card className="border-dashed bg-muted/20">
-      <CardHeader>
-        <CardTitle>{t('title')}</CardTitle>
-        <CardDescription>{t('description')}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {sources.map((source, index) => {
-          const hasPreview = Boolean(source.preview)
-
-          return (
-            <div key={source.id} className="rounded-xl border bg-background/80 p-4 shadow-xs">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <div
-                    className={cn(
-                      'flex size-9 items-center justify-center rounded-lg border',
-                      source.type === 'jira'
-                        ? 'border-amber-200 bg-amber-50 text-amber-700'
-                        : 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                    )}
-                  >
-                    {source.type === 'jira' ? (
-                      <Ticket className="h-4 w-4" />
-                    ) : (
-                      <FileCode2 className="h-4 w-4" />
-                    )}
-                  </div>
-                  <div>
-                    <p className="font-medium">{t('sourceLabel', { index: index + 1 })}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {source.preview?.label || t('preview.empty')}
-                    </p>
-                  </div>
+    <>
+      <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="external-context" className="rounded-xl border bg-muted/20 px-4">
+          <AccordionTrigger className="py-4 hover:no-underline">
+            <div className="space-y-1 text-left">
+              <p className="text-base font-semibold">{t('title')}</p>
+              <p className="text-sm font-normal text-muted-foreground">{t('description')}</p>
+            </div>
+          </AccordionTrigger>
+          <AccordionContent className="pb-4">
+            <Card className="border-dashed bg-background/80 shadow-xs">
+              <CardContent className="space-y-5 pt-6">
+                <div className="space-y-2">
+                  <Label htmlFor="github-pr-url">{t('fields.githubPrUrl')}</Label>
+                  <Input
+                    id="github-pr-url"
+                    value={githubPrUrl}
+                    disabled={disabled || loading}
+                    placeholder={t('placeholders.githubPrUrl')}
+                    onChange={event => {
+                      setGithubPrUrl(event.target.value)
+                      setPreview(null)
+                      setErrorMessage(null)
+                    }}
+                  />
                 </div>
 
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-sm"
-                  disabled={disabled || source.loading}
-                  onClick={() => removeSource(source.id)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-2">
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor={`context-type-${source.id}`}>{t('sourceType')}</Label>
-                  <Select
-                    value={source.type}
-                    onValueChange={value =>
-                      patchSource(source.id, {
-                        type: value as ExternalContextSourceType,
-                        preview: undefined,
-                        errorMessage: undefined,
-                        selected: false,
-                      })
+                <div className="space-y-3">
+                  <Label htmlFor={jiraInputId}>{t('fields.jiraKeys')}</Label>
+                  <Input
+                    id={jiraInputId}
+                    value={jiraDraft}
+                    disabled={disabled || loading}
+                    placeholder={t('placeholders.jiraKeys')}
+                    onChange={event => setJiraDraft(event.target.value)}
+                    onKeyDown={event =>
+                      handleChipKeyDown(
+                        event,
+                        jiraDraft,
+                        jiraKeys,
+                        setJiraKeys,
+                        () => setJiraDraft(''),
+                        t('messages.duplicateJira')
+                      )
                     }
-                  >
-                    <SelectTrigger id={`context-type-${source.id}`}>
-                      <SelectValue placeholder={t('sourceTypePlaceholder')} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="github">{t('sourceTypes.github')}</SelectItem>
-                      <SelectItem value="jira">{t('sourceTypes.jira')}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {jiraKeys.map(item => (
+                      <Badge key={item} variant="outline" className="h-7 gap-1 px-3">
+                        <Ticket className="h-3 w-3" />
+                        {item}
+                        <button
+                          type="button"
+                          className="rounded-full"
+                          disabled={disabled || loading}
+                          onClick={() => removeChip(item, jiraKeys, setJiraKeys)}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
 
-                {source.type === 'github' ? (
-                  <>
+                <div className="space-y-3">
+                  <Label htmlFor={confluenceInputId}>{t('fields.confluencePageIds')}</Label>
+                  <Input
+                    id={confluenceInputId}
+                    value={confluenceDraft}
+                    disabled={disabled || loading}
+                    placeholder={t('placeholders.confluencePageIds')}
+                    onChange={event => setConfluenceDraft(event.target.value)}
+                    onKeyDown={event =>
+                      handleChipKeyDown(
+                        event,
+                        confluenceDraft,
+                        confluencePageIds,
+                        setConfluencePageIds,
+                        () => setConfluenceDraft(''),
+                        t('messages.duplicateConfluence')
+                      )
+                    }
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    {confluencePageIds.map(item => (
+                      <Badge key={item} variant="outline" className="h-7 gap-1 px-3">
+                        <ExternalLink className="h-3 w-3" />
+                        {item}
+                        <button
+                          type="button"
+                          className="rounded-full"
+                          disabled={disabled || loading}
+                          onClick={() => removeChip(item, confluencePageIds, setConfluencePageIds)}
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-3">
+                  <Button
+                    type="button"
+                    disabled={disabled || loading}
+                    onClick={() => void handlePreview()}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        {t('actions.previewLoading')}
+                      </>
+                    ) : (
+                      t('actions.preview')
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    disabled={disabled || !preview?.contextText}
+                    onClick={handleConfirm}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    {t('actions.confirm')}
+                  </Button>
+                </div>
+
+                {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
+
+                {preview ? (
+                  <div className="space-y-4">
                     <div className="space-y-2">
-                      <Label htmlFor={`context-owner-${source.id}`}>{t('fields.owner')}</Label>
-                      <Input
-                        id={`context-owner-${source.id}`}
-                        placeholder={t('placeholders.owner')}
-                        value={source.owner}
-                        disabled={disabled || source.loading}
-                        onChange={event =>
-                          patchSource(source.id, {
-                            owner: event.target.value,
-                            preview: undefined,
-                            errorMessage: undefined,
-                            selected: false,
-                          })
-                        }
-                      />
+                      <p className="text-sm font-medium">{t('preview.sourcesTitle')}</p>
+                      <div className="space-y-2">
+                        {preview.sources.map(source => (
+                          <div
+                            key={`${source.type}-${source.id}`}
+                            className="rounded-lg border bg-muted/30 px-3 py-2"
+                          >
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Badge
+                                variant="outline"
+                                className={cn('border', getBadgeClasses(source))}
+                              >
+                                {source.status === 'SUCCESS' ? (
+                                  <Check className="h-3 w-3" />
+                                ) : (
+                                  <X className="h-3 w-3" />
+                                )}
+                                {source.status}
+                              </Badge>
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {getSourceTypeLabel(t, source)}
+                              </span>
+                              <span className="text-sm font-medium">{source.title}</span>
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              {source.id}
+                              {source.error ? ` • ${source.error}` : ''}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`context-repo-${source.id}`}>{t('fields.repo')}</Label>
-                      <Input
-                        id={`context-repo-${source.id}`}
-                        placeholder={t('placeholders.repo')}
-                        value={source.repo}
-                        disabled={disabled || source.loading}
-                        onChange={event =>
-                          patchSource(source.id, {
-                            repo: event.target.value,
-                            preview: undefined,
-                            errorMessage: undefined,
-                            selected: false,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor={`context-path-${source.id}`}>{t('fields.path')}</Label>
-                      <Input
-                        id={`context-path-${source.id}`}
-                        placeholder={t('placeholders.path')}
-                        value={source.path}
-                        disabled={disabled || source.loading}
-                        onChange={event =>
-                          patchSource(source.id, {
-                            path: event.target.value,
-                            preview: undefined,
-                            errorMessage: undefined,
-                            selected: false,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor={`context-ref-${source.id}`}>{t('fields.ref')}</Label>
-                      <Input
-                        id={`context-ref-${source.id}`}
-                        placeholder={t('placeholders.ref')}
-                        value={source.ref}
-                        disabled={disabled || source.loading}
-                        onChange={event =>
-                          patchSource(source.id, {
-                            ref: event.target.value,
-                            preview: undefined,
-                            errorMessage: undefined,
-                            selected: false,
-                          })
-                        }
-                      />
-                    </div>
-                  </>
-                ) : source.type === 'jira' ? (
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor={`context-jira-${source.id}`}>{t('fields.issueKey')}</Label>
-                    <Input
-                      id={`context-jira-${source.id}`}
-                      placeholder={t('placeholders.issueKey')}
-                      value={source.issueKey}
-                      disabled={disabled || source.loading}
-                      onChange={event =>
-                        patchSource(source.id, {
-                          issueKey: event.target.value,
-                          preview: undefined,
-                          errorMessage: undefined,
-                          selected: false,
-                        })
-                      }
-                    />
+
+                    <Accordion type="single" collapsible defaultValue="context-preview">
+                      <AccordionItem value="context-preview" className="rounded-lg border px-3">
+                        <AccordionTrigger className="py-3 text-sm hover:no-underline">
+                          {t('preview.contextTitle')}
+                        </AccordionTrigger>
+                        <AccordionContent className="pb-3">
+                          <pre className="max-h-72 overflow-y-auto text-xs break-words whitespace-pre-wrap text-muted-foreground">
+                            {preview.contextText}
+                          </pre>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
                   </div>
                 ) : null}
-              </div>
+              </CardContent>
+            </Card>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
-              <div className="mt-4 flex flex-wrap items-center gap-3">
-                <Button
+      {toasts.length > 0 ? (
+        <div className="pointer-events-none fixed bottom-[20%] left-1/2 z-50 flex w-[min(480px,calc(100%-48px))] -translate-x-1/2 flex-col gap-3">
+          {toasts.map((toast, index) => (
+            <div
+              key={toast.id}
+              className={cn(
+                'pointer-events-auto rounded-xl border border-l-4 border-border bg-background px-4 py-3 shadow-lg',
+                getToastClasses(toast.tone),
+                index > 0 ? 'opacity-80' : ''
+              )}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">{toast.title}</p>
+                  <p className="text-xs text-muted-foreground">{toast.description}</p>
+                </div>
+                <button
                   type="button"
-                  variant="outline"
-                  disabled={disabled || source.loading || !source.type}
-                  onClick={() => void handlePreview(source)}
+                  className="rounded-full"
+                  onClick={() => setToasts(prev => prev.filter(item => item.id !== toast.id))}
                 >
-                  {source.loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {t('preview.loading')}
-                    </>
-                  ) : (
-                    t('actions.preview')
-                  )}
-                </Button>
-
-                {hasPreview ? (
-                  <label className="flex items-center gap-2 text-sm text-foreground">
-                    <input
-                      type="checkbox"
-                      checked={source.selected}
-                      disabled={disabled || source.loading}
-                      onChange={event => patchSource(source.id, { selected: event.target.checked })}
-                    />
-                    {t('preview.select')}
-                  </label>
-                ) : null}
-              </div>
-
-              <div className="mt-4 rounded-lg border bg-muted/40 p-3">
-                <p className="mb-2 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                  {t('preview.title')}
-                </p>
-                {source.errorMessage ? (
-                  <p className="text-sm text-destructive">{source.errorMessage}</p>
-                ) : source.preview ? (
-                  <div className="space-y-2">
-                    <p className="font-medium">{source.preview.label}</p>
-                    <pre className="max-h-56 overflow-y-auto text-xs break-words whitespace-pre-wrap text-muted-foreground">
-                      {source.preview.content}
-                    </pre>
-                  </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">{t('preview.empty')}</p>
-                )}
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
               </div>
             </div>
-          )
-        })}
-
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <Button type="button" variant="outline" disabled={disabled} onClick={addSource}>
-            <Plus className="mr-2 h-4 w-4" />
-            {t('actions.addSource')}
-          </Button>
-
-          <p className="text-sm text-muted-foreground">{t('helper.importDescription')}</p>
+          ))}
         </div>
-
-        <Button type="button" className="w-full" disabled={disabled} onClick={handleImportSelected}>
-          {t('actions.importSelected')}
-        </Button>
-      </CardContent>
-    </Card>
+      ) : null}
+    </>
   )
 }

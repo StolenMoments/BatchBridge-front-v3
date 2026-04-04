@@ -5,9 +5,8 @@ import type {
   ApiResponse,
   Batch,
   BatchListItem,
-  ExternalContextPreviewResponse,
-  GithubPreviewRequest,
-  JiraPreviewRequest,
+  ContextPreviewRequest,
+  ContextPreviewResponse,
   Model,
   PaginatedResponse,
   Prompt,
@@ -112,19 +111,8 @@ export const modelService = {
 }
 
 export const externalContextService = {
-  previewGithub: async (data: GithubPreviewRequest) => {
-    const response = await api.post<ApiResponse<ExternalContextPreviewResponse>>(
-      '/external-context/preview/github',
-      data
-    )
-    return response.data
-  },
-
-  previewJira: async (data: JiraPreviewRequest) => {
-    const response = await api.post<ApiResponse<ExternalContextPreviewResponse>>(
-      '/external-context/preview/jira',
-      data
-    )
+  preview: async (data: ContextPreviewRequest) => {
+    const response = await api.post<ApiResponse<ContextPreviewResponse>>('/context/preview', data)
     return response.data
   },
 }
