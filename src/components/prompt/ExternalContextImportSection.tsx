@@ -345,7 +345,7 @@ export function ExternalContextImportSection({
           </AccordionTrigger>
           <AccordionContent
             key={
-              preview ? `preview-${preview.sources.length}-${preview.formattedText.length}` : 'idle'
+              preview ? `preview-${preview.sources.length}-${preview.sources.filter(s => s.status === 'SUCCESS').length}` : 'idle'
             }
             className="pb-4"
           >
