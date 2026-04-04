@@ -33,6 +33,8 @@ interface ToastItem {
   title: string
   description: string
   tone: ToastTone
+  phase: 'entering' | 'visible' | 'exiting'
+  progressStarted: boolean
 }
 
 function sanitizeToken(value: string): string {
@@ -89,11 +91,41 @@ export function ExternalContextImportSection({
   useEffect(() => {
     if (toasts.length === 0) return
 
-    const timers = toasts.map(toast =>
-      window.setTimeout(() => {
-        setToasts(prev => prev.filter(item => item.id !== toast.id))
-      }, 3000)
-    )
+    const timers = toasts.flatMap(toast => {
+      const nextTimers: number[] = []
+
+      if (toast.phase === 'entering') {
+        nextTimers.push(
+          window.setTimeout(() => {
+            setToasts(prev =>
+              prev.map(item =>
+                item.id === toast.id ? { ...item, phase: 'visible', progressStarted: true } : item
+              )
+            )
+          }, 10)
+        )
+      }
+
+      if (toast.phase === 'visible') {
+        nextTimers.push(
+          window.setTimeout(() => {
+            setToasts(prev =>
+              prev.map(item => (item.id === toast.id ? { ...item, phase: 'exiting' } : item))
+            )
+          }, 3000)
+        )
+      }
+
+      if (toast.phase === 'exiting') {
+        nextTimers.push(
+          window.setTimeout(() => {
+            setToasts(prev => prev.filter(item => item.id !== toast.id))
+          }, 300)
+        )
+      }
+
+      return nextTimers
+    })
 
     return () => {
       timers.forEach(timer => window.clearTimeout(timer))
@@ -106,6 +138,8 @@ export function ExternalContextImportSection({
       tone,
       title,
       description,
+      phase: 'entering',
+      progressStarted: false,
     }
 
     toastIdRef.current += 1
@@ -423,8 +457,11 @@ export function ExternalContextImportSection({
             <div
               key={toast.id}
               className={cn(
-                'pointer-events-auto rounded-xl border border-l-4 border-border bg-background px-4 py-3 shadow-lg',
+                'pointer-events-auto relative overflow-hidden rounded-xl border border-l-4 border-border bg-background px-4 py-3 shadow-lg transition-all ease-out',
                 getToastClasses(toast.tone),
+                toast.phase === 'entering' && 'translate-y-3 opacity-0 duration-[250ms]',
+                toast.phase === 'visible' && 'translate-y-0 opacity-100 duration-[250ms]',
+                toast.phase === 'exiting' && 'translate-y-1 opacity-0 duration-[300ms]',
                 index > 0 ? 'opacity-80' : ''
               )}
             >
@@ -441,6 +478,15 @@ export function ExternalContextImportSection({
                   <X className="h-4 w-4 text-muted-foreground" />
                 </button>
               </div>
+              <div
+                className={cn(
+                  'absolute right-0 bottom-0 left-0 h-[3px] origin-left transition-[width] duration-[3000ms] ease-linear',
+                  toast.tone === 'success' && 'bg-sky-500',
+                  toast.tone === 'warning' && 'bg-amber-500',
+                  toast.tone === 'error' && 'bg-destructive'
+                )}
+                style={{ width: toast.progressStarted ? '0%' : '100%' }}
+              />
             </div>
           ))}
         </div>

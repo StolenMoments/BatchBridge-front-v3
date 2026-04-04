@@ -2,7 +2,7 @@
   "title": "컨텍스트 가져오기",
   "description": "GitHub PR, Jira 이슈, Confluence 페이지를 불러와 프롬프트 첨부로 저장합니다.",
   "fields": {
-    "githubPrUrl": "GitHub PR URL",
+    "githubPrUrl": "GitHub PR 주소",
     "jiraKeys": "Jira 키",
     "confluencePageIds": "Confluence 페이지 ID"
   },
@@ -18,8 +18,8 @@
   },
   "sources": {
     "github": "GitHub PR",
-    "jira": "Jira",
-    "confluence": "Confluence"
+    "jira": "Jira 이슈",
+    "confluence": "Confluence 페이지"
   },
   "preview": {
     "sourcesTitle": "소스 결과",
