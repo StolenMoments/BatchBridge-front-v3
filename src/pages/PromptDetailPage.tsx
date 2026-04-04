@@ -22,6 +22,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import type { Attachment, BatchStatus, Prompt } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
+import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import { Badge } from '@/components/ui/badge'
@@ -43,7 +44,7 @@ import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
 import { batchService } from '@/services/api'
 
 export function PromptDetailPage() {
-  const { t } = useTranslation(['prompt', 'common', 'batch'])
+  const { t } = useTranslation(['prompt', 'common', 'batch', 'external_context'])
   const { batchId, promptId } = useParams<{ batchId: string; promptId: string }>()
   const navigate = useNavigate()
   const [prompt, setPrompt] = useState<Prompt | null>(null)
@@ -290,8 +291,14 @@ export function PromptDetailPage() {
                       rows={10}
                     />
                   </div>
+                  <ExternalContextImportSection
+                    disabled={isUpdating || isAttachmentPending}
+                    attachments={editAttachments}
+                    onAttachmentsChange={setEditAttachments}
+                  />
                   <PromptAttachmentsField
                     attachments={editAttachments}
+                    disabled={isUpdating}
                     errorMessage={attachmentError}
                     onChange={setEditAttachments}
                     onErrorChange={setAttachmentError}
