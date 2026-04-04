@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import type { Attachment, Model } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert.tsx'
+import { ExternalContextChipsDisplay } from '@/components/prompt/ExternalContextChipsDisplay'
 import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
@@ -220,6 +221,17 @@ export function BatchCreatePage() {
               disabled={submitting || attachmentsPending}
               attachments={formData.attachments}
               onAttachmentsChange={attachments => setFormData(prev => ({ ...prev, attachments }))}
+            />
+
+            <ExternalContextChipsDisplay
+              attachments={formData.attachments}
+              disabled={submitting}
+              onRemove={fileName =>
+                setFormData(prev => ({
+                  ...prev,
+                  attachments: prev.attachments.filter(a => a.fileName !== fileName),
+                }))
+              }
             />
 
             <PromptAttachmentsField

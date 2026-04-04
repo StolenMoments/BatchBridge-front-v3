@@ -3,6 +3,7 @@
   "description": "GitHub PR, Jira 이슈, Confluence 페이지를 불러와 프롬프트 첨부로 저장합니다.",
   "fields": {
     "githubPrUrl": "GitHub PR 주소",
+    "githubPrReplace": "GitHub PR 교체",
     "jiraKeys": "Jira 키",
     "confluencePageIds": "Confluence 페이지 ID"
   },
@@ -14,7 +15,8 @@
   "actions": {
     "preview": "미리보기",
     "previewLoading": "불러오는 중...",
-    "confirm": "확인"
+    "confirm": "확인",
+    "replace": "교체"
   },
   "sources": {
     "github": "GitHub PR",
@@ -23,7 +25,12 @@
   },
   "preview": {
     "sourcesTitle": "소스 결과",
-    "contextTitle": "컨텍스트 미리보기"
+    "contextTitle": "컨텍스트 미리보기",
+    "viewContent": "상세 내용 보기"
+  },
+  "importedContext": {
+    "title": "임포트된 컨텍스트",
+    "dialogTitle": "컨텍스트 상세"
   },
   "messages": {
     "successTitle": "컨텍스트를 가져왔습니다",
@@ -38,7 +45,9 @@
     "savedDescription": "미리본 컨텍스트를 첨부 파일로 추가했습니다.",
     "duplicateTitle": "이미 추가됨",
     "duplicateJira": "이미 추가된 Jira 키입니다.",
-    "duplicateConfluence": "이미 추가된 Confluence 페이지 ID입니다."
+    "duplicateConfluence": "이미 추가된 Confluence 페이지 ID입니다.",
+    "existingPrInfo": "현재 첨부된 PR: {{fileName}}",
+    "replacePrConfirm": "이미 첨부된 GitHub PR이 있습니다. 교체하시겠습니까?"
   },
   "errors": {
     "emptySources": "미리보기 전에 최소 한 개 이상의 소스를 입력하세요."

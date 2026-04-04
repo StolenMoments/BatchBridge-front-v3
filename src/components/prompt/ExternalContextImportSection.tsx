@@ -442,23 +442,29 @@ export function ExternalContextImportSection({
                     onClick={handleConfirm}
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    {t('actions.confirm')}
+                    {existingPr && githubPrUrl.trim()
+                      ? t('actions.replace')
+                      : t('actions.confirm')}
                   </Button>
                 </div>
 
                 {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
 
                 {preview ? (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">{t('preview.sourcesTitle')}</p>
-                      <div className="space-y-2">
-                        {preview.sources.map(source => (
-                          <div
-                            key={`${source.type}-${source.id}`}
-                            className="rounded-lg border bg-muted/30 px-3 py-2"
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">{t('preview.sourcesTitle')}</p>
+                    <Accordion type="multiple" className="space-y-2">
+                      {preview.sources.map(source => (
+                        <AccordionItem
+                          key={`${source.type}-${source.id}`}
+                          value={`${source.type}-${source.id}`}
+                          className="rounded-lg border bg-muted/30 px-3"
+                        >
+                          <AccordionTrigger
+                            className="py-2 hover:no-underline"
+                            disabled={source.status !== 'SUCCESS' || !source.formattedText}
                           >
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2 text-left">
                               <Badge
                                 variant="outline"
                                 className={cn('border', getBadgeClasses(source))}
@@ -474,27 +480,20 @@ export function ExternalContextImportSection({
                                 {getSourceTypeLabel(t, source)}
                               </span>
                               <span className="text-sm font-medium">{source.title}</span>
+                              {source.error ? (
+                                <span className="text-xs text-destructive">{source.error}</span>
+                              ) : null}
                             </div>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {source.id}
-                              {source.error ? ` • ${source.error}` : ''}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <Accordion type="single" collapsible defaultValue="context-preview">
-                      <AccordionItem value="context-preview" className="rounded-lg border px-3">
-                        <AccordionTrigger className="py-3 text-sm hover:no-underline">
-                          {t('preview.contextTitle')}
-                        </AccordionTrigger>
-                        <AccordionContent className="pb-3">
-                          <pre className="max-h-72 overflow-y-auto text-xs break-words whitespace-pre-wrap text-muted-foreground">
-                            {preview.contextText}
-                          </pre>
-                        </AccordionContent>
-                      </AccordionItem>
+                          </AccordionTrigger>
+                          {source.status === 'SUCCESS' && source.formattedText ? (
+                            <AccordionContent className="pb-3">
+                              <pre className="max-h-72 overflow-y-auto rounded-md border bg-background p-3 text-xs break-words whitespace-pre-wrap text-muted-foreground">
+                                {source.formattedText}
+                              </pre>
+                            </AccordionContent>
+                          ) : null}
+                        </AccordionItem>
+                      ))}
                     </Accordion>
                   </div>
                 ) : null}

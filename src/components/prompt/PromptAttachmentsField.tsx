@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next'
 import type { Attachment } from '@/types/api'
 import type { ChangeEvent, DragEvent, KeyboardEvent } from 'react'
 
+import { isExternalContextFile } from '@/components/prompt/ExternalContextChipsDisplay'
+
 import {
   Accordion,
   AccordionContent,
@@ -88,6 +90,7 @@ export function PromptAttachmentsField({
   const acceptedTypes = allowedExtensions.map(ext => `.${ext}`).join(',')
   const allowedTypesText = allowedExtensions.map(ext => `.${ext}`).join(', ')
   const resolvedHelperText = helperText ?? t('attachments.helper')
+  const visibleAttachments = attachments.filter(a => !isExternalContextFile(a.fileName))
 
   const updateAttachments = async (files: File[]) => {
     if (files.length === 0 || disabled) return
@@ -236,16 +239,16 @@ export function PromptAttachmentsField({
         <div className="flex items-center justify-between">
           <p className="text-sm font-medium text-foreground">{t('attachments.attachedFiles')}</p>
           <p className="text-xs text-muted-foreground">
-            {t('attachments.fileCount', { count: attachments.length })}
+            {t('attachments.fileCount', { count: visibleAttachments.length })}
           </p>
         </div>
-        {attachments.length === 0 ? (
+        {visibleAttachments.length === 0 ? (
           <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
             {t('attachments.noFiles')}
           </div>
         ) : (
           <Accordion type="multiple" className="rounded-lg border">
-            {attachments.map((attachment, index) => (
+            {visibleAttachments.map((attachment, index) => (
               <AccordionItem
                 key={`${attachment.fileName}-${index}`}
                 value={`${attachment.fileName}-${index}`}

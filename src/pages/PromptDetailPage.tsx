@@ -22,6 +22,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import type { Attachment, BatchStatus, Prompt } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
+import { ExternalContextChipsDisplay } from '@/components/prompt/ExternalContextChipsDisplay'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import { Badge } from '@/components/ui/badge'
@@ -290,6 +291,12 @@ export function PromptDetailPage() {
                       rows={10}
                     />
                   </div>
+                  <ExternalContextChipsDisplay
+                    attachments={editAttachments}
+                    onRemove={fileName =>
+                      setEditAttachments(prev => prev.filter(a => a.fileName !== fileName))
+                    }
+                  />
                   <PromptAttachmentsField
                     attachments={editAttachments}
                     errorMessage={attachmentError}
@@ -398,7 +405,8 @@ export function PromptDetailPage() {
               <CardTitle className="text-lg">{t('detail.attachments', { ns: 'prompt' })}</CardTitle>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-4">
+            <ExternalContextChipsDisplay attachments={prompt.attachments ?? []} disabled />
             <PromptAttachmentsField
               attachments={prompt.attachments ?? []}
               disabled
