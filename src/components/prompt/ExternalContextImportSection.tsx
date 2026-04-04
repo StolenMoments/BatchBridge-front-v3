@@ -41,6 +41,12 @@ function sanitizeToken(value: string): string {
   return value.trim().replace(/\s+/g, '')
 }
 
+function appendUniqueToken(items: string[], value: string): string[] {
+  const normalized = sanitizeToken(value)
+  if (!normalized || items.includes(normalized)) return items
+  return [...items, normalized]
+}
+
 function buildAttachmentFileName(): string {
   const timestamp = new Date().toISOString().replaceAll(':', '-')
   return `context-preview-${timestamp}.md`
@@ -191,10 +197,24 @@ export function ExternalContextImportSection({
   }
 
   const handlePreview = async () => {
-    if (!githubPrUrl.trim() && jiraKeys.length === 0 && confluencePageIds.length === 0) {
+    const nextJiraKeys = appendUniqueToken(jiraKeys, jiraDraft)
+    const nextConfluencePageIds = appendUniqueToken(confluencePageIds, confluenceDraft)
+    const nextGithubPrUrl = githubPrUrl.trim()
+
+    if (!nextGithubPrUrl && nextJiraKeys.length === 0 && nextConfluencePageIds.length === 0) {
       setErrorMessage(t('errors.emptySources'))
       setPreview(null)
       return
+    }
+
+    if (nextJiraKeys !== jiraKeys) {
+      setJiraKeys(nextJiraKeys)
+      setJiraDraft('')
+    }
+
+    if (nextConfluencePageIds !== confluencePageIds) {
+      setConfluencePageIds(nextConfluencePageIds)
+      setConfluenceDraft('')
     }
 
     setLoading(true)
@@ -202,9 +222,9 @@ export function ExternalContextImportSection({
 
     try {
       const response = await externalContextService.preview({
-        githubPrUrl: githubPrUrl.trim() || undefined,
-        jiraKeys,
-        confluencePageIds,
+        githubPrUrl: nextGithubPrUrl || undefined,
+        jiraKeys: nextJiraKeys,
+        confluencePageIds: nextConfluencePageIds,
       })
 
       if (!response.success) {
