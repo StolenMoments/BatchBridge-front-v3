@@ -41,6 +41,12 @@ function sanitizeToken(value: string): string {
   return value.trim().replace(/\s+/g, '')
 }
 
+function appendUniqueToken(items: string[], value: string): string[] {
+  const normalized = sanitizeToken(value)
+  if (!normalized || items.includes(normalized)) return items
+  return [...items, normalized]
+}
+
 function buildAttachmentFileName(): string {
   const timestamp = new Date().toISOString().replaceAll(':', '-')
   return `context-preview-${timestamp}.md`
@@ -83,6 +89,7 @@ export function ExternalContextImportSection({
   const [jiraKeys, setJiraKeys] = useState<string[]>([])
   const [confluenceDraft, setConfluenceDraft] = useState('')
   const [confluencePageIds, setConfluencePageIds] = useState<string[]>([])
+  const [sectionValue, setSectionValue] = useState<string | undefined>(undefined)
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [preview, setPreview] = useState<ContextPreviewResponse | null>(null)
@@ -191,10 +198,24 @@ export function ExternalContextImportSection({
   }
 
   const handlePreview = async () => {
-    if (!githubPrUrl.trim() && jiraKeys.length === 0 && confluencePageIds.length === 0) {
+    const nextJiraKeys = appendUniqueToken(jiraKeys, jiraDraft)
+    const nextConfluencePageIds = appendUniqueToken(confluencePageIds, confluenceDraft)
+    const nextGithubPrUrl = githubPrUrl.trim()
+
+    if (!nextGithubPrUrl && nextJiraKeys.length === 0 && nextConfluencePageIds.length === 0) {
       setErrorMessage(t('errors.emptySources'))
       setPreview(null)
       return
+    }
+
+    if (nextJiraKeys !== jiraKeys) {
+      setJiraKeys(nextJiraKeys)
+      setJiraDraft('')
+    }
+
+    if (nextConfluencePageIds !== confluencePageIds) {
+      setConfluencePageIds(nextConfluencePageIds)
+      setConfluenceDraft('')
     }
 
     setLoading(true)
@@ -202,9 +223,9 @@ export function ExternalContextImportSection({
 
     try {
       const response = await externalContextService.preview({
-        githubPrUrl: githubPrUrl.trim() || undefined,
-        jiraKeys,
-        confluencePageIds,
+        githubPrUrl: nextGithubPrUrl || undefined,
+        jiraKeys: nextJiraKeys,
+        confluencePageIds: nextConfluencePageIds,
       })
 
       if (!response.success) {
@@ -216,6 +237,7 @@ export function ExternalContextImportSection({
       }
 
       setPreview(response.data)
+      setSectionValue('external-context')
 
       const successCount = response.data.sources.filter(
         source => source.status === 'SUCCESS'
@@ -267,7 +289,13 @@ export function ExternalContextImportSection({
 
   return (
     <>
-      <Accordion type="single" collapsible className="w-full">
+      <Accordion
+        type="single"
+        collapsible
+        value={sectionValue}
+        onValueChange={setSectionValue}
+        className="w-full"
+      >
         <AccordionItem value="external-context" className="rounded-xl border bg-muted/20 px-4">
           <AccordionTrigger className="py-4 hover:no-underline">
             <div className="space-y-1 text-left">
@@ -275,7 +303,12 @@ export function ExternalContextImportSection({
               <p className="text-sm font-normal text-muted-foreground">{t('description')}</p>
             </div>
           </AccordionTrigger>
-          <AccordionContent className="pb-4">
+          <AccordionContent
+            key={
+              preview ? `preview-${preview.sources.length}-${preview.contextText.length}` : 'idle'
+            }
+            className="pb-4"
+          >
             <Card className="border-dashed bg-background/80 shadow-xs">
               <CardContent className="space-y-5 pt-6">
                 <div className="space-y-2">
