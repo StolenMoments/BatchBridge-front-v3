@@ -88,6 +88,8 @@ export function ExternalContextImportSection({
   const [preview, setPreview] = useState<ContextPreviewResponse | null>(null)
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
+  const existingPr = attachments.find(a => a.fileName.endsWith('.pr'))
+
   useEffect(() => {
     if (toasts.length === 0) return
 
@@ -262,10 +264,17 @@ export function ExternalContextImportSection({
       return
     }
 
+    const hasNewPr = successSources.some(s => s.type === 'GITHUB_PR')
+
+    if (hasNewPr && existingPr) {
+      if (!window.confirm(t('messages.replacePrConfirm'))) {
+        return
+      }
+    }
+
     // 1번 요구사항: 개별 파일 저장 및 파일명 규칙 적용
     const nextAttachments: Attachment[] = successSources.map(source => {
       let fileName = ''
-      // promptId는 현재 컨텍스트에 없으므로 0 또는 플레이스홀더 사용
       const promptId = '0'
 
       if (source.type === 'JIRA') {
@@ -273,7 +282,6 @@ export function ExternalContextImportSection({
       } else if (source.type === 'CONFLUENCE') {
         fileName = `${source.id}.${promptId}.conf`
       } else if (source.type === 'GITHUB_PR') {
-        // GitHub PR URL에서 repo name 추출 (예: https://github.com/org/repo/pull/1)
         try {
           const url = new URL(githubPrUrl)
           const pathParts = url.pathname.split('/')
@@ -290,9 +298,16 @@ export function ExternalContextImportSection({
       }
     })
 
-    onAttachmentsChange([...attachments, ...nextAttachments])
+    // 2번 요구사항: GitHub PR 교체 시 기존 PR 삭제
+    let finalAttachments = [...attachments]
+    if (hasNewPr && existingPr) {
+      finalAttachments = finalAttachments.filter(a => a.fileName !== existingPr.fileName)
+    }
+
+    onAttachmentsChange([...finalAttachments, ...nextAttachments])
 
     setPreview(null)
+    setGithubPrUrl('')
     pushToast('success', t('messages.savedTitle'), t('messages.savedDescription'))
   }
 
@@ -310,7 +325,9 @@ export function ExternalContextImportSection({
             <Card className="border-dashed bg-background/80 shadow-xs">
               <CardContent className="space-y-5 pt-6">
                 <div className="space-y-2">
-                  <Label htmlFor="github-pr-url">{t('fields.githubPrUrl')}</Label>
+                  <Label htmlFor="github-pr-url">
+                    {existingPr ? t('fields.githubPrReplace') : t('fields.githubPrUrl')}
+                  </Label>
                   <Input
                     id="github-pr-url"
                     value={githubPrUrl}
@@ -322,6 +339,11 @@ export function ExternalContextImportSection({
                       setErrorMessage(null)
                     }}
                   />
+                  {existingPr && !githubPrUrl && (
+                    <p className="text-xs text-amber-600">
+                      {t('messages.existingPrInfo', { fileName: existingPr.fileName })}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -416,7 +438,7 @@ export function ExternalContextImportSection({
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={disabled || !preview?.contextText}
+                    disabled={disabled || !preview?.sources || preview.sources.length === 0}
                     onClick={handleConfirm}
                   >
                     <Plus className="mr-2 h-4 w-4" />
