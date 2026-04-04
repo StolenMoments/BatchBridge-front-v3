@@ -1,0 +1,56 @@
+{
+  "title": "컨텍스트 가져오기",
+  "description": "GitHub 파일이나 Jira 이슈 내용을 불러와 프롬프트에 바로 추가할 수 있습니다.",
+  "sourceLabel": "소스 {{index}}",
+  "sourceType": "소스 종류",
+  "sourceTypePlaceholder": "소스를 선택하세요",
+  "sourceTypes": {
+    "github": "GitHub 파일",
+    "jira": "Jira 이슈"
+  },
+  "fields": {
+    "owner": "Owner",
+    "repo": "Repository",
+    "path": "파일 경로",
+    "ref": "Ref (선택)",
+    "issueKey": "이슈 키"
+  },
+  "placeholders": {
+    "owner": "예: StolenMoments",
+    "repo": "예: BatchBridge-api-v2",
+    "path": "예: src/main/resources/messages_ko.properties",
+    "ref": "예: master 또는 feat_DEV-69",
+    "issueKey": "예: DEV-70"
+  },
+  "actions": {
+    "addSource": "소스 추가",
+    "removeSource": "제거",
+    "preview": "미리보기",
+    "importSelected": "선택한 컨텍스트 추가"
+  },
+  "preview": {
+    "title": "가져올 내용 미리보기",
+    "empty": "소스를 입력하고 미리보기를 실행하면 여기에 내용이 표시됩니다.",
+    "select": "프롬프트에 포함",
+    "loading": "불러오는 중..."
+  },
+  "helper": {
+    "importDescription": "선택한 항목은 `User Prompt` 하단에 컨텍스트 블록으로 추가됩니다."
+  },
+  "messages": {
+    "previewFailed": "미리보기에 실패했습니다.",
+    "successTitle": "컨텍스트를 가져왔습니다",
+    "successDescription": "{{count}}개 소스가 프롬프트에 추가되었습니다.",
+    "partialTitle": "일부 소스를 가져오지 못했습니다",
+    "partialDescription": "{{successCount}}개 성공, {{failedCount}}개 실패. 실패 항목을 확인하세요.",
+    "failedTitle": "컨텍스트 가져오기에 실패했습니다",
+    "failedDescription": "선택한 항목의 미리보기 결과가 없습니다. 먼저 미리보기를 실행하세요."
+  },
+  "errors": {
+    "sourceTypeRequired": "소스 종류를 선택하세요.",
+    "ownerRequired": "GitHub owner를 입력하세요.",
+    "repoRequired": "GitHub repository를 입력하세요.",
+    "pathRequired": "GitHub 파일 경로를 입력하세요.",
+    "issueKeyRequired": "Jira 이슈 키를 입력하세요."
+  }
+}

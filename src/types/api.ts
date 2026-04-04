@@ -61,6 +61,24 @@ export interface ApiResponse<T> {
   error?: ApiErrorPayload
 }
 
+export type ExternalContextSourceType = 'github' | 'jira'
+
+export interface GithubPreviewRequest {
+  owner: string
+  repo: string
+  path: string
+  ref?: string
+}
+
+export interface JiraPreviewRequest {
+  issueKey: string
+}
+
+export interface ExternalContextPreviewResponse {
+  label: string
+  content: string
+}
+
 export interface PaginatedResponse<T> {
   content: T[]
   totalElements: number

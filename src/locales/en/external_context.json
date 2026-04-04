@@ -1,0 +1,56 @@
+{
+  "title": "Import Context",
+  "description": "Fetch GitHub file contents or Jira issue details and append them to the prompt.",
+  "sourceLabel": "Source {{index}}",
+  "sourceType": "Source Type",
+  "sourceTypePlaceholder": "Select a source",
+  "sourceTypes": {
+    "github": "GitHub File",
+    "jira": "Jira Issue"
+  },
+  "fields": {
+    "owner": "Owner",
+    "repo": "Repository",
+    "path": "File Path",
+    "ref": "Ref (Optional)",
+    "issueKey": "Issue Key"
+  },
+  "placeholders": {
+    "owner": "e.g. StolenMoments",
+    "repo": "e.g. BatchBridge-api-v2",
+    "path": "e.g. src/main/resources/messages_en.properties",
+    "ref": "e.g. master or feat_DEV-69",
+    "issueKey": "e.g. DEV-70"
+  },
+  "actions": {
+    "addSource": "Add source",
+    "removeSource": "Remove",
+    "preview": "Preview",
+    "importSelected": "Add selected context"
+  },
+  "preview": {
+    "title": "Preview",
+    "empty": "Enter a source and run preview to show the fetched content here.",
+    "select": "Include in prompt",
+    "loading": "Loading..."
+  },
+  "helper": {
+    "importDescription": "Selected items are appended to the bottom of the user prompt as context blocks."
+  },
+  "messages": {
+    "previewFailed": "Preview failed.",
+    "successTitle": "Context imported",
+    "successDescription": "{{count}} source(s) added to prompt.",
+    "partialTitle": "Some sources failed",
+    "partialDescription": "{{successCount}} succeeded, {{failedCount}} failed. Please check the failed items.",
+    "failedTitle": "Context import failed",
+    "failedDescription": "Selected items do not have preview results yet. Run preview first."
+  },
+  "errors": {
+    "sourceTypeRequired": "Select a source type.",
+    "ownerRequired": "Enter the GitHub owner.",
+    "repoRequired": "Enter the GitHub repository.",
+    "pathRequired": "Enter the GitHub file path.",
+    "issueKeyRequired": "Enter the Jira issue key."
+  }
+}
