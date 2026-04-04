@@ -191,7 +191,24 @@ export function ExternalContextImportSection({
   }
 
   const handlePreview = async () => {
-    if (!githubPrUrl.trim() && jiraKeys.length === 0 && confluencePageIds.length === 0) {
+    // Auto-commit any pending draft values before preview
+    const finalJiraKeys = [...jiraKeys]
+    const sanitizedJiraDraft = sanitizeToken(jiraDraft)
+    if (sanitizedJiraDraft && !finalJiraKeys.includes(sanitizedJiraDraft)) {
+      finalJiraKeys.push(sanitizedJiraDraft)
+      setJiraKeys(finalJiraKeys)
+      setJiraDraft('')
+    }
+
+    const finalConfluencePageIds = [...confluencePageIds]
+    const sanitizedConfluenceDraft = sanitizeToken(confluenceDraft)
+    if (sanitizedConfluenceDraft && !finalConfluencePageIds.includes(sanitizedConfluenceDraft)) {
+      finalConfluencePageIds.push(sanitizedConfluenceDraft)
+      setConfluencePageIds(finalConfluencePageIds)
+      setConfluenceDraft('')
+    }
+
+    if (!githubPrUrl.trim() && finalJiraKeys.length === 0 && finalConfluencePageIds.length === 0) {
       setErrorMessage(t('errors.emptySources'))
       setPreview(null)
       return
@@ -203,8 +220,8 @@ export function ExternalContextImportSection({
     try {
       const response = await externalContextService.preview({
         githubPrUrl: githubPrUrl.trim() || undefined,
-        jiraKeys,
-        confluencePageIds,
+        jiraKeys: finalJiraKeys,
+        confluencePageIds: finalConfluencePageIds,
       })
 
       if (!response.success) {
