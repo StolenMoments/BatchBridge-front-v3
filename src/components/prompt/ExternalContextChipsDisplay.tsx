@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 
-const EXTERNAL_EXTENSIONS = ['.jira', '.conf', '.pr'] as const
+const EXTERNAL_EXTENSIONS = ['.jira', '.conf', '.github'] as const
 
 export function isExternalContextFile(fileName: string): boolean {
   return EXTERNAL_EXTENSIONS.some(ext => fileName.endsWith(ext))
@@ -32,9 +32,12 @@ function parseFileName(fileName: string): ParsedExternalFile {
   if (fileName.endsWith('.conf')) {
     return { type: 'confluence', label: fileName.split('.')[0] }
   }
-  // .pr: repoName.#prNumber.pr → "repoName #prNumber"
-  const base = fileName.slice(0, -3)
-  return { type: 'pr', label: base.replace(/\.#/, ' #') }
+  // .github: {repo}.{prNumber}.{promptId}.github → "repo #prNumber"
+  const base = fileName.slice(0, -7) // remove '.github'
+  const parts = base.split('.')
+  const prNumber = parts[parts.length - 2]
+  const repoName = parts.slice(0, -2).join('.')
+  return { type: 'pr', label: `${repoName} #${prNumber}` }
 }
 
 interface ExternalContextChipsDisplayProps {
