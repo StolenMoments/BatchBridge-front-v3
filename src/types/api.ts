@@ -81,7 +81,7 @@ export interface ContextPreviewSource {
 }
 
 export interface ContextPreviewResponse {
-  contextText: string
+  formattedText: string
   sources: ContextPreviewSource[]
 }
 

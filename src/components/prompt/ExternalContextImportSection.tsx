@@ -46,12 +46,6 @@ function appendUniqueToken(items: string[], value: string): string[] {
   if (!normalized || items.includes(normalized)) return items
   return [...items, normalized]
 }
-
-function buildAttachmentFileName(): string {
-  const timestamp = new Date().toISOString().replaceAll(':', '-')
-  return `context-preview-${timestamp}.md`
-}
-
 function getSourceTypeLabel(
   t: ReturnType<typeof useTranslation>['t'],
   source: ContextPreviewSource
@@ -351,7 +345,7 @@ export function ExternalContextImportSection({
           </AccordionTrigger>
           <AccordionContent
             key={
-              preview ? `preview-${preview.sources.length}-${preview.contextText.length}` : 'idle'
+              preview ? `preview-${preview.sources.length}-${preview.formattedText.length}` : 'idle'
             }
             className="pb-4"
           >
