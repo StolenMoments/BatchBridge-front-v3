@@ -91,7 +91,7 @@ export function ExternalContextImportSection({
   const [preview, setPreview] = useState<ContextPreviewResponse | null>(null)
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
-  const existingPr = attachments.find(a => a.fileName.endsWith('.pr'))
+  const existingPr = attachments.find(a => a.fileName.endsWith('.github'))
 
   useEffect(() => {
     if (toasts.length === 0) return
