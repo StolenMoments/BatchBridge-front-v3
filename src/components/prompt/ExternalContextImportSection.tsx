@@ -95,6 +95,8 @@ export function ExternalContextImportSection({
   const [preview, setPreview] = useState<ContextPreviewResponse | null>(null)
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
+  const existingPr = attachments.find(a => a.fileName.endsWith('.pr'))
+
   useEffect(() => {
     if (toasts.length === 0) return
 
@@ -270,20 +272,64 @@ export function ExternalContextImportSection({
   }
 
   const handleConfirm = () => {
-    if (!preview?.contextText.trim()) {
+    if (!preview?.sources || preview.sources.length === 0) {
       pushToast('error', t('messages.confirmFailedTitle'), t('messages.confirmFailedDescription'))
       return
     }
 
-    onAttachmentsChange([
-      ...attachments,
-      {
-        fileName: buildAttachmentFileName(),
-        fileContent: preview.contextText,
-      },
-    ])
+    const successSources = preview.sources.filter(
+      source => source.status === 'SUCCESS' && source.formattedText
+    )
+
+    if (successSources.length === 0) {
+      pushToast('error', t('messages.confirmFailedTitle'), t('messages.confirmFailedDescription'))
+      return
+    }
+
+    const hasNewPr = successSources.some(s => s.type === 'GITHUB_PR')
+
+    if (hasNewPr && existingPr) {
+      if (!window.confirm(t('messages.replacePrConfirm'))) {
+        return
+      }
+    }
+
+    // 1번 요구사항: 개별 파일 저장 및 파일명 규칙 적용
+    const nextAttachments: Attachment[] = successSources.map(source => {
+      let fileName = ''
+      const promptId = '0'
+
+      if (source.type === 'JIRA') {
+        fileName = `${source.id}.${promptId}.jira`
+      } else if (source.type === 'CONFLUENCE') {
+        fileName = `${source.id}.${promptId}.conf`
+      } else if (source.type === 'GITHUB_PR') {
+        try {
+          const url = new URL(githubPrUrl)
+          const pathParts = url.pathname.split('/')
+          const repoName = pathParts[2] || 'github'
+          fileName = `${repoName}.#${source.id}.pr`
+        } catch {
+          fileName = `github-pr.#${source.id}.pr`
+        }
+      }
+
+      return {
+        fileName,
+        fileContent: source.formattedText as string,
+      }
+    })
+
+    // 2번 요구사항: GitHub PR 교체 시 기존 PR 삭제
+    let finalAttachments = [...attachments]
+    if (hasNewPr && existingPr) {
+      finalAttachments = finalAttachments.filter(a => a.fileName !== existingPr.fileName)
+    }
+
+    onAttachmentsChange([...finalAttachments, ...nextAttachments])
 
     setPreview(null)
+    setGithubPrUrl('')
     pushToast('success', t('messages.savedTitle'), t('messages.savedDescription'))
   }
 
@@ -312,7 +358,9 @@ export function ExternalContextImportSection({
             <Card className="border-dashed bg-background/80 shadow-xs">
               <CardContent className="space-y-5 pt-6">
                 <div className="space-y-2">
-                  <Label htmlFor="github-pr-url">{t('fields.githubPrUrl')}</Label>
+                  <Label htmlFor="github-pr-url">
+                    {existingPr ? t('fields.githubPrReplace') : t('fields.githubPrUrl')}
+                  </Label>
                   <Input
                     id="github-pr-url"
                     value={githubPrUrl}
@@ -324,6 +372,11 @@ export function ExternalContextImportSection({
                       setErrorMessage(null)
                     }}
                   />
+                  {existingPr && !githubPrUrl && (
+                    <p className="text-xs text-amber-600">
+                      {t('messages.existingPrInfo', { fileName: existingPr.fileName })}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-3">
@@ -418,27 +471,33 @@ export function ExternalContextImportSection({
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={disabled || !preview?.contextText}
+                    disabled={disabled || !preview?.sources || preview.sources.length === 0}
                     onClick={handleConfirm}
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    {t('actions.confirm')}
+                    {existingPr && githubPrUrl.trim()
+                      ? t('actions.replace')
+                      : t('actions.confirm')}
                   </Button>
                 </div>
 
                 {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
 
                 {preview ? (
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">{t('preview.sourcesTitle')}</p>
-                      <div className="space-y-2">
-                        {preview.sources.map(source => (
-                          <div
-                            key={`${source.type}-${source.id}`}
-                            className="rounded-lg border bg-muted/30 px-3 py-2"
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">{t('preview.sourcesTitle')}</p>
+                    <Accordion type="multiple" className="space-y-2">
+                      {preview.sources.map(source => (
+                        <AccordionItem
+                          key={`${source.type}-${source.id}`}
+                          value={`${source.type}-${source.id}`}
+                          className="rounded-lg border bg-muted/30 px-3"
+                        >
+                          <AccordionTrigger
+                            className="py-2 hover:no-underline"
+                            disabled={source.status !== 'SUCCESS' || !source.formattedText}
                           >
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex flex-wrap items-center gap-2 text-left">
                               <Badge
                                 variant="outline"
                                 className={cn('border', getBadgeClasses(source))}
@@ -454,27 +513,20 @@ export function ExternalContextImportSection({
                                 {getSourceTypeLabel(t, source)}
                               </span>
                               <span className="text-sm font-medium">{source.title}</span>
+                              {source.error ? (
+                                <span className="text-xs text-destructive">{source.error}</span>
+                              ) : null}
                             </div>
-                            <p className="mt-1 text-xs text-muted-foreground">
-                              {source.id}
-                              {source.error ? ` • ${source.error}` : ''}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <Accordion type="single" collapsible defaultValue="context-preview">
-                      <AccordionItem value="context-preview" className="rounded-lg border px-3">
-                        <AccordionTrigger className="py-3 text-sm hover:no-underline">
-                          {t('preview.contextTitle')}
-                        </AccordionTrigger>
-                        <AccordionContent className="pb-3">
-                          <pre className="max-h-72 overflow-y-auto text-xs break-words whitespace-pre-wrap text-muted-foreground">
-                            {preview.contextText}
-                          </pre>
-                        </AccordionContent>
-                      </AccordionItem>
+                          </AccordionTrigger>
+                          {source.status === 'SUCCESS' && source.formattedText ? (
+                            <AccordionContent className="pb-3">
+                              <pre className="max-h-72 overflow-y-auto rounded-md border bg-background p-3 text-xs break-words whitespace-pre-wrap text-muted-foreground">
+                                {source.formattedText}
+                              </pre>
+                            </AccordionContent>
+                          ) : null}
+                        </AccordionItem>
+                      ))}
                     </Accordion>
                   </div>
                 ) : null}

@@ -3,6 +3,7 @@
   "description": "Fetch a GitHub PR, Jira issues, and Confluence pages into prompt attachments.",
   "fields": {
     "githubPrUrl": "GitHub PR URL",
+    "githubPrReplace": "Replace GitHub PR",
     "jiraKeys": "Jira Keys",
     "confluencePageIds": "Confluence Page IDs"
   },
@@ -14,7 +15,8 @@
   "actions": {
     "preview": "Preview",
     "previewLoading": "Loading...",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "replace": "Replace"
   },
   "sources": {
     "github": "GitHub PR",
@@ -23,7 +25,12 @@
   },
   "preview": {
     "sourcesTitle": "Source Results",
-    "contextTitle": "Context Preview"
+    "contextTitle": "Context Preview",
+    "viewContent": "View Content"
+  },
+  "importedContext": {
+    "title": "Imported Context",
+    "dialogTitle": "Context Detail"
   },
   "messages": {
     "successTitle": "Context imported",
@@ -38,7 +45,9 @@
     "savedDescription": "The previewed context was added as an attachment.",
     "duplicateTitle": "Already added",
     "duplicateJira": "That Jira key is already in the list.",
-    "duplicateConfluence": "That Confluence page ID is already in the list."
+    "duplicateConfluence": "That Confluence page ID is already in the list.",
+    "existingPrInfo": "Currently attached PR: {{fileName}}",
+    "replacePrConfirm": "A GitHub PR is already attached. Do you want to replace it?"
   },
   "errors": {
     "emptySources": "Enter at least one source before previewing."
