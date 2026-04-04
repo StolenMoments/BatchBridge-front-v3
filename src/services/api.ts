@@ -112,7 +112,18 @@ export const modelService = {
 
 export const externalContextService = {
   preview: async (data: ContextPreviewRequest) => {
-    const response = await api.post<ApiResponse<ContextPreviewResponse>>('/context/preview', data)
-    return response.data
+    const response = await api.post<ApiResponse<ContextPreviewResponse> | ContextPreviewResponse>(
+      '/context/preview',
+      data
+    )
+
+    if ('success' in response.data) {
+      return response.data
+    }
+
+    return {
+      success: true,
+      data: response.data,
+    }
   },
 }
