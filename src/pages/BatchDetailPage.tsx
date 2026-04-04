@@ -25,6 +25,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import type { Attachment, Batch, BatchStatus } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
+import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import {
@@ -57,7 +58,7 @@ const statusAppearanceMap: Record<BatchStatus, { color: string; icon: LucideIcon
 }
 
 export function BatchDetailPage() {
-  const { t } = useTranslation(['batch', 'common'])
+  const { t } = useTranslation(['batch', 'common', 'external_context'])
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [batch, setBatch] = useState<Batch | null>(null)
@@ -478,6 +479,14 @@ export function BatchDetailPage() {
                         }
                       />
                     </div>
+
+                    <ExternalContextImportSection
+                      disabled={isAttachmentPending}
+                      attachments={newPrompt.attachments}
+                      onAttachmentsChange={attachments =>
+                        setNewPrompt(prev => ({ ...prev, attachments }))
+                      }
+                    />
 
                     <PromptAttachmentsField
                       attachments={newPrompt.attachments}

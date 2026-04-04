@@ -5,6 +5,8 @@ import type {
   ApiResponse,
   Batch,
   BatchListItem,
+  ContextPreviewRequest,
+  ContextPreviewResponse,
   Model,
   PaginatedResponse,
   Prompt,
@@ -104,6 +106,13 @@ export const batchService = {
 export const modelService = {
   getModels: async () => {
     const response = await api.get<ApiResponse<Model[]>>('/models')
+    return response.data
+  },
+}
+
+export const externalContextService = {
+  preview: async (data: ContextPreviewRequest) => {
+    const response = await api.post<ApiResponse<ContextPreviewResponse>>('/context/preview', data)
     return response.data
   },
 }

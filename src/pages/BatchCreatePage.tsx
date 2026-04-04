@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom'
 import type { Attachment, Model } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert.tsx'
+import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import { Button } from '@/components/ui/button'
@@ -31,7 +32,7 @@ import { getApiErrorMessage } from '@/lib/api-error'
 import { batchService, modelService } from '@/services/api'
 
 export function BatchCreatePage() {
-  const { t } = useTranslation(['batch', 'common'])
+  const { t } = useTranslation(['batch', 'common', 'external_context'])
   const navigate = useNavigate()
   const [models, setModels] = useState<Model[]>([])
   const [loadingModels, setLoadingModels] = useState(false)
@@ -214,6 +215,12 @@ export function BatchCreatePage() {
                 onChange={event => setFormData({ ...formData, userPrompt: event.target.value })}
               />
             </div>
+
+            <ExternalContextImportSection
+              disabled={submitting || attachmentsPending}
+              attachments={formData.attachments}
+              onAttachmentsChange={attachments => setFormData(prev => ({ ...prev, attachments }))}
+            />
 
             <PromptAttachmentsField
               attachments={formData.attachments}

@@ -61,6 +61,29 @@ export interface ApiResponse<T> {
   error?: ApiErrorPayload
 }
 
+export type ContextPreviewSourceType = 'GITHUB_PR' | 'JIRA' | 'CONFLUENCE'
+
+export type ContextPreviewSourceStatus = 'SUCCESS' | 'FAILED'
+
+export interface ContextPreviewRequest {
+  githubPrUrl?: string
+  jiraKeys: string[]
+  confluencePageIds: string[]
+}
+
+export interface ContextPreviewSource {
+  type: ContextPreviewSourceType
+  id: string
+  title: string
+  status: ContextPreviewSourceStatus
+  error?: string
+}
+
+export interface ContextPreviewResponse {
+  contextText: string
+  sources: ContextPreviewSource[]
+}
+
 export interface PaginatedResponse<T> {
   content: T[]
   totalElements: number

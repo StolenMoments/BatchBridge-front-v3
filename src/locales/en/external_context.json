@@ -1,0 +1,46 @@
+{
+  "title": "Import Context",
+  "description": "Fetch a GitHub PR, Jira issues, and Confluence pages into prompt attachments.",
+  "fields": {
+    "githubPrUrl": "GitHub PR URL",
+    "jiraKeys": "Jira Keys",
+    "confluencePageIds": "Confluence Page IDs"
+  },
+  "placeholders": {
+    "githubPrUrl": "https://github.com/org/repo/pull/1",
+    "jiraKeys": "Type a Jira key and press Enter",
+    "confluencePageIds": "Type a page ID and press Enter"
+  },
+  "actions": {
+    "preview": "Preview",
+    "previewLoading": "Loading...",
+    "confirm": "Confirm"
+  },
+  "sources": {
+    "github": "GitHub PR",
+    "jira": "Jira",
+    "confluence": "Confluence"
+  },
+  "preview": {
+    "sourcesTitle": "Source Results",
+    "contextTitle": "Context Preview"
+  },
+  "messages": {
+    "successTitle": "Context imported",
+    "successDescription": "{{count}} source(s) were fetched successfully.",
+    "partialTitle": "Some sources failed",
+    "partialDescription": "{{successCount}} succeeded, {{failedCount}} failed. Check the failed items.",
+    "requestFailedTitle": "Request failed",
+    "requestFailedDescription": "There was a problem communicating with the server. Please try again shortly.",
+    "confirmFailedTitle": "Nothing to save",
+    "confirmFailedDescription": "Run preview first to generate context text.",
+    "savedTitle": "Context saved",
+    "savedDescription": "The previewed context was added as an attachment.",
+    "duplicateTitle": "Already added",
+    "duplicateJira": "That Jira key is already in the list.",
+    "duplicateConfluence": "That Confluence page ID is already in the list."
+  },
+  "errors": {
+    "emptySources": "Enter at least one source before previewing."
+  }
+}
