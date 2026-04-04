@@ -89,6 +89,7 @@ export function ExternalContextImportSection({
   const [jiraKeys, setJiraKeys] = useState<string[]>([])
   const [confluenceDraft, setConfluenceDraft] = useState('')
   const [confluencePageIds, setConfluencePageIds] = useState<string[]>([])
+  const [sectionValue, setSectionValue] = useState<string | undefined>(undefined)
   const [loading, setLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [preview, setPreview] = useState<ContextPreviewResponse | null>(null)
@@ -236,6 +237,7 @@ export function ExternalContextImportSection({
       }
 
       setPreview(response.data)
+      setSectionValue('external-context')
 
       const successCount = response.data.sources.filter(
         source => source.status === 'SUCCESS'
@@ -287,7 +289,13 @@ export function ExternalContextImportSection({
 
   return (
     <>
-      <Accordion type="single" collapsible className="w-full">
+      <Accordion
+        type="single"
+        collapsible
+        value={sectionValue}
+        onValueChange={setSectionValue}
+        className="w-full"
+      >
         <AccordionItem value="external-context" className="rounded-xl border bg-muted/20 px-4">
           <AccordionTrigger className="py-4 hover:no-underline">
             <div className="space-y-1 text-left">
@@ -295,7 +303,12 @@ export function ExternalContextImportSection({
               <p className="text-sm font-normal text-muted-foreground">{t('description')}</p>
             </div>
           </AccordionTrigger>
-          <AccordionContent className="pb-4">
+          <AccordionContent
+            key={
+              preview ? `preview-${preview.sources.length}-${preview.contextText.length}` : 'idle'
+            }
+            className="pb-4"
+          >
             <Card className="border-dashed bg-background/80 shadow-xs">
               <CardContent className="space-y-5 pt-6">
                 <div className="space-y-2">
