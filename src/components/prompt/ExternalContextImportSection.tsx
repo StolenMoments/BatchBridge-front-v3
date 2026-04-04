@@ -265,7 +265,7 @@ export function ExternalContextImportSection({
   }
 
   const handleConfirm = () => {
-    if (!preview?.contextText.trim()) {
+    if (!preview?.formattedText.trim()) {
       pushToast('error', t('messages.confirmFailedTitle'), t('messages.confirmFailedDescription'))
       return
     }
@@ -274,7 +274,7 @@ export function ExternalContextImportSection({
       ...attachments,
       {
         fileName: buildAttachmentFileName(),
-        fileContent: preview.contextText,
+        fileContent: preview.formattedText,
       },
     ])
 
@@ -402,7 +402,7 @@ export function ExternalContextImportSection({
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={disabled || !preview?.contextText}
+                    disabled={disabled || !preview?.formattedText}
                     onClick={handleConfirm}
                   >
                     <Plus className="mr-2 h-4 w-4" />
@@ -455,7 +455,7 @@ export function ExternalContextImportSection({
                         </AccordionTrigger>
                         <AccordionContent className="pb-3">
                           <pre className="max-h-72 overflow-y-auto text-xs break-words whitespace-pre-wrap text-muted-foreground">
-                            {preview.contextText}
+                            {preview.formattedText}
                           </pre>
                         </AccordionContent>
                       </AccordionItem>
