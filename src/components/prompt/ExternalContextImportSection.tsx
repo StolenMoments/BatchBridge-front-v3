@@ -248,18 +248,49 @@ export function ExternalContextImportSection({
   }
 
   const handleConfirm = () => {
-    if (!preview?.contextText.trim()) {
+    if (!preview?.sources || preview.sources.length === 0) {
       pushToast('error', t('messages.confirmFailedTitle'), t('messages.confirmFailedDescription'))
       return
     }
 
-    onAttachmentsChange([
-      ...attachments,
-      {
-        fileName: buildAttachmentFileName(),
-        fileContent: preview.contextText,
-      },
-    ])
+    const successSources = preview.sources.filter(
+      source => source.status === 'SUCCESS' && source.formattedText
+    )
+
+    if (successSources.length === 0) {
+      pushToast('error', t('messages.confirmFailedTitle'), t('messages.confirmFailedDescription'))
+      return
+    }
+
+    // 1번 요구사항: 개별 파일 저장 및 파일명 규칙 적용
+    const nextAttachments: Attachment[] = successSources.map(source => {
+      let fileName = ''
+      // promptId는 현재 컨텍스트에 없으므로 0 또는 플레이스홀더 사용
+      const promptId = '0'
+
+      if (source.type === 'JIRA') {
+        fileName = `${source.id}.${promptId}.jira`
+      } else if (source.type === 'CONFLUENCE') {
+        fileName = `${source.id}.${promptId}.conf`
+      } else if (source.type === 'GITHUB_PR') {
+        // GitHub PR URL에서 repo name 추출 (예: https://github.com/org/repo/pull/1)
+        try {
+          const url = new URL(githubPrUrl)
+          const pathParts = url.pathname.split('/')
+          const repoName = pathParts[2] || 'github'
+          fileName = `${repoName}.#${source.id}.pr`
+        } catch {
+          fileName = `github-pr.#${source.id}.pr`
+        }
+      }
+
+      return {
+        fileName,
+        fileContent: source.formattedText as string,
+      }
+    })
+
+    onAttachmentsChange([...attachments, ...nextAttachments])
 
     setPreview(null)
     pushToast('success', t('messages.savedTitle'), t('messages.savedDescription'))

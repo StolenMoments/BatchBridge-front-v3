@@ -77,6 +77,7 @@ export interface ContextPreviewSource {
   title: string
   status: ContextPreviewSourceStatus
   error?: string
+  formattedText?: string | null
 }
 
 export interface ContextPreviewResponse {
