@@ -23,6 +23,7 @@ import type { Attachment, BatchStatus, Prompt } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { ExternalContextChipsDisplay } from '@/components/prompt/ExternalContextChipsDisplay'
+import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import { Badge } from '@/components/ui/badge'
@@ -291,6 +292,12 @@ export function PromptDetailPage() {
                       rows={10}
                     />
                   </div>
+                  <ExternalContextImportSection
+                    attachments={editAttachments}
+                    disabled={isUpdating || isAttachmentPending}
+                    promptId={promptId}
+                    onAttachmentsChange={setEditAttachments}
+                  />
                   <ExternalContextChipsDisplay
                     attachments={editAttachments}
                     onRemove={fileName =>

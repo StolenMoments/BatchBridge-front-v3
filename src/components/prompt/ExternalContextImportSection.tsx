@@ -23,6 +23,7 @@ import { externalContextService } from '@/services/api'
 interface ExternalContextImportSectionProps {
   attachments: Attachment[]
   disabled?: boolean
+  promptId?: string | number
   onAttachmentsChange: (attachments: Attachment[]) => void
 }
 
@@ -72,6 +73,7 @@ function getBadgeClasses(source: ContextPreviewSource): string {
 export function ExternalContextImportSection({
   attachments,
   disabled = false,
+  promptId,
   onAttachmentsChange,
 }: ExternalContextImportSectionProps) {
   const { t } = useTranslation('external_context')
@@ -289,22 +291,22 @@ export function ExternalContextImportSection({
     }
 
     // 1번 요구사항: 개별 파일 저장 및 파일명 규칙 적용
+    const resolvedPromptId = promptId ?? '0'
     const nextAttachments: Attachment[] = successSources.map(source => {
       let fileName = ''
-      const promptId = '0'
 
       if (source.type === 'JIRA') {
-        fileName = `${source.id}.${promptId}.jira`
+        fileName = `${source.id}.${resolvedPromptId}.jira`
       } else if (source.type === 'CONFLUENCE') {
-        fileName = `${source.id}.${promptId}.conf`
+        fileName = `${source.id}.${resolvedPromptId}.conf`
       } else if (source.type === 'GITHUB_PR') {
         try {
           const url = new URL(githubPrUrl)
           const pathParts = url.pathname.split('/')
           const repoName = pathParts[2] || 'github'
-          fileName = `${repoName}.#${source.id}.pr`
+          fileName = `${repoName}.${source.id}.${resolvedPromptId}.github`
         } catch {
-          fileName = `github-pr.#${source.id}.pr`
+          fileName = `github-pr.${source.id}.${resolvedPromptId}.github`
         }
       }
 
