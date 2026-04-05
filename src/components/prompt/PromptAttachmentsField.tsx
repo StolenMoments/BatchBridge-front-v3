@@ -5,8 +5,6 @@ import { useTranslation } from 'react-i18next'
 import type { Attachment } from '@/types/api'
 import type { ChangeEvent, DragEvent, KeyboardEvent } from 'react'
 
-import { isExternalContextFile } from '@/components/prompt/ExternalContextChipsDisplay'
-
 import {
   Accordion,
   AccordionContent,
@@ -15,6 +13,7 @@ import {
 } from '@/components/ui/accordion'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
+import { isExternalContextFile } from '@/lib/utils'
 
 const allowedExtensions = [
   'txt',

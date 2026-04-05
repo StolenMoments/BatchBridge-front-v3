@@ -5,18 +5,8 @@ import { useTranslation } from 'react-i18next'
 import type { Attachment } from '@/types/api'
 
 import { Badge } from '@/components/ui/badge'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
-
-const EXTERNAL_EXTENSIONS = ['.jira', '.conf', '.github'] as const
-
-export function isExternalContextFile(fileName: string): boolean {
-  return EXTERNAL_EXTENSIONS.some(ext => fileName.endsWith(ext))
-}
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { isExternalContextFile } from '@/lib/utils'
 
 type ExternalFileType = 'jira' | 'confluence' | 'pr'
 

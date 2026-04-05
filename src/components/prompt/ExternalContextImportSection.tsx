@@ -24,6 +24,7 @@ interface ExternalContextImportSectionProps {
   attachments: Attachment[]
   disabled?: boolean
   promptId?: string | number
+  resetToken?: number
   onAttachmentsChange: (attachments: Attachment[]) => void
 }
 
@@ -74,6 +75,7 @@ export function ExternalContextImportSection({
   attachments,
   disabled = false,
   promptId,
+  resetToken = 0,
   onAttachmentsChange,
 }: ExternalContextImportSectionProps) {
   const { t } = useTranslation('external_context')
@@ -92,6 +94,17 @@ export function ExternalContextImportSection({
   const [toasts, setToasts] = useState<ToastItem[]>([])
 
   const existingPr = attachments.find(a => a.fileName.endsWith('.github'))
+
+  useEffect(() => {
+    setGithubPrUrl('')
+    setJiraDraft('')
+    setJiraKeys([])
+    setConfluenceDraft('')
+    setConfluencePageIds([])
+    setSectionValue(undefined)
+    setErrorMessage(null)
+    setPreview(null)
+  }, [resetToken])
 
   useEffect(() => {
     if (toasts.length === 0) return
@@ -347,7 +360,9 @@ export function ExternalContextImportSection({
           </AccordionTrigger>
           <AccordionContent
             key={
-              preview ? `preview-${preview.sources.length}-${preview.sources.filter(s => s.status === 'SUCCESS').length}` : 'idle'
+              preview
+                ? `preview-${preview.sources.length}-${preview.sources.filter(s => s.status === 'SUCCESS').length}`
+                : 'idle'
             }
             className="pb-4"
           >
@@ -471,9 +486,7 @@ export function ExternalContextImportSection({
                     onClick={handleConfirm}
                   >
                     <Plus className="mr-2 h-4 w-4" />
-                    {existingPr && githubPrUrl.trim()
-                      ? t('actions.replace')
-                      : t('actions.confirm')}
+                    {existingPr && githubPrUrl.trim() ? t('actions.replace') : t('actions.confirm')}
                   </Button>
                 </div>
 

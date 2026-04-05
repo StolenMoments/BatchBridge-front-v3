@@ -75,6 +75,7 @@ export function BatchDetailPage() {
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const [isAttachmentPending, setIsAttachmentPending] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [externalContextResetToken, setExternalContextResetToken] = useState(0)
 
   const batchStatusLabelMap: Record<BatchStatus, string> = {
     DRAFT: t('status.draft', { ns: 'common' }),
@@ -200,6 +201,7 @@ export function BatchDetailPage() {
         setNewPrompt({ label: '', systemPrompt: '', userPrompt: '', attachments: [] })
         setAttachmentError(null)
         setErrorMessage(null)
+        setExternalContextResetToken(prev => prev + 1)
 
         if (response.data) {
           setBatch(prev => {
@@ -482,6 +484,7 @@ export function BatchDetailPage() {
 
                     <ExternalContextImportSection
                       disabled={isAttachmentPending}
+                      resetToken={externalContextResetToken}
                       attachments={newPrompt.attachments}
                       onAttachmentsChange={attachments =>
                         setNewPrompt(prev => ({ ...prev, attachments }))
