@@ -18,6 +18,11 @@
     "text": "Text",
     "noResponseContent": "No response content."
   },
+  "edit": {
+    "notAllowed": "Not allowed to edit in this status.",
+    "backToDetail": "Back to detail",
+    "description": "Modify prompt content."
+  },
   "attachments": {
     "label": "Attachments",
     "helper": "Click or drag and drop files to attach them.",

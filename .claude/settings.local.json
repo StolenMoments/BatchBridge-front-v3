@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/lee/.claude/skills/atlassian/**)",
+      "Bash(python3 atlassian.py --service jira --action info --target_id DEV-81)",
+      "Bash(python atlassian.py --service jira --action info --target_id DEV-81)",
+      "mcp__claude_ai_Atlassian__getAccessibleAtlassianResources",
+      "mcp__claude_ai_Atlassian__editJiraIssue"
+    ]
+  }
+}

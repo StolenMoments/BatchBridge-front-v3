@@ -18,6 +18,11 @@
     "text": "Text",
     "noResponseContent": "응답 내용이 없습니다."
   },
+  "edit": {
+    "notAllowed": "수정할 수 없는 상태입니다.",
+    "backToDetail": "상세 페이지로 돌아가기",
+    "description": "프롬프트 내용을 수정합니다."
+  },
   "attachments": {
     "label": "첨부 파일",
     "helper": "클릭하거나 파일을 끌어다 놓아 첨부하세요.",
