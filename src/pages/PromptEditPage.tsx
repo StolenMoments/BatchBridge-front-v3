@@ -171,7 +171,7 @@ export function PromptEditPage() {
         </Button>
         <div>
           <h1 className="text-3xl font-bold tracking-tight">{t('detail.editTitle')}</h1>
-          <p className="text-muted-foreground">{t('detail.subtitle')}</p>
+          <p className="text-muted-foreground">{t('edit.description')}</p>
         </div>
       </div>
 
@@ -217,7 +217,6 @@ export function PromptEditPage() {
             </div>
 
             <div className="space-y-4 border-t pt-4">
-              <Label className="text-base font-semibold">{t('detail.attachments')}</Label>
               <ExternalContextImportSection
                 attachments={editAttachments}
                 disabled={isUpdating || isAttachmentPending}
