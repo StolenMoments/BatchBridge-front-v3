@@ -19,13 +19,11 @@ import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import type { Attachment, BatchStatus, Prompt } from '@/types/api'
+import type { BatchStatus, Prompt } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { ExternalContextChipsDisplay } from '@/components/prompt/ExternalContextChipsDisplay'
-import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
-import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -37,10 +35,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Textarea } from '@/components/ui/textarea'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
 import { batchService } from '@/services/api'
 
@@ -51,14 +46,7 @@ export function PromptDetailPage() {
   const [prompt, setPrompt] = useState<Prompt | null>(null)
   const [batchStatus, setBatchStatus] = useState<BatchStatus | null>(null)
   const [loading, setLoading] = useState(true)
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [editLabel, setEditLabel] = useState('')
-  const [editUserPrompt, setEditUserPrompt] = useState('')
-  const [editAttachments, setEditAttachments] = useState<Attachment[]>([])
-  const [attachmentError, setAttachmentError] = useState<string | null>(null)
-  const [isAttachmentPending, setIsAttachmentPending] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
@@ -78,18 +66,6 @@ export function PromptDetailPage() {
     PENDING: { color: 'bg-amber-500', icon: Clock },
   }
 
-  const haveAttachmentsChanged = (current: Attachment[], next: Attachment[]) => {
-    if (current.length !== next.length) return true
-
-    return current.some((attachment, index) => {
-      const nextAttachment = next[index]
-      return (
-        attachment.fileName !== nextAttachment?.fileName ||
-        attachment.fileContent !== nextAttachment?.fileContent
-      )
-    })
-  }
-
   useEffect(() => {
     const fetchData = async () => {
       if (!batchId || !promptId) return
@@ -103,9 +79,6 @@ export function PromptDetailPage() {
 
         if (promptResponse.success) {
           setPrompt(promptResponse.data)
-          setEditLabel(promptResponse.data.label || '')
-          setEditUserPrompt(promptResponse.data.userPrompt || '')
-          setEditAttachments(promptResponse.data.attachments ?? [])
           setErrorMessage(null)
         }
 
@@ -122,69 +95,6 @@ export function PromptDetailPage() {
 
     void fetchData()
   }, [batchId, promptId])
-
-  const resetEditState = (nextPrompt: Prompt) => {
-    setEditLabel(nextPrompt.label || '')
-    setEditUserPrompt(nextPrompt.userPrompt || '')
-    setEditAttachments(nextPrompt.attachments ?? [])
-    setAttachmentError(null)
-    setIsAttachmentPending(false)
-  }
-
-  const handleEditDialogChange = (open: boolean) => {
-    setIsEditDialogOpen(open)
-    if (open && prompt) {
-      resetEditState(prompt)
-    }
-  }
-
-  const handleUpdate = async () => {
-    if (!batchId || !promptId || !prompt || isAttachmentPending) return
-
-    setIsUpdating(true)
-    try {
-      const batchIdNumber = Number.parseInt(batchId, 10)
-      const promptIdNumber = Number.parseInt(promptId, 10)
-      const attachmentsChanged = haveAttachmentsChanged(prompt.attachments ?? [], editAttachments)
-
-      if (attachmentsChanged) {
-        const createResponse = await batchService.addPrompt(batchIdNumber, {
-          label: editLabel,
-          systemPrompt: prompt.systemPrompt,
-          userPrompt: editUserPrompt,
-          attachments: editAttachments,
-        })
-
-        if (createResponse.success) {
-          await batchService.deletePrompt(batchIdNumber, promptIdNumber)
-          setPrompt(createResponse.data)
-          resetEditState(createResponse.data)
-          setIsEditDialogOpen(false)
-          setErrorMessage(null)
-          navigate(`/batches/${batchId}/prompts/${createResponse.data.id}`, { replace: true })
-        }
-        return
-      }
-
-      const updateResponse = await batchService.updatePrompt(batchIdNumber, promptIdNumber, {
-        label: editLabel,
-        userPrompt: editUserPrompt,
-        attachments: editAttachments,
-      })
-
-      if (updateResponse.success) {
-        setPrompt(updateResponse.data)
-        resetEditState(updateResponse.data)
-        setIsEditDialogOpen(false)
-        setErrorMessage(null)
-      }
-    } catch (error) {
-      console.error('Failed to update prompt:', error)
-      showApiErrorAlert(error)
-    } finally {
-      setIsUpdating(false)
-    }
-  }
 
   const handleDelete = async () => {
     if (!batchId || !promptId) return
@@ -258,77 +168,15 @@ export function PromptDetailPage() {
 
         {batchStatus === 'DRAFT' && prompt.status === 'PENDING' ? (
           <div className="flex gap-2">
-            <Dialog open={isEditDialogOpen} onOpenChange={handleEditDialogChange}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Edit className="h-4 w-4" />
-                  {t('actions.edit', { ns: 'common' })}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-150">
-                <DialogHeader>
-                  <DialogTitle>{t('detail.editTitle', { ns: 'prompt' })}</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="label">{t('detail.label', { ns: 'prompt' })}</Label>
-                    <Input
-                      id="label"
-                      value={editLabel}
-                      onChange={event => setEditLabel(event.target.value)}
-                      placeholder={t('detail.labelPlaceholder', { ns: 'prompt' })}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="userPrompt">{t('detail.userPrompt', { ns: 'prompt' })}</Label>
-                    <PromptTemplateSelect
-                      onSelectTemplate={template => setEditUserPrompt(template)}
-                    />
-                    <Textarea
-                      id="userPrompt"
-                      value={editUserPrompt}
-                      onChange={event => setEditUserPrompt(event.target.value)}
-                      placeholder={t('detail.userPromptPlaceholder', { ns: 'prompt' })}
-                      rows={10}
-                    />
-                  </div>
-                  <ExternalContextImportSection
-                    attachments={editAttachments}
-                    disabled={isUpdating || isAttachmentPending}
-                    promptId={promptId}
-                    onAttachmentsChange={setEditAttachments}
-                  />
-                  <ExternalContextChipsDisplay
-                    attachments={editAttachments}
-                    onRemove={fileName =>
-                      setEditAttachments(prev => prev.filter(a => a.fileName !== fileName))
-                    }
-                  />
-                  <PromptAttachmentsField
-                    attachments={editAttachments}
-                    errorMessage={attachmentError}
-                    onChange={setEditAttachments}
-                    onErrorChange={setAttachmentError}
-                    onPendingChange={setIsAttachmentPending}
-                  />
-                </div>
-                <DialogFooter>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsEditDialogOpen(false)}
-                    disabled={isUpdating || isAttachmentPending}
-                  >
-                    {t('actions.cancel', { ns: 'common' })}
-                  </Button>
-                  <Button onClick={handleUpdate} disabled={isUpdating || isAttachmentPending}>
-                    {isUpdating || isAttachmentPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : null}
-                    {t('actions.save', { ns: 'common' })}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => navigate(`/batches/${batchId}/prompts/${promptId}/edit`)}
+            >
+              <Edit className="h-4 w-4" />
+              {t('actions.edit', { ns: 'common' })}
+            </Button>
 
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <DialogTrigger asChild>
