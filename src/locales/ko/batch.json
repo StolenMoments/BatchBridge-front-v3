@@ -48,6 +48,9 @@
     "errorLabel": "에러:",
     "addPromptAction": "프롬프트 추가",
     "deletePromptConfirm": "프롬프트를 삭제하시겠습니까?",
+    "deleteBatch": "배치 삭제",
+    "deleteBatchConfirm": "배치를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+    "deleteBatchSuccess": "배치가 삭제되었습니다. 이 작업은 되돌릴 수 없습니다.",
     "alerts": {
       "resynced": "{{count}}개 프롬프트가 복구되었습니다.",
       "stillFailed": "{{count}}개 프롬프트는 여전히 실패 상태입니다.",
