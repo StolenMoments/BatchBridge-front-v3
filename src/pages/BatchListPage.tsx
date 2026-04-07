@@ -67,6 +67,7 @@ export function BatchListPage() {
   const [batches, setBatches] = useAtom(batchesAtom)
   const [params, setParams] = useAtom(batchesParamsAtom)
   const [loading, setLoading] = useState(false)
+  const [deletingBatchId, setDeletingBatchId] = useState<number | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const statusLabelMap: Record<BatchStatus, string> = {
@@ -136,6 +137,7 @@ export function BatchListPage() {
 
     if (!confirm(t('detail.deleteBatchConfirm', { ns: 'batch' }))) return
 
+    setDeletingBatchId(batchId)
     try {
       await batchService.deleteBatch(batchId)
       toast.warning(t('detail.deleteBatchSuccess', { ns: 'batch' }))
@@ -143,6 +145,8 @@ export function BatchListPage() {
     } catch (error) {
       console.error('Failed to delete batch:', error)
       setErrorMessage(getApiErrorMessage(error))
+    } finally {
+      setDeletingBatchId(null)
     }
   }
 
@@ -222,9 +226,14 @@ export function BatchListPage() {
                       variant="ghost"
                       size="sm"
                       className="text-xs text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
+                      disabled={deletingBatchId === batch.id}
                       onClick={event => void handleDeleteBatch(event, batch.id)}
                     >
-                      <Trash2 className="h-3.5 w-3.5" />
+                      {deletingBatchId === batch.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
                     </Button>
                   ) : null}
                 </CardFooter>
