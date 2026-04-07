@@ -58,6 +58,10 @@ export const batchService = {
     return response.data
   },
 
+  deleteBatch: async (id: number): Promise<void> => {
+    await api.delete(`/batches/${id}`)
+  },
+
   addPrompt: async (
     batchId: number,
     data: {

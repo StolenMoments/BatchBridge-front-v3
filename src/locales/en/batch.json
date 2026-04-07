@@ -47,6 +47,8 @@
     "answerSection": "Model Answer",
     "errorLabel": "Error:",
     "addPromptAction": "Add prompt",
+    "deleteBatch": "Delete batch",
+    "deleteBatchConfirm": "Delete this batch? This action cannot be undone.",
     "deletePromptConfirm": "Delete this prompt?",
     "alerts": {
       "resynced": "{{count}} prompts were restored.",

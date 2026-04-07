@@ -119,6 +119,18 @@ export function BatchDetailPage() {
     void fetchBatch()
   }, [fetchBatch])
 
+  const handleDeleteBatch = async () => {
+    if (!batch || !confirm(t('detail.deleteBatchConfirm', { ns: 'batch' }))) return
+
+    try {
+      await batchService.deleteBatch(batch.id)
+      navigate('/batches')
+    } catch (error) {
+      console.error('Failed to delete batch:', error)
+      showApiErrorAlert(error)
+    }
+  }
+
   const handleSubmitBatch = async () => {
     if (!batch) return
 
@@ -326,14 +338,25 @@ export function BatchDetailPage() {
           ) : null}
 
           {batch.status === 'DRAFT' ? (
-            <Button size="sm" onClick={handleSubmitBatch} disabled={submitting}>
-              {submitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="mr-2 h-4 w-4" />
-              )}
-              {t('detail.submitBatch', { ns: 'batch' })}
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                onClick={handleDeleteBatch}
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {t('detail.deleteBatch', { ns: 'batch' })}
+              </Button>
+              <Button size="sm" onClick={handleSubmitBatch} disabled={submitting}>
+                {submitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
+                {t('detail.submitBatch', { ns: 'batch' })}
+              </Button>
+            </>
           ) : null}
         </div>
       </div>

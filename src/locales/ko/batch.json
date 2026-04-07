@@ -47,6 +47,8 @@
     "answerSection": "모델 응답 (Answer)",
     "errorLabel": "에러:",
     "addPromptAction": "프롬프트 추가",
+    "deleteBatch": "배치 삭제",
+    "deleteBatchConfirm": "이 배치를 삭제하시겠습니까? 삭제 후 복구할 수 없습니다.",
     "deletePromptConfirm": "프롬프트를 삭제하시겠습니까?",
     "alerts": {
       "resynced": "{{count}}개 프롬프트가 복구되었습니다.",
