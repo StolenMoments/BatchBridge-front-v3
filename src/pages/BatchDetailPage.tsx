@@ -94,6 +94,17 @@ export function BatchDetailPage() {
   const [loadingModels, setLoadingModels] = useState(false)
   const [saving, setSaving] = useState(false)
 
+  useEffect(() => {
+    setLoadingModels(true)
+    modelService
+      .getModels()
+      .then(response => {
+        if (response.success) setModels(response.data)
+      })
+      .catch(error => console.error('Failed to fetch models:', error))
+      .finally(() => setLoadingModels(false))
+  }, [])
+
   const batchStatusLabelMap: Record<BatchStatus, string> = {
     DRAFT: t('status.draft', { ns: 'common' }),
     IN_PROGRESS: t('status.inProgress', { ns: 'common' }),
@@ -274,22 +285,11 @@ export function BatchDetailPage() {
     }
   }
 
-  const handleStartEdit = async () => {
+  const handleStartEdit = () => {
     if (!batch) return
     setEditLabel(batch.label)
     setEditModel(batch.model)
     setIsEditing(true)
-    setLoadingModels(true)
-    try {
-      const response = await modelService.getModels()
-      if (response.success) {
-        setModels(response.data)
-      }
-    } catch (error) {
-      console.error('Failed to fetch models:', error)
-    } finally {
-      setLoadingModels(false)
-    }
   }
 
   const handleCancelEdit = () => {
@@ -303,6 +303,11 @@ export function BatchDetailPage() {
     const body: { label?: string; model?: string } = {}
     if (editLabel !== batch.label) body.label = editLabel
     if (editModel !== batch.model) body.model = editModel
+
+    if (Object.keys(body).length === 0) {
+      setIsEditing(false)
+      return
+    }
 
     setSaving(true)
     try {
@@ -420,7 +425,7 @@ export function BatchDetailPage() {
           ) : null}
 
           {batch.status === 'DRAFT' && !isEditing ? (
-            <Button variant="outline" size="sm" onClick={() => void handleStartEdit()}>
+            <Button variant="outline" size="sm" onClick={handleStartEdit}>
               <Pencil className="mr-2 h-4 w-4" />
               {t('actions.edit', { ns: 'common' })}
             </Button>
