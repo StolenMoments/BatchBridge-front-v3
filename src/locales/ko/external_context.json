@@ -46,6 +46,9 @@
     "duplicateTitle": "이미 추가됨",
     "duplicateJira": "이미 추가된 Jira 키입니다.",
     "duplicateConfluence": "이미 추가된 Confluence 페이지 ID입니다.",
+    "alreadyImportedTitle": "이미 임포트된 항목",
+    "alreadyImportedJira": "이미 가져온 Jira 키입니다. 확인 시 최신 내용으로 업데이트됩니다.",
+    "alreadyImportedConfluence": "이미 가져온 Confluence 페이지입니다. 확인 시 최신 내용으로 업데이트됩니다.",
     "existingPrInfo": "현재 첨부된 PR: {{fileName}}",
     "replacePrConfirm": "이미 첨부된 GitHub PR이 있습니다. 교체하시겠습니까?"
   },

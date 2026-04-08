@@ -21,11 +21,11 @@ import { cn } from '@/lib/utils'
 import { externalContextService } from '@/services/api'
 
 interface ExternalContextImportSectionProps {
-  attachments: Attachment[]
-  disabled?: boolean
-  promptId?: string | number
-  resetToken?: number
-  onAttachmentsChange: (attachments: Attachment[]) => void
+  readonly attachments: Attachment[]
+  readonly disabled?: boolean
+  readonly promptId?: string | number
+  readonly resetToken?: number
+  readonly onAttachmentsChange: (attachments: Attachment[]) => void
 }
 
 type ToastTone = 'success' | 'warning' | 'error'
@@ -40,7 +40,7 @@ interface ToastItem {
 }
 
 function sanitizeToken(value: string): string {
-  return value.trim().replace(/\s+/g, '')
+  return value.trim().replaceAll(/\s+/g, '')
 }
 
 function appendUniqueToken(items: string[], value: string): string[] {
@@ -69,6 +69,22 @@ function getBadgeClasses(source: ContextPreviewSource): string {
   }
 
   return 'border-amber-200 bg-amber-50 text-amber-700'
+}
+
+function toEnterVisible(id: number) {
+  return (prev: ToastItem[]) =>
+    prev.map(item =>
+      item.id === id ? { ...item, phase: 'visible' as const, progressStarted: true } : item
+    )
+}
+
+function toExiting(id: number) {
+  return (prev: ToastItem[]) =>
+    prev.map(item => (item.id === id ? { ...item, phase: 'exiting' as const } : item))
+}
+
+function withoutToast(id: number) {
+  return (prev: ToastItem[]) => prev.filter(item => item.id !== id)
 }
 
 export function ExternalContextImportSection({
@@ -114,30 +130,24 @@ export function ExternalContextImportSection({
 
       if (toast.phase === 'entering') {
         nextTimers.push(
-          window.setTimeout(() => {
-            setToasts(prev =>
-              prev.map(item =>
-                item.id === toast.id ? { ...item, phase: 'visible', progressStarted: true } : item
-              )
-            )
+          globalThis.setTimeout(() => {
+            setToasts(toEnterVisible(toast.id))
           }, 10)
         )
       }
 
       if (toast.phase === 'visible') {
         nextTimers.push(
-          window.setTimeout(() => {
-            setToasts(prev =>
-              prev.map(item => (item.id === toast.id ? { ...item, phase: 'exiting' } : item))
-            )
+          globalThis.setTimeout(() => {
+            setToasts(toExiting(toast.id))
           }, 3000)
         )
       }
 
       if (toast.phase === 'exiting') {
         nextTimers.push(
-          window.setTimeout(() => {
-            setToasts(prev => prev.filter(item => item.id !== toast.id))
+          globalThis.setTimeout(() => {
+            setToasts(withoutToast(toast.id))
           }, 300)
         )
       }
@@ -146,7 +156,7 @@ export function ExternalContextImportSection({
     })
 
     return () => {
-      timers.forEach(timer => window.clearTimeout(timer))
+      timers.forEach(timer => globalThis.clearTimeout(timer))
     }
   }, [toasts])
 
@@ -169,7 +179,8 @@ export function ExternalContextImportSection({
     value: string,
     items: string[],
     setter: (nextItems: string[]) => void,
-    invalidMessage: string
+    invalidMessage: string,
+    ext: 'jira' | 'conf'
   ) => {
     const normalized = sanitizeToken(value)
     if (!normalized) return false
@@ -177,6 +188,18 @@ export function ExternalContextImportSection({
     if (items.includes(normalized)) {
       pushToast('warning', t('messages.duplicateTitle'), invalidMessage)
       return true
+    }
+
+    // promptId가 달라도 같은 id+확장자면 이미 임포트된 항목으로 간주
+    if (
+      attachments.some(a => {
+        const parts = a.fileName.split('.')
+        return parts[0] === normalized && parts.at(-1) === ext
+      })
+    ) {
+      const alreadyMsg =
+        ext === 'jira' ? t('messages.alreadyImportedJira') : t('messages.alreadyImportedConfluence')
+      pushToast('warning', t('messages.alreadyImportedTitle'), alreadyMsg)
     }
 
     setter([...items, normalized])
@@ -189,12 +212,13 @@ export function ExternalContextImportSection({
     items: string[],
     setter: (nextItems: string[]) => void,
     reset: () => void,
-    invalidMessage: string
+    invalidMessage: string,
+    ext: 'jira' | 'conf'
   ) => {
     if (event.key !== 'Enter') return
 
     event.preventDefault()
-    const added = addChip(value, items, setter, invalidMessage)
+    const added = addChip(value, items, setter, invalidMessage, ext)
     if (added) {
       reset()
       setPreview(null)
@@ -298,7 +322,7 @@ export function ExternalContextImportSection({
     const hasNewPr = successSources.some(s => s.type === 'GITHUB_PR')
 
     if (hasNewPr && existingPr) {
-      if (!window.confirm(t('messages.replacePrConfirm'))) {
+      if (!globalThis.confirm(t('messages.replacePrConfirm'))) {
         return
       }
     }
@@ -335,7 +359,23 @@ export function ExternalContextImportSection({
       finalAttachments = finalAttachments.filter(a => a.fileName !== existingPr.fileName)
     }
 
-    onAttachmentsChange([...finalAttachments, ...nextAttachments])
+    // 같은 id+확장자면 교체(upsert), 없으면 추가 (promptId 차이 무시)
+    const upserted = [...finalAttachments]
+    for (const next of nextAttachments) {
+      const nextParts = next.fileName.split('.')
+      const nextId = nextParts[0]
+      const nextExt = nextParts.at(-1)
+      const idx = upserted.findIndex(a => {
+        const parts = a.fileName.split('.')
+        return parts[0] === nextId && parts.at(-1) === nextExt
+      })
+      if (idx === -1) {
+        upserted.push(next)
+      } else {
+        upserted[idx] = next
+      }
+    }
+    onAttachmentsChange(upserted)
 
     setPreview(null)
     setGithubPrUrl('')
@@ -405,7 +445,8 @@ export function ExternalContextImportSection({
                         jiraKeys,
                         setJiraKeys,
                         () => setJiraDraft(''),
-                        t('messages.duplicateJira')
+                        t('messages.duplicateJira'),
+                        'jira'
                       )
                     }
                   />
@@ -442,7 +483,8 @@ export function ExternalContextImportSection({
                         confluencePageIds,
                         setConfluencePageIds,
                         () => setConfluenceDraft(''),
-                        t('messages.duplicateConfluence')
+                        t('messages.duplicateConfluence'),
+                        'conf'
                       )
                     }
                   />
@@ -567,7 +609,7 @@ export function ExternalContextImportSection({
                 <button
                   type="button"
                   className="rounded-full"
-                  onClick={() => setToasts(prev => prev.filter(item => item.id !== toast.id))}
+                  onClick={() => setToasts(withoutToast(toast.id))}
                 >
                   <X className="h-4 w-4 text-muted-foreground" />
                 </button>

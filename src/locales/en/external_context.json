@@ -46,6 +46,9 @@
     "duplicateTitle": "Already added",
     "duplicateJira": "That Jira key is already in the list.",
     "duplicateConfluence": "That Confluence page ID is already in the list.",
+    "alreadyImportedTitle": "Already imported",
+    "alreadyImportedJira": "This Jira key is already imported. It will be updated with the latest content on confirm.",
+    "alreadyImportedConfluence": "This Confluence page is already imported. It will be updated with the latest content on confirm.",
     "existingPrInfo": "Currently attached PR: {{fileName}}",
     "replacePrConfirm": "A GitHub PR is already attached. Do you want to replace it?"
   },
