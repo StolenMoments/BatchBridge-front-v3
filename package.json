@@ -11,7 +11,7 @@
     "check": "eslint . && prettier --check .",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "prepare": "husky && husky install"
+    "prepare": "husky install"
   },
   "lint-staged": {
     "*.{ts,tsx}": [
