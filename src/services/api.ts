@@ -53,6 +53,11 @@ export const batchService = {
     return response.data
   },
 
+  updateBatch: async (id: number, data: { label?: string; model?: string }) => {
+    const response = await api.patch<ApiResponse<Batch>>(`/batches/${id}`, data)
+    return response.data
+  },
+
   deleteBatch: async (id: number): Promise<void> => {
     await api.delete(`/batches/${id}`)
   },
