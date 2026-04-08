@@ -10,8 +10,10 @@ import {
   Loader2,
   MessageSquare,
   Paperclip,
+  Pencil,
   Plus,
   RefreshCw,
+  Save,
   Send,
   Trash2,
   XCircle,
@@ -23,7 +25,7 @@ import ReactMarkdown from 'react-markdown'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import type { Attachment, Batch, BatchStatus } from '@/types/api'
+import type { Attachment, Batch, BatchStatus, Model } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
@@ -47,9 +49,16 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
-import { batchService } from '@/services/api'
+import { batchService, modelService } from '@/services/api'
 
 const statusAppearanceMap: Record<BatchStatus, { color: string; icon: LucideIcon }> = {
   DRAFT: { color: 'bg-slate-500', icon: FileText },
@@ -78,6 +87,12 @@ export function BatchDetailPage() {
   const [isAttachmentPending, setIsAttachmentPending] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [externalContextResetToken, setExternalContextResetToken] = useState(0)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editLabel, setEditLabel] = useState('')
+  const [editModel, setEditModel] = useState('')
+  const [models, setModels] = useState<Model[]>([])
+  const [loadingModels, setLoadingModels] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   const batchStatusLabelMap: Record<BatchStatus, string> = {
     DRAFT: t('status.draft', { ns: 'common' }),
@@ -259,6 +274,54 @@ export function BatchDetailPage() {
     }
   }
 
+  const handleStartEdit = async () => {
+    if (!batch) return
+    setEditLabel(batch.label)
+    setEditModel(batch.model)
+    setIsEditing(true)
+    setLoadingModels(true)
+    try {
+      const response = await modelService.getModels()
+      if (response.success) {
+        setModels(response.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch models:', error)
+    } finally {
+      setLoadingModels(false)
+    }
+  }
+
+  const handleCancelEdit = () => {
+    setIsEditing(false)
+    setEditLabel('')
+    setEditModel('')
+  }
+
+  const handleSaveEdit = async () => {
+    if (!batch) return
+    const body: { label?: string; model?: string } = {}
+    if (editLabel !== batch.label) body.label = editLabel
+    if (editModel !== batch.model) body.model = editModel
+
+    setSaving(true)
+    try {
+      const response = await batchService.updateBatch(batch.id, body)
+      if (response.success) {
+        setBatch(response.data)
+        setIsEditing(false)
+        toast.info(t('detail.editSuccessTitle', { ns: 'batch' }), {
+          description: t('detail.editSuccessDescription', { ns: 'batch' }),
+        })
+      }
+    } catch (error) {
+      console.error('Failed to update batch:', error)
+      toast.error(t('detail.editError', { ns: 'batch' }))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   if (loading && !batch) {
     return (
       <div className="flex h-60 items-center justify-center">
@@ -291,12 +354,41 @@ export function BatchDetailPage() {
             <Button variant="ghost" size="icon" onClick={() => navigate('/batches')}>
               <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-3xl font-bold tracking-tight">{batch.label}</h1>
+            {isEditing ? (
+              <Input
+                value={editLabel}
+                onChange={e => setEditLabel(e.target.value)}
+                className="max-w-sm text-xl font-bold"
+              />
+            ) : (
+              <h1 className="text-3xl font-bold tracking-tight">{batch.label}</h1>
+            )}
           </div>
           <div className="ml-11 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Cpu className="h-4 w-4" /> {batch.model}
-            </div>
+            {isEditing ? (
+              <Select value={editModel} onValueChange={setEditModel} disabled={loadingModels}>
+                <SelectTrigger className="h-7 w-52 text-sm">
+                  <SelectValue
+                    placeholder={
+                      loadingModels
+                        ? t('create.modelLoading', { ns: 'batch' })
+                        : t('create.modelPlaceholder', { ns: 'batch' })
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map(model => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {model.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="flex items-center gap-1">
+                <Cpu className="h-4 w-4" /> {batch.model}
+              </div>
+            )}
             <div className="flex items-center gap-1">
               <Clock className="h-4 w-4" /> {t('labels.createdAt', { ns: 'common' })}:{' '}
               {format(new Date(batch.createdAt), 'yyyy-MM-dd HH:mm')}
@@ -327,7 +419,34 @@ export function BatchDetailPage() {
             </Button>
           ) : null}
 
-          {batch.status === 'DRAFT' ? (
+          {batch.status === 'DRAFT' && !isEditing ? (
+            <Button variant="outline" size="sm" onClick={() => void handleStartEdit()}>
+              <Pencil className="mr-2 h-4 w-4" />
+              {t('actions.edit', { ns: 'common' })}
+            </Button>
+          ) : null}
+
+          {isEditing ? (
+            <>
+              <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={saving}>
+                {t('actions.cancel', { ns: 'common' })}
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => void handleSaveEdit()}
+                disabled={saving || loadingModels}
+              >
+                {saving ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                {t('actions.save', { ns: 'common' })}
+              </Button>
+            </>
+          ) : null}
+
+          {batch.status === 'DRAFT' && !isEditing ? (
             <Button
               variant="outline"
               size="sm"
@@ -360,7 +479,7 @@ export function BatchDetailPage() {
             </Button>
           ) : null}
 
-          {batch.status === 'DRAFT' ? (
+          {batch.status === 'DRAFT' && !isEditing ? (
             <Button size="sm" onClick={handleSubmitBatch} disabled={submitting}>
               {submitting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -51,6 +51,9 @@
     "deleteBatch": "Delete batch",
     "deleteBatchConfirm": "Delete this batch? This action cannot be undone.",
     "deleteBatchSuccess": "The batch has been deleted. This action cannot be undone.",
+    "editSuccessTitle": "Batch updated",
+    "editSuccessDescription": "Your changes have been saved.",
+    "editError": "Request failed",
     "alerts": {
       "resynced": "{{count}} prompts were restored.",
       "stillFailed": "{{count}} prompts are still in failed status.",
