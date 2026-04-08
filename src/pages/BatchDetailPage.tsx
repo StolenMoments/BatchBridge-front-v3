@@ -21,6 +21,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
 import { Link, useNavigate, useParams } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import type { Attachment, Batch, BatchStatus } from '@/types/api'
 
@@ -64,6 +65,7 @@ export function BatchDetailPage() {
   const [batch, setBatch] = useState<Batch | null>(null)
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [syncing, setSyncing] = useState(false)
   const [resyncing, setResyncing] = useState(false)
   const [newPrompt, setNewPrompt] = useState({
@@ -221,6 +223,22 @@ export function BatchDetailPage() {
     }
   }
 
+  const handleDeleteBatch = async () => {
+    if (!batch || !confirm(t('detail.deleteBatchConfirm', { ns: 'batch' }))) return
+
+    setDeleting(true)
+    try {
+      await batchService.deleteBatch(batch.id)
+      toast.warning(t('detail.deleteBatchSuccess', { ns: 'batch' }))
+      navigate('/batches')
+    } catch (error) {
+      console.error('Failed to delete batch:', error)
+      showApiErrorAlert(error)
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const handleDeletePrompt = async (promptId: number) => {
     if (!batch || !confirm(t('detail.deletePromptConfirm', { ns: 'batch' }))) return
 
@@ -306,6 +324,23 @@ export function BatchDetailPage() {
             <Button variant="outline" size="sm" onClick={handleResyncPrompts} disabled={resyncing}>
               <RefreshCw className={`mr-2 h-4 w-4 ${resyncing ? 'animate-spin' : ''}`} />
               {t('detail.resyncPrompts', { ns: 'batch' })}
+            </Button>
+          ) : null}
+
+          {batch.status === 'DRAFT' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
+              disabled={deleting}
+              onClick={() => void handleDeleteBatch()}
+            >
+              {deleting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
+              {t('detail.deleteBatch', { ns: 'batch' })}
             </Button>
           ) : null}
 

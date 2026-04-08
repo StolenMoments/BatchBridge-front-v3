@@ -48,6 +48,9 @@
     "errorLabel": "Error:",
     "addPromptAction": "Add prompt",
     "deletePromptConfirm": "Delete this prompt?",
+    "deleteBatch": "Delete batch",
+    "deleteBatchConfirm": "Delete this batch? This action cannot be undone.",
+    "deleteBatchSuccess": "The batch has been deleted. This action cannot be undone.",
     "alerts": {
       "resynced": "{{count}} prompts were restored.",
       "stillFailed": "{{count}} prompts are still in failed status.",

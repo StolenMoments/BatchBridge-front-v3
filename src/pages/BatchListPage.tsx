@@ -9,12 +9,14 @@ import {
   Plus,
   RefreshCw,
   Search,
+  Trash2,
   XCircle,
   type LucideIcon,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
+import { toast } from 'sonner'
 
 import type { BatchStatus } from '@/types/api'
 
@@ -65,6 +67,7 @@ export function BatchListPage() {
   const [batches, setBatches] = useAtom(batchesAtom)
   const [params, setParams] = useAtom(batchesParamsAtom)
   const [loading, setLoading] = useState(false)
+  const [deletingBatchId, setDeletingBatchId] = useState<number | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const statusLabelMap: Record<BatchStatus, string> = {
@@ -126,6 +129,25 @@ export function BatchListPage() {
 
   const handleSizeChange = (size: string) => {
     setParams(prev => ({ ...prev, size: Number.parseInt(size, 10), page: 1 }))
+  }
+
+  const handleDeleteBatch = async (event: React.MouseEvent, batchId: number) => {
+    event.preventDefault()
+    event.stopPropagation()
+
+    if (!confirm(t('detail.deleteBatchConfirm', { ns: 'batch' }))) return
+
+    setDeletingBatchId(batchId)
+    try {
+      await batchService.deleteBatch(batchId)
+      toast.warning(t('detail.deleteBatchSuccess', { ns: 'batch' }))
+      void fetchBatches()
+    } catch (error) {
+      console.error('Failed to delete batch:', error)
+      setErrorMessage(getApiErrorMessage(error))
+    } finally {
+      setDeletingBatchId(null)
+    }
   }
 
   const renderContent = () => {
@@ -195,10 +217,25 @@ export function BatchListPage() {
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter className="pt-2">
-                  <Button variant="ghost" size="sm" className="w-full text-xs">
+                <CardFooter className="gap-2 pt-2">
+                  <Button variant="ghost" size="sm" className="flex-1 text-xs">
                     {t('list.viewDetails', { ns: 'batch' })}
                   </Button>
+                  {batch.status === 'DRAFT' ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-xs text-red-500 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30"
+                      disabled={deletingBatchId === batch.id}
+                      onClick={event => void handleDeleteBatch(event, batch.id)}
+                    >
+                      {deletingBatchId === batch.id ? (
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      ) : (
+                        <Trash2 className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
+                  ) : null}
                 </CardFooter>
               </Card>
             </Link>

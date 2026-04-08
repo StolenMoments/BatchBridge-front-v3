@@ -2,6 +2,7 @@ import { useAtomValue } from 'jotai'
 import { Provider as JotaiProvider } from 'jotai'
 import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { Toaster } from 'sonner'
 
 import { localeAtom } from './atoms/localeAtom'
 import { Layout } from './components/layout/Layout'
@@ -30,6 +31,7 @@ function App() {
     <JotaiProvider>
       <LocaleSync />
       <ThemeProvider defaultTheme="system" storageKey="batchbridge-theme">
+        <Toaster position="bottom-center" toastOptions={{ className: 'sonner-toast' }} />
         <BrowserRouter>
           <Routes>
             <Route element={<Layout />}>

@@ -53,6 +53,10 @@ export const batchService = {
     return response.data
   },
 
+  deleteBatch: async (id: number): Promise<void> => {
+    await api.delete(`/batches/${id}`)
+  },
+
   syncBatch: async (id: number) => {
     const response = await api.post<ApiResponse<Batch>>(`/batches/${id}/sync`)
     return response.data
