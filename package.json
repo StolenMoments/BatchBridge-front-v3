@@ -1,11 +1,11 @@
 {
-  "name": "BatchBridge-Front",
+  "name": "batchbridge-front",
   "private": true,
   "version": "0.0.1",
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "eslint . --fix && prettier --write \"**/*.{ts,tsx}\" && tsc -b && vite build",
     "lint": "eslint . --fix",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "check": "eslint . && prettier --check .",
