@@ -193,7 +193,15 @@ export function PromptEditPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="edit-system">{t('detail.systemPrompt', { ns: 'batch' })}</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="edit-system">{t('detail.systemPrompt', { ns: 'batch' })}</Label>
+                <PromptTemplateSelect
+                  onSelectTemplate={(systemPrompt, userPrompt) => {
+                    setEditSystemPrompt(systemPrompt)
+                    setEditUserPrompt(userPrompt)
+                  }}
+                />
+              </div>
               <Textarea
                 id="edit-system"
                 value={editSystemPrompt}
@@ -205,7 +213,6 @@ export function PromptEditPage() {
 
             <div className="space-y-2">
               <Label htmlFor="edit-user">{t('detail.userPrompt')}</Label>
-              <PromptTemplateSelect onSelectTemplate={setEditUserPrompt} />
               <Textarea
                 id="edit-user"
                 value={editUserPrompt}

@@ -3,6 +3,12 @@
   "placeholder": "템플릿을 선택하세요",
   "description": "현재 언어에 맞는 템플릿으로 User Prompt를 채웁니다.",
   "replaceNotice": "템플릿을 선택하면 기존 User Prompt 내용이 템플릿으로 대체됩니다.",
+  "loader": {
+    "button": "템플릿 불러오기",
+    "modalTitle": "템플릿 불러오기",
+    "replaceNotice": "선택 시 System Prompt와 User Prompt가 템플릿 내용으로 대체됩니다.",
+    "empty": "등록된 템플릿이 없습니다."
+  },
   "templates": {
     "codeReview": {
       "label": "코드 리뷰 요청",

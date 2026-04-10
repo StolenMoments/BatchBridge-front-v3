@@ -3,6 +3,12 @@
   "placeholder": "Select a template",
   "description": "Choose a localized template to fill the user prompt.",
   "replaceNotice": "Selecting a template replaces the current user prompt text.",
+  "loader": {
+    "button": "Load Template",
+    "modalTitle": "Load Template",
+    "replaceNotice": "Selecting a template will replace the current System Prompt and User Prompt.",
+    "empty": "No templates found."
+  },
   "templates": {
     "codeReview": {
       "label": "Code review request",
