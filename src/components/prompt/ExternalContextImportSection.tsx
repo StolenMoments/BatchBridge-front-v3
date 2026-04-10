@@ -243,16 +243,6 @@ export function ExternalContextImportSection({
       return
     }
 
-    if (nextJiraKeys !== jiraKeys) {
-      setJiraKeys(nextJiraKeys)
-      setJiraDraft('')
-    }
-
-    if (nextConfluencePageIds !== confluencePageIds) {
-      setConfluencePageIds(nextConfluencePageIds)
-      setConfluenceDraft('')
-    }
-
     setLoading(true)
     setErrorMessage(null)
 
@@ -269,6 +259,16 @@ export function ExternalContextImportSection({
         setErrorMessage(message)
         pushToast('error', t('messages.requestFailedTitle'), message)
         return
+      }
+
+      if (nextJiraKeys !== jiraKeys) {
+        setJiraKeys(nextJiraKeys)
+        setJiraDraft('')
+      }
+
+      if (nextConfluencePageIds !== confluencePageIds) {
+        setConfluencePageIds(nextConfluencePageIds)
+        setConfluenceDraft('')
       }
 
       setPreview(response.data)
