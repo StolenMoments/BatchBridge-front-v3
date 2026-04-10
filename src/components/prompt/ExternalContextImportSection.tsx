@@ -200,6 +200,7 @@ export function ExternalContextImportSection({
       const alreadyMsg =
         ext === 'jira' ? t('messages.alreadyImportedJira') : t('messages.alreadyImportedConfluence')
       pushToast('warning', t('messages.alreadyImportedTitle'), alreadyMsg)
+      return true
     }
 
     setter([...items, normalized])
@@ -243,16 +244,6 @@ export function ExternalContextImportSection({
       return
     }
 
-    if (nextJiraKeys !== jiraKeys) {
-      setJiraKeys(nextJiraKeys)
-      setJiraDraft('')
-    }
-
-    if (nextConfluencePageIds !== confluencePageIds) {
-      setConfluencePageIds(nextConfluencePageIds)
-      setConfluenceDraft('')
-    }
-
     setLoading(true)
     setErrorMessage(null)
 
@@ -269,6 +260,16 @@ export function ExternalContextImportSection({
         setErrorMessage(message)
         pushToast('error', t('messages.requestFailedTitle'), message)
         return
+      }
+
+      if (nextJiraKeys !== jiraKeys) {
+        setJiraKeys(nextJiraKeys)
+        setJiraDraft('')
+      }
+
+      if (nextConfluencePageIds !== confluencePageIds) {
+        setConfluencePageIds(nextConfluencePageIds)
+        setConfluenceDraft('')
       }
 
       setPreview(response.data)
