@@ -10,6 +10,8 @@ import type {
   Model,
   PaginatedResponse,
   Prompt,
+  PromptTemplate,
+  PromptTemplateRequest,
   SyncPromptsResponse,
 } from '../types/api'
 
@@ -116,6 +118,27 @@ export const modelService = {
   getModels: async () => {
     const response = await api.get<ApiResponse<Model[]>>('/models')
     return response.data
+  },
+}
+
+export const templateService = {
+  getTemplates: async () => {
+    const response = await api.get<ApiResponse<PromptTemplate[]>>('/templates')
+    return response.data
+  },
+
+  createTemplate: async (data: PromptTemplateRequest) => {
+    const response = await api.post<ApiResponse<PromptTemplate>>('/templates', data)
+    return response.data
+  },
+
+  updateTemplate: async (id: number, data: PromptTemplateRequest) => {
+    const response = await api.put<ApiResponse<PromptTemplate>>(`/templates/${id}`, data)
+    return response.data
+  },
+
+  deleteTemplate: async (id: number): Promise<void> => {
+    await api.delete(`/templates/${id}`)
   },
 }
 
