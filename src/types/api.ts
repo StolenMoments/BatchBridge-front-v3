@@ -97,3 +97,20 @@ export interface SyncPromptsResponse {
   resynced: number
   stillFailed: number
 }
+
+export interface PromptTemplate {
+  id: number
+  name: string
+  description?: string
+  systemPrompt?: string
+  userPrompt: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PromptTemplateRequest {
+  name: string
+  description?: string
+  systemPrompt?: string
+  userPrompt: string
+}

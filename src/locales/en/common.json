@@ -16,6 +16,9 @@
     "failed": "Failed",
     "pending": "Pending"
   },
+  "navigation": {
+    "templates": "Prompt Templates"
+  },
   "labels": {
     "createdAt": "Created",
     "submittedAt": "Submitted",

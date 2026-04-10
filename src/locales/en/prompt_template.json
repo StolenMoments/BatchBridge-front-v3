@@ -16,5 +16,46 @@
       "label": "Translation request",
       "content": "Translate the following content into English while preserving the original meaning and tone.\n\n{content}"
     }
+  },
+  "page": {
+    "title": "Prompt Templates",
+    "description": "Manage reusable prompt templates.",
+    "newTemplate": "New Template",
+    "empty": "No templates found.",
+    "createFirst": "Create your first template",
+    "createdAt": "Created",
+    "editDialog": {
+      "title": "Edit Template"
+    },
+    "createDialog": {
+      "title": "New Template"
+    },
+    "fields": {
+      "name": "Name",
+      "namePlaceholder": "Template name",
+      "description": "Description",
+      "descriptionPlaceholder": "Brief description (optional)",
+      "systemPrompt": "System Prompt",
+      "systemPromptPlaceholder": "System prompt (optional)",
+      "userPrompt": "User Prompt",
+      "userPromptPlaceholder": "User prompt content"
+    },
+    "systemPromptToggle": {
+      "show": "Show System Prompt",
+      "hide": "Hide System Prompt"
+    },
+    "toast": {
+      "created": "Template created.",
+      "updated": "Template updated.",
+      "deleted": "Template deleted.",
+      "createError": "Failed to create template.",
+      "updateError": "Failed to update template.",
+      "deleteError": "Failed to delete template."
+    },
+    "deleteConfirm": "Are you sure you want to delete this template?",
+    "validation": {
+      "nameRequired": "Name is required.",
+      "userPromptRequired": "User Prompt is required."
+    }
   }
 }

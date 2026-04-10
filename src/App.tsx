@@ -12,6 +12,7 @@ import { BatchDetailPage } from './pages/BatchDetailPage'
 import { BatchListPage } from './pages/BatchListPage'
 import { PromptDetailPage } from './pages/PromptDetailPage'
 import { PromptEditPage } from './pages/PromptEditPage'
+import { TemplatesPage } from './pages/TemplatesPage'
 import i18n from './plugins/i18n'
 
 function LocaleSync() {
@@ -41,6 +42,7 @@ function App() {
               <Route path="/batches/:id" element={<BatchDetailPage />} />
               <Route path="/batches/:batchId/prompts/:promptId" element={<PromptDetailPage />} />
               <Route path="/batches/:batchId/prompts/:promptId/edit" element={<PromptEditPage />} />
+              <Route path="/templates" element={<TemplatesPage />} />
             </Route>
           </Routes>
         </BrowserRouter>
