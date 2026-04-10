@@ -200,6 +200,7 @@ export function ExternalContextImportSection({
       const alreadyMsg =
         ext === 'jira' ? t('messages.alreadyImportedJira') : t('messages.alreadyImportedConfluence')
       pushToast('warning', t('messages.alreadyImportedTitle'), alreadyMsg)
+      return true
     }
 
     setter([...items, normalized])
