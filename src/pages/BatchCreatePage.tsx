@@ -175,20 +175,28 @@ export function BatchCreatePage() {
             </div>
 
             <div className="space-y-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="h-auto p-0 hover:bg-transparent"
-                onClick={() => setShowSystemPrompt(prev => !prev)}
-              >
-                {showSystemPrompt ? (
-                  <ChevronUp className="mr-1 h-4 w-4" />
-                ) : (
-                  <ChevronDown className="mr-1 h-4 w-4" />
-                )}
-                {t('create.systemPromptLabel', { ns: 'batch' })}
-              </Button>
+              <div className="flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-auto p-0 hover:bg-transparent"
+                  onClick={() => setShowSystemPrompt(prev => !prev)}
+                >
+                  {showSystemPrompt ? (
+                    <ChevronUp className="mr-1 h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="mr-1 h-4 w-4" />
+                  )}
+                  {t('create.systemPromptLabel', { ns: 'batch' })}
+                </Button>
+                <PromptTemplateSelect
+                  onSelectTemplate={({ systemPrompt, userPrompt }) => {
+                    setShowSystemPrompt(true)
+                    setFormData(prev => ({ ...prev, systemPrompt, userPrompt }))
+                  }}
+                />
+              </div>
               {showSystemPrompt ? (
                 <Textarea
                   id="systemPrompt"
@@ -202,11 +210,6 @@ export function BatchCreatePage() {
 
             <div className="space-y-2">
               <Label htmlFor="userPrompt">{t('create.userPromptLabel', { ns: 'batch' })}</Label>
-              <PromptTemplateSelect
-                onSelectTemplate={template =>
-                  setFormData(prev => ({ ...prev, userPrompt: template }))
-                }
-              />
               <Textarea
                 id="userPrompt"
                 placeholder={t('create.userPromptPlaceholder', { ns: 'batch' })}

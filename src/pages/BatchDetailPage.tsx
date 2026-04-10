@@ -606,9 +606,16 @@ export function BatchDetailPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="p-system" className="text-sm font-medium text-foreground">
-                        {t('create.systemPromptLabel', { ns: 'batch' })}
-                      </Label>
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="p-system" className="text-sm font-medium text-foreground">
+                          {t('create.systemPromptLabel', { ns: 'batch' })}
+                        </Label>
+                        <PromptTemplateSelect
+                          onSelectTemplate={({ systemPrompt, userPrompt }) =>
+                            setNewPrompt(prev => ({ ...prev, systemPrompt, userPrompt }))
+                          }
+                        />
+                      </div>
                       <Textarea
                         id="p-system"
                         placeholder={t('create.systemPromptPlaceholder', { ns: 'batch' })}
@@ -624,11 +631,6 @@ export function BatchDetailPage() {
                       <Label htmlFor="p-user" className="text-sm font-medium text-foreground">
                         {t('create.userPromptLabel', { ns: 'batch' })}
                       </Label>
-                      <PromptTemplateSelect
-                        onSelectTemplate={template =>
-                          setNewPrompt(prev => ({ ...prev, userPrompt: template }))
-                        }
-                      />
                       <Textarea
                         id="p-user"
                         placeholder={t('create.userPromptPlaceholder', { ns: 'batch' })}
