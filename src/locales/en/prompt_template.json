@@ -1,27 +1,9 @@
 {
-  "label": "Prompt Template",
-  "placeholder": "Select a template",
-  "description": "Choose a localized template to fill the user prompt.",
-  "replaceNotice": "Selecting a template replaces the current user prompt text.",
   "loader": {
     "button": "Load Template",
     "modalTitle": "Load Template",
     "replaceNotice": "Selecting a template will replace the current System Prompt and User Prompt.",
     "empty": "No templates found."
-  },
-  "templates": {
-    "codeReview": {
-      "label": "Code review request",
-      "content": "Review the following code and identify bugs, risks, and improvement points.\n\n```text\n{code}\n```"
-    },
-    "summarize": {
-      "label": "Content summary",
-      "content": "Summarize the following content into concise bullet points.\n\n{content}"
-    },
-    "translate": {
-      "label": "Translation request",
-      "content": "Translate the following content into English while preserving the original meaning and tone.\n\n{content}"
-    }
   },
   "page": {
     "title": "Prompt Templates",

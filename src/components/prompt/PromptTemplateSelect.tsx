@@ -1,5 +1,5 @@
 import { BookOpen, Loader2 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import type { PromptTemplate } from '@/types/api'
@@ -15,9 +15,39 @@ import {
 import { getApiErrorMessage } from '@/lib/api-error'
 import { templateService } from '@/services/api'
 
+export interface SelectedTemplate {
+  systemPrompt: string
+  userPrompt: string
+}
+
 interface PromptTemplateSelectProps {
   disabled?: boolean
-  onSelectTemplate: (systemPrompt: string, userPrompt: string) => void
+  onSelectTemplate: (template: SelectedTemplate) => void
+}
+
+type DialogState =
+  | { status: 'idle' }
+  | { status: 'loading' }
+  | { status: 'success'; templates: PromptTemplate[] }
+  | { status: 'error'; message: string }
+
+type DialogAction =
+  | { type: 'FETCH_START' }
+  | { type: 'FETCH_SUCCESS'; templates: PromptTemplate[] }
+  | { type: 'FETCH_ERROR'; message: string }
+  | { type: 'RESET' }
+
+function reducer(_state: DialogState, action: DialogAction): DialogState {
+  switch (action.type) {
+    case 'FETCH_START':
+      return { status: 'loading' }
+    case 'FETCH_SUCCESS':
+      return { status: 'success', templates: action.templates }
+    case 'FETCH_ERROR':
+      return { status: 'error', message: action.message }
+    case 'RESET':
+      return { status: 'idle' }
+  }
 }
 
 export function PromptTemplateSelect({
@@ -26,28 +56,32 @@ export function PromptTemplateSelect({
 }: PromptTemplateSelectProps) {
   const { t } = useTranslation('prompt_template')
   const [open, setOpen] = useState(false)
-  const [templates, setTemplates] = useState<PromptTemplate[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [state, dispatch] = useReducer(reducer, { status: 'idle' })
 
-  const handleOpen = async () => {
-    setOpen(true)
-    setLoading(true)
-    setError(null)
-    try {
-      const response = await templateService.getTemplates()
-      if (response.success) {
-        setTemplates(response.data)
+  useEffect(() => {
+    // idle 상태에서 모달이 열릴 때만 fetch (success/loading/error면 재요청 안 함)
+    if (!open || state.status !== 'idle') return
+
+    const fetchTemplates = async () => {
+      dispatch({ type: 'FETCH_START' })
+      try {
+        const response = await templateService.getTemplates()
+        if (response.success) {
+          dispatch({ type: 'FETCH_SUCCESS', templates: response.data })
+        }
+      } catch (err) {
+        dispatch({ type: 'FETCH_ERROR', message: getApiErrorMessage(err) })
       }
-    } catch (err) {
-      setError(getApiErrorMessage(err))
-    } finally {
-      setLoading(false)
     }
-  }
+
+    void fetchTemplates()
+  }, [open, state.status])
 
   const handleSelect = (template: PromptTemplate) => {
-    onSelectTemplate(template.systemPrompt ?? '', template.userPrompt)
+    onSelectTemplate({
+      systemPrompt: template.systemPrompt ?? '',
+      userPrompt: template.userPrompt ?? '',
+    })
     setOpen(false)
   }
 
@@ -58,13 +92,20 @@ export function PromptTemplateSelect({
         variant="outline"
         size="sm"
         disabled={disabled}
-        onClick={() => void handleOpen()}
+        onClick={() => setOpen(true)}
       >
         <BookOpen className="mr-2 h-4 w-4" />
         {t('loader.button')}
       </Button>
 
-      <Dialog open={open} onOpenChange={setOpen}>
+      <Dialog
+        open={open}
+        onOpenChange={next => {
+          // 에러 상태에서 닫으면 idle로 리셋해 다음 열림 시 재시도 가능하게 함
+          if (!next && state.status === 'error') dispatch({ type: 'RESET' })
+          setOpen(next)
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>{t('loader.modalTitle')}</DialogTitle>
@@ -72,19 +113,19 @@ export function PromptTemplateSelect({
           </DialogHeader>
 
           <div className="mt-2 space-y-2">
-            {loading ? (
+            {state.status === 'loading' || state.status === 'idle' ? (
               <div className="flex items-center justify-center py-10">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : error ? (
-              <p className="py-4 text-center text-sm text-destructive">{error}</p>
-            ) : templates.length === 0 ? (
+            ) : state.status === 'error' ? (
+              <p className="py-4 text-center text-sm text-destructive">{state.message}</p>
+            ) : state.templates.length === 0 ? (
               <div className="py-10 text-center">
                 <BookOpen className="mx-auto mb-2 h-8 w-8 text-muted-foreground/40" />
                 <p className="text-sm text-muted-foreground">{t('loader.empty')}</p>
               </div>
             ) : (
-              templates.map(template => (
+              state.templates.map(template => (
                 <button
                   key={template.id}
                   type="button"

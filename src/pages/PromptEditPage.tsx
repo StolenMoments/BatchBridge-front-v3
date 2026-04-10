@@ -196,7 +196,7 @@ export function PromptEditPage() {
               <div className="flex items-center justify-between">
                 <Label htmlFor="edit-system">{t('detail.systemPrompt', { ns: 'batch' })}</Label>
                 <PromptTemplateSelect
-                  onSelectTemplate={(systemPrompt, userPrompt) => {
+                  onSelectTemplate={({ systemPrompt, userPrompt }) => {
                     setEditSystemPrompt(systemPrompt)
                     setEditUserPrompt(userPrompt)
                   }}

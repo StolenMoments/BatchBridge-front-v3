@@ -191,7 +191,7 @@ export function BatchCreatePage() {
                   {t('create.systemPromptLabel', { ns: 'batch' })}
                 </Button>
                 <PromptTemplateSelect
-                  onSelectTemplate={(systemPrompt, userPrompt) => {
+                  onSelectTemplate={({ systemPrompt, userPrompt }) => {
                     setShowSystemPrompt(true)
                     setFormData(prev => ({ ...prev, systemPrompt, userPrompt }))
                   }}
