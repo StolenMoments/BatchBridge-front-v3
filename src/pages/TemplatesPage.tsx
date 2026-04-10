@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import { ChevronDown, ChevronUp, Loader2, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { ChevronDown, ChevronUp, Inbox, Loader2, Pencil, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -78,20 +78,16 @@ function TemplateFormDialog({
     try {
       if (initial) {
         await templateService.updateTemplate(initial.id, payload)
-        toast.info(t('page.toast.updated', { ns: 'prompt_template' }))
+        toast.info(t('page.toast.updated'))
       } else {
         await templateService.createTemplate(payload)
-        toast.info(t('page.toast.created', { ns: 'prompt_template' }))
+        toast.info(t('page.toast.created'))
       }
       onSaved()
       onOpenChange(false)
     } catch (error) {
       console.error('Failed to save template:', error)
-      toast.error(
-        initial
-          ? t('page.toast.updateError', { ns: 'prompt_template' })
-          : t('page.toast.createError', { ns: 'prompt_template' })
-      )
+      toast.error(initial ? t('page.toast.updateError') : t('page.toast.createError'))
     } finally {
       setSubmitting(false)
     }
@@ -104,15 +100,13 @@ function TemplateFormDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>
-            {isEdit
-              ? t('page.editDialog.title', { ns: 'prompt_template' })
-              : t('page.createDialog.title', { ns: 'prompt_template' })}
+            {isEdit ? t('page.editDialog.title') : t('page.createDialog.title')}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <Label htmlFor="tpl-name">{t('page.fields.name', { ns: 'prompt_template' })}</Label>
+            <Label htmlFor="tpl-name">{t('page.fields.name')}</Label>
             <Input
               id="tpl-name"
               value={name}
@@ -120,25 +114,21 @@ function TemplateFormDialog({
                 setName(e.target.value)
                 if (e.target.value.trim()) setNameError(false)
               }}
-              placeholder={t('page.fields.namePlaceholder', { ns: 'prompt_template' })}
+              placeholder={t('page.fields.namePlaceholder')}
               className={nameError ? 'border-destructive' : ''}
             />
             {nameError ? (
-              <p className="text-xs text-destructive">
-                {t('page.fields.name', { ns: 'prompt_template' })}
-              </p>
+              <p className="text-xs text-destructive">{t('page.validation.nameRequired')}</p>
             ) : null}
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="tpl-description">
-              {t('page.fields.description', { ns: 'prompt_template' })}
-            </Label>
+            <Label htmlFor="tpl-description">{t('page.fields.description')}</Label>
             <Input
               id="tpl-description"
               value={description}
               onChange={e => setDescription(e.target.value)}
-              placeholder={t('page.fields.descriptionPlaceholder', { ns: 'prompt_template' })}
+              placeholder={t('page.fields.descriptionPlaceholder')}
             />
           </div>
 
@@ -151,30 +141,31 @@ function TemplateFormDialog({
               {systemPromptOpen ? (
                 <>
                   <ChevronUp className="h-4 w-4" />
-                  {t('page.systemPromptToggle.hide', { ns: 'prompt_template' })}
+                  {t('page.systemPromptToggle.hide')}
                 </>
               ) : (
                 <>
                   <ChevronDown className="h-4 w-4" />
-                  {t('page.systemPromptToggle.show', { ns: 'prompt_template' })}
+                  {t('page.systemPromptToggle.show')}
                 </>
               )}
             </button>
             {systemPromptOpen ? (
-              <Textarea
-                id="tpl-system-prompt"
-                value={systemPrompt}
-                onChange={e => setSystemPrompt(e.target.value)}
-                placeholder={t('page.fields.systemPromptPlaceholder', { ns: 'prompt_template' })}
-                rows={4}
-              />
+              <>
+                <Label htmlFor="tpl-system-prompt">{t('page.fields.systemPrompt')}</Label>
+                <Textarea
+                  id="tpl-system-prompt"
+                  value={systemPrompt}
+                  onChange={e => setSystemPrompt(e.target.value)}
+                  placeholder={t('page.fields.systemPromptPlaceholder')}
+                  rows={4}
+                />
+              </>
             ) : null}
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="tpl-user-prompt">
-              {t('page.fields.userPrompt', { ns: 'prompt_template' })}
-            </Label>
+            <Label htmlFor="tpl-user-prompt">{t('page.fields.userPrompt')}</Label>
             <Textarea
               id="tpl-user-prompt"
               value={userPrompt}
@@ -182,14 +173,12 @@ function TemplateFormDialog({
                 setUserPrompt(e.target.value)
                 if (e.target.value.trim()) setUserPromptError(false)
               }}
-              placeholder={t('page.fields.userPromptPlaceholder', { ns: 'prompt_template' })}
+              placeholder={t('page.fields.userPromptPlaceholder')}
               rows={5}
               className={userPromptError ? 'border-destructive' : ''}
             />
             {userPromptError ? (
-              <p className="text-xs text-destructive">
-                {t('page.fields.userPrompt', { ns: 'prompt_template' })}
-              </p>
+              <p className="text-xs text-destructive">{t('page.validation.userPromptRequired')}</p>
             ) : null}
           </div>
         </div>
@@ -248,16 +237,16 @@ export function TemplatesPage() {
   }
 
   const handleDelete = async (id: number) => {
-    if (!confirm(t('page.deleteConfirm', { ns: 'prompt_template' }))) return
+    if (!confirm(t('page.deleteConfirm'))) return
 
     setDeletingId(id)
     try {
       await templateService.deleteTemplate(id)
-      toast.warning(t('page.toast.deleted', { ns: 'prompt_template' }))
+      toast.warning(t('page.toast.deleted'))
       void fetchTemplates()
     } catch (error) {
       console.error('Failed to delete template:', error)
-      toast.error(t('page.toast.deleteError', { ns: 'prompt_template' }))
+      toast.error(t('page.toast.deleteError'))
     } finally {
       setDeletingId(null)
     }
@@ -275,10 +264,10 @@ export function TemplatesPage() {
     if (templates?.length === 0) {
       return (
         <div className="flex h-60 flex-col items-center justify-center rounded-lg border border-dashed">
-          <Search className="mb-2 h-10 w-10 text-muted-foreground" />
-          <p className="text-muted-foreground">{t('page.empty', { ns: 'prompt_template' })}</p>
+          <Inbox className="mb-2 h-10 w-10 text-muted-foreground" />
+          <p className="text-muted-foreground">{t('page.empty')}</p>
           <Button variant="link" className="mt-4" onClick={handleOpenCreate}>
-            {t('page.createFirst', { ns: 'prompt_template' })}
+            {t('page.createFirst')}
           </Button>
         </div>
       )
@@ -299,8 +288,7 @@ export function TemplatesPage() {
             </CardContent>
             <CardFooter className="flex items-center justify-between pt-2">
               <span className="text-xs text-muted-foreground">
-                {t('page.createdAt', { ns: 'prompt_template' })}:{' '}
-                {format(new Date(template.createdAt), 'yyyy-MM-dd')}
+                {t('page.createdAt')}: {format(new Date(template.createdAt), 'yyyy-MM-dd')}
               </span>
               <div className="flex gap-1">
                 <Button
@@ -336,16 +324,12 @@ export function TemplatesPage() {
     <div className="space-y-6">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            {t('page.title', { ns: 'prompt_template' })}
-          </h1>
-          <p className="text-muted-foreground">
-            {t('page.description', { ns: 'prompt_template' })}
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{t('page.title')}</h1>
+          <p className="text-muted-foreground">{t('page.description')}</p>
         </div>
         <Button size="sm" onClick={handleOpenCreate}>
           <Plus className="mr-2 h-4 w-4" />
-          {t('page.newTemplate', { ns: 'prompt_template' })}
+          {t('page.newTemplate')}
         </Button>
       </div>
 

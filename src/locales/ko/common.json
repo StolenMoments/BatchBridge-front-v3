@@ -16,6 +16,9 @@
     "failed": "실패",
     "pending": "대기중"
   },
+  "navigation": {
+    "templates": "프롬프트 템플릿"
+  },
   "labels": {
     "createdAt": "생성",
     "submittedAt": "제출",

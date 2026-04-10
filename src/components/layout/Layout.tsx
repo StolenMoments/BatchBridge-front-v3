@@ -6,7 +6,7 @@ import { LocaleToggle } from '@/components/LocaleToggle'
 import { ModeToggle } from '@/components/mode-toggle'
 
 export function Layout() {
-  const { t } = useTranslation('prompt_template')
+  const { t } = useTranslation('common')
 
   return (
     <div className="flex min-h-screen flex-col bg-background text-foreground">
@@ -26,7 +26,7 @@ export function Layout() {
                     : 'text-muted-foreground transition-colors hover:text-foreground'
                 }
               >
-                {t('page.title')}
+                {t('navigation.templates')}
               </NavLink>
             </nav>
           </div>
