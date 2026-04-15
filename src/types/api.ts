@@ -1,5 +1,12 @@
 export type BatchStatus = 'DRAFT' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED'
 
+export type PromptType =
+  | 'TEXT'
+  | 'IMAGE_GENERATION'
+  | 'IMAGE_EDIT'
+  | 'VIDEO_GENERATION'
+  | 'VIDEO_EDIT'
+
 export interface Attachment {
   fileName: string
   fileContent: string
@@ -18,6 +25,8 @@ export interface Prompt {
   status: BatchStatus | 'PENDING'
   responseContent?: string
   errorMessage?: string
+  promptType?: PromptType
+  sourceMediaUrl?: string
 }
 
 export interface Batch {
@@ -48,6 +57,7 @@ export interface BatchListItem {
 export interface Model {
   id: string
   displayName: string
+  supportedPromptTypes?: PromptType[]
 }
 
 export interface ApiErrorPayload {

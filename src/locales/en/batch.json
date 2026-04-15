@@ -1,4 +1,13 @@
 {
+  "common": {
+    "promptTypes": {
+      "TEXT": "Text",
+      "IMAGE_GENERATION": "Image Generation",
+      "IMAGE_EDIT": "Image Edit",
+      "VIDEO_GENERATION": "Video Generation",
+      "VIDEO_EDIT": "Video Edit"
+    }
+  },
   "list": {
     "title": "Batch List",
     "description": "Check the status and results of created batches at a glance.",
@@ -25,7 +34,11 @@
     "systemPromptPlaceholder": "Enter a system prompt",
     "userPromptLabel": "User Prompt (Required)",
     "userPromptPlaceholder": "Enter the request content to send to the AI",
-    "creating": "Creating..."
+    "creating": "Creating...",
+    "promptTypeLabel": "Prompt Type",
+    "promptTypePlaceholder": "Select a type",
+    "sourceMediaUrlLabel": "Source Media URL",
+    "sourceMediaUrlPlaceholder": "Enter the public URL of the original image/video to edit"
   },
   "detail": {
     "notFound": "Batch not found.",
@@ -40,6 +53,10 @@
     "noPrompts": "No prompts have been added.",
     "addPromptTitle": "Add Prompt",
     "addPromptDescription": "Add a new prompt to the batch.",
+    "promptTypeLabel": "Prompt Type",
+    "promptTypePlaceholder": "Select a type",
+    "sourceMediaUrlLabel": "Source Media URL",
+    "sourceMediaUrlPlaceholder": "Enter the public URL of the original image/video to edit",
     "labelField": "Label (Optional)",
     "labelPlaceholder": "Label to identify the prompt",
     "userPromptInput": "Input Content (User Prompt)",

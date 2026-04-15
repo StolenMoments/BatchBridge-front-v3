@@ -36,6 +36,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { usePromptTypeLabels } from '@/hooks/usePromptType'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
 import { batchService } from '@/services/api'
 
@@ -49,6 +50,8 @@ export function PromptDetailPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  const promptTypeLabels = usePromptTypeLabels()
 
   const statusLabelMap: Record<Prompt['status'], string> = {
     DRAFT: t('status.draft', { ns: 'common' }),
@@ -162,6 +165,11 @@ export function PromptDetailPage() {
                 ? t('detail.draftBadge', { ns: 'batch' })
                 : statusLabelMap[prompt.status]}
             </Badge>
+            {prompt.promptType && prompt.promptType !== 'TEXT' ? (
+              <Badge variant="secondary" className="h-6 px-2 py-0.5 text-[10px] font-medium">
+                {promptTypeLabels[prompt.promptType]}
+              </Badge>
+            ) : null}
           </div>
           <p className="text-muted-foreground">{t('detail.subtitle', { ns: 'prompt' })}</p>
         </div>
@@ -330,11 +338,7 @@ export function PromptDetailPage() {
                   </div>
                   <div className="flex justify-center">
                     <p className="text-xs text-muted-foreground">
-                      {t('detail.failedHelper', {
-                        ns: 'prompt',
-                        defaultValue:
-                          '프롬프트 처리 중 오류가 발생했습니다. 배치 상세 페이지에서 재동기화를 시도할 수 있습니다.',
-                      })}
+                      {t('detail.failedHelper', { ns: 'prompt' })}
                     </p>
                   </div>
                 </div>

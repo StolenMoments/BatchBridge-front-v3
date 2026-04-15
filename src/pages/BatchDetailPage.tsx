@@ -25,7 +25,7 @@ import ReactMarkdown from 'react-markdown'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import type { Attachment, Batch, BatchStatus, Model } from '@/types/api'
+import type { Attachment, Batch, BatchStatus, Model, PromptType } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
@@ -57,6 +57,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
 import { batchService, modelService } from '@/services/api'
 
@@ -82,6 +83,8 @@ export function BatchDetailPage() {
     systemPrompt: '',
     userPrompt: '',
     attachments: [] as Attachment[],
+    promptType: 'TEXT' as PromptType,
+    sourceMediaUrl: '',
   })
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const [isAttachmentPending, setIsAttachmentPending] = useState(false)
@@ -104,6 +107,11 @@ export function BatchDetailPage() {
       .catch(error => console.error('Failed to fetch models:', error))
       .finally(() => setLoadingModels(false))
   }, [])
+
+  const currentBatchModel = models.find(m => m.id === batch?.model)
+  const { supportedTypes: currentBatchSupportedTypes, showTypeSelect: showPromptTypeSelect } =
+    useSupportedPromptTypes(currentBatchModel)
+  const promptTypeLabels = usePromptTypeLabels()
 
   const batchStatusLabelMap: Record<BatchStatus, string> = {
     DRAFT: t('status.draft', { ns: 'common' }),
@@ -215,18 +223,31 @@ export function BatchDetailPage() {
 
   const handleAddPrompt = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!batch || !newPrompt.userPrompt || isAttachmentPending) return
+    const isTextType = newPrompt.promptType === 'TEXT'
+    if (!batch || !newPrompt.userPrompt || (isTextType && isAttachmentPending)) return
+
+    const isEditType =
+      newPrompt.promptType === 'IMAGE_EDIT' || newPrompt.promptType === 'VIDEO_EDIT'
 
     try {
       const response = await batchService.addPrompt(batch.id, {
         label: newPrompt.label || undefined,
-        systemPrompt: newPrompt.systemPrompt || undefined,
+        systemPrompt: isTextType ? newPrompt.systemPrompt || undefined : undefined,
         userPrompt: newPrompt.userPrompt,
-        attachments: newPrompt.attachments,
+        attachments: isTextType ? newPrompt.attachments : [],
+        promptType: newPrompt.promptType !== 'TEXT' ? newPrompt.promptType : undefined,
+        sourceMediaUrl: isEditType ? newPrompt.sourceMediaUrl || undefined : undefined,
       })
 
       if (response.success) {
-        setNewPrompt({ label: '', systemPrompt: '', userPrompt: '', attachments: [] })
+        setNewPrompt({
+          label: '',
+          systemPrompt: '',
+          userPrompt: '',
+          attachments: [],
+          promptType: currentBatchSupportedTypes?.[0] ?? 'TEXT',
+          sourceMediaUrl: '',
+        })
         setAttachmentError(null)
         setErrorMessage(null)
         setExternalContextResetToken(prev => prev + 1)
@@ -533,9 +554,16 @@ export function BatchDetailPage() {
                         {index + 1}. {prompt.label} <ExternalLink className="h-3 w-3" />
                       </Link>
                     </CardTitle>
-                    <Badge variant="outline" className="text-xs">
-                      {t('detail.draftBadge', { ns: 'batch' })}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      {prompt.promptType && prompt.promptType !== 'TEXT' ? (
+                        <Badge variant="secondary" className="text-xs">
+                          {promptTypeLabels[prompt.promptType]}
+                        </Badge>
+                      ) : null}
+                      <Badge variant="outline" className="text-xs">
+                        {t('detail.draftBadge', { ns: 'batch' })}
+                      </Badge>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-2 px-4 py-2">
                     {prompt.systemPrompt ? (
@@ -605,27 +633,60 @@ export function BatchDetailPage() {
                       />
                     </div>
 
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor="p-system" className="text-sm font-medium text-foreground">
-                          {t('create.systemPromptLabel', { ns: 'batch' })}
+                    {showPromptTypeSelect ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="p-type" className="text-sm font-medium text-foreground">
+                          {t('detail.promptTypeLabel', { ns: 'batch' })}
                         </Label>
-                        <PromptTemplateSelect
-                          onSelectTemplate={({ systemPrompt, userPrompt }) =>
-                            setNewPrompt(prev => ({ ...prev, systemPrompt, userPrompt }))
+                        <Select
+                          value={newPrompt.promptType}
+                          onValueChange={value =>
+                            setNewPrompt(prev => ({
+                              ...prev,
+                              promptType: value as PromptType,
+                              sourceMediaUrl: '',
+                            }))
+                          }
+                        >
+                          <SelectTrigger id="p-type">
+                            <SelectValue
+                              placeholder={t('detail.promptTypePlaceholder', { ns: 'batch' })}
+                            />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(currentBatchSupportedTypes ?? []).map(type => (
+                              <SelectItem key={type} value={type}>
+                                {promptTypeLabels[type]}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ) : null}
+
+                    {newPrompt.promptType === 'TEXT' ? (
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor="p-system" className="text-sm font-medium text-foreground">
+                            {t('create.systemPromptLabel', { ns: 'batch' })}
+                          </Label>
+                          <PromptTemplateSelect
+                            onSelectTemplate={({ systemPrompt, userPrompt }) =>
+                              setNewPrompt(prev => ({ ...prev, systemPrompt, userPrompt }))
+                            }
+                          />
+                        </div>
+                        <Textarea
+                          id="p-system"
+                          placeholder={t('create.systemPromptPlaceholder', { ns: 'batch' })}
+                          className="min-h-[80px] text-sm"
+                          value={newPrompt.systemPrompt}
+                          onChange={event =>
+                            setNewPrompt({ ...newPrompt, systemPrompt: event.target.value })
                           }
                         />
                       </div>
-                      <Textarea
-                        id="p-system"
-                        placeholder={t('create.systemPromptPlaceholder', { ns: 'batch' })}
-                        className="min-h-[80px] text-sm"
-                        value={newPrompt.systemPrompt}
-                        onChange={event =>
-                          setNewPrompt({ ...newPrompt, systemPrompt: event.target.value })
-                        }
-                      />
-                    </div>
+                    ) : null}
 
                     <div className="space-y-2">
                       <Label htmlFor="p-user" className="text-sm font-medium text-foreground">
@@ -643,28 +704,55 @@ export function BatchDetailPage() {
                       />
                     </div>
 
-                    <ExternalContextImportSection
-                      disabled={isAttachmentPending}
-                      resetToken={externalContextResetToken}
-                      attachments={newPrompt.attachments}
-                      onAttachmentsChange={attachments =>
-                        setNewPrompt(prev => ({ ...prev, attachments }))
-                      }
-                    />
+                    {newPrompt.promptType === 'IMAGE_EDIT' ||
+                    newPrompt.promptType === 'VIDEO_EDIT' ? (
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="p-source-media"
+                          className="text-sm font-medium text-foreground"
+                        >
+                          {t('detail.sourceMediaUrlLabel', { ns: 'batch' })}
+                        </Label>
+                        <Input
+                          id="p-source-media"
+                          placeholder={t('detail.sourceMediaUrlPlaceholder', { ns: 'batch' })}
+                          value={newPrompt.sourceMediaUrl}
+                          onChange={event =>
+                            setNewPrompt({ ...newPrompt, sourceMediaUrl: event.target.value })
+                          }
+                        />
+                      </div>
+                    ) : null}
 
-                    <PromptAttachmentsField
-                      attachments={newPrompt.attachments}
-                      errorMessage={attachmentError}
-                      onChange={attachments => setNewPrompt({ ...newPrompt, attachments })}
-                      onErrorChange={setAttachmentError}
-                      onPendingChange={setIsAttachmentPending}
-                    />
+                    {newPrompt.promptType === 'TEXT' ? (
+                      <>
+                        <ExternalContextImportSection
+                          disabled={isAttachmentPending}
+                          resetToken={externalContextResetToken}
+                          attachments={newPrompt.attachments}
+                          onAttachmentsChange={attachments =>
+                            setNewPrompt(prev => ({ ...prev, attachments }))
+                          }
+                        />
+
+                        <PromptAttachmentsField
+                          attachments={newPrompt.attachments}
+                          errorMessage={attachmentError}
+                          onChange={attachments => setNewPrompt({ ...newPrompt, attachments })}
+                          onErrorChange={setAttachmentError}
+                          onPendingChange={setIsAttachmentPending}
+                        />
+                      </>
+                    ) : null}
                   </CardContent>
                   <CardFooter className="border-t pt-4">
                     <Button
                       type="submit"
                       className="w-full"
-                      disabled={!newPrompt.userPrompt || isAttachmentPending}
+                      disabled={
+                        !newPrompt.userPrompt ||
+                        (newPrompt.promptType === 'TEXT' && isAttachmentPending)
+                      }
                     >
                       <Plus className="mr-2 h-4 w-4" />
                       {t('detail.addPromptAction', { ns: 'batch' })}
@@ -695,6 +783,11 @@ export function BatchDetailPage() {
                     >
                       {promptStatusLabelMap[prompt.status]}
                     </Badge>
+                    {prompt.promptType && prompt.promptType !== 'TEXT' ? (
+                      <Badge variant="outline" className="h-5 text-[10px]">
+                        {promptTypeLabels[prompt.promptType]}
+                      </Badge>
+                    ) : null}
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">

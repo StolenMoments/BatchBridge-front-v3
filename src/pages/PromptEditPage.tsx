@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import type { Attachment, BatchStatus, Prompt } from '@/types/api'
+import type { Attachment, BatchStatus, Model, Prompt, PromptType } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { ExternalContextChipsDisplay } from '@/components/prompt/ExternalContextChipsDisplay'
@@ -21,9 +21,17 @@ import {
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { usePromptType, usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
-import { batchService } from '@/services/api'
+import { batchService, modelService } from '@/services/api'
 
 export function PromptEditPage() {
   const { t } = useTranslation(['prompt', 'common', 'batch'])
@@ -36,11 +44,15 @@ export function PromptEditPage() {
 
   const [prompt, setPrompt] = useState<Prompt | null>(null)
   const [batchStatus, setBatchStatus] = useState<BatchStatus | null>(null)
+  const [batchModel, setBatchModel] = useState<string>('')
+  const [models, setModels] = useState<Model[]>([])
 
   const [editLabel, setEditLabel] = useState('')
   const [editSystemPrompt, setEditSystemPrompt] = useState('')
   const [editUserPrompt, setEditUserPrompt] = useState('')
   const [editAttachments, setEditAttachments] = useState<Attachment[]>([])
+  const [editPromptType, setEditPromptType] = useState<PromptType>('TEXT')
+  const [editSourceMediaUrl, setEditSourceMediaUrl] = useState('')
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const [isAttachmentPending, setIsAttachmentPending] = useState(false)
 
@@ -53,9 +65,10 @@ export function PromptEditPage() {
         const batchIdNum = Number.parseInt(batchId, 10)
         const promptIdNum = Number.parseInt(promptId, 10)
 
-        const [promptResponse, batchResponse] = await Promise.all([
+        const [promptResponse, batchResponse, modelsResponse] = await Promise.all([
           batchService.getPrompt(batchIdNum, promptIdNum),
           batchService.getBatch(batchIdNum),
+          modelService.getModels(),
         ])
 
         if (promptResponse.success) {
@@ -65,10 +78,16 @@ export function PromptEditPage() {
           setEditSystemPrompt(p.systemPrompt || '')
           setEditUserPrompt(p.userPrompt || '')
           setEditAttachments(p.attachments ?? [])
+          setEditPromptType(p.promptType ?? 'TEXT')
         }
 
         if (batchResponse.success) {
           setBatchStatus(batchResponse.data.status)
+          setBatchModel(batchResponse.data.model)
+        }
+
+        if (modelsResponse.success) {
+          setModels(modelsResponse.data)
         }
       } catch (error) {
         console.error('Failed to fetch data for edit:', error)
@@ -92,9 +111,14 @@ export function PromptEditPage() {
     })
   }
 
+  const { isTextType, isEditType } = usePromptType(editPromptType)
+  const currentModel = models.find(m => m.id === batchModel)
+  const { supportedTypes, showTypeSelect } = useSupportedPromptTypes(currentModel)
+  const promptTypeLabels = usePromptTypeLabels()
+
   const handleUpdate = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!batchId || !promptId || !prompt || isAttachmentPending) return
+    if (!batchId || !promptId || !prompt || (isTextType && isAttachmentPending)) return
 
     setIsUpdating(true)
     try {
@@ -102,13 +126,14 @@ export function PromptEditPage() {
       const promptIdNumber = Number.parseInt(promptId, 10)
       const attachmentsChanged = haveAttachmentsChanged(prompt.attachments ?? [], editAttachments)
 
-      if (attachmentsChanged) {
+      if (isTextType && attachmentsChanged) {
         // If attachments changed, we must recreate the prompt (as per original logic in PromptDetailPage)
         const createResponse = await batchService.addPrompt(batchIdNumber, {
           label: editLabel || undefined,
           systemPrompt: editSystemPrompt || undefined,
           userPrompt: editUserPrompt,
           attachments: editAttachments,
+          promptType: editPromptType !== 'TEXT' ? editPromptType : undefined,
         })
 
         if (createResponse.success) {
@@ -120,9 +145,11 @@ export function PromptEditPage() {
 
       const updateResponse = await batchService.updatePrompt(batchIdNumber, promptIdNumber, {
         label: editLabel,
-        systemPrompt: editSystemPrompt,
+        systemPrompt: isTextType ? editSystemPrompt : undefined,
         userPrompt: editUserPrompt,
-        attachments: editAttachments,
+        attachments: isTextType ? editAttachments : [],
+        promptType: editPromptType !== 'TEXT' ? editPromptType : undefined,
+        sourceMediaUrl: isEditType ? editSourceMediaUrl || undefined : undefined,
       })
 
       if (updateResponse.success) {
@@ -192,24 +219,50 @@ export function PromptEditPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="edit-system">{t('detail.systemPrompt', { ns: 'batch' })}</Label>
-                <PromptTemplateSelect
-                  onSelectTemplate={({ systemPrompt, userPrompt }) => {
-                    setEditSystemPrompt(systemPrompt)
-                    setEditUserPrompt(userPrompt)
+            {showTypeSelect ? (
+              <div className="space-y-2">
+                <Label htmlFor="edit-type">{t('create.promptTypeLabel', { ns: 'batch' })}</Label>
+                <Select
+                  value={editPromptType}
+                  onValueChange={value => {
+                    setEditPromptType(value as PromptType)
+                    setEditSourceMediaUrl('')
                   }}
+                >
+                  <SelectTrigger id="edit-type">
+                    <SelectValue placeholder={t('create.promptTypePlaceholder', { ns: 'batch' })} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(supportedTypes ?? []).map(type => (
+                      <SelectItem key={type} value={type}>
+                        {promptTypeLabels[type]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : null}
+
+            {isTextType ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="edit-system">{t('detail.systemPrompt', { ns: 'batch' })}</Label>
+                  <PromptTemplateSelect
+                    onSelectTemplate={({ systemPrompt, userPrompt }) => {
+                      setEditSystemPrompt(systemPrompt)
+                      setEditUserPrompt(userPrompt)
+                    }}
+                  />
+                </div>
+                <Textarea
+                  id="edit-system"
+                  value={editSystemPrompt}
+                  onChange={event => setEditSystemPrompt(event.target.value)}
+                  placeholder={t('create.systemPromptPlaceholder', { ns: 'batch' })}
+                  className="min-h-[80px]"
                 />
               </div>
-              <Textarea
-                id="edit-system"
-                value={editSystemPrompt}
-                onChange={event => setEditSystemPrompt(event.target.value)}
-                placeholder={t('create.systemPromptPlaceholder', { ns: 'batch' })}
-                className="min-h-[80px]"
-              />
-            </div>
+            ) : null}
 
             <div className="space-y-2">
               <Label htmlFor="edit-user">{t('detail.userPrompt')}</Label>
@@ -223,27 +276,43 @@ export function PromptEditPage() {
               />
             </div>
 
-            <div className="space-y-4 border-t pt-4">
-              <ExternalContextImportSection
-                attachments={editAttachments}
-                disabled={isUpdating || isAttachmentPending}
-                promptId={promptId}
-                onAttachmentsChange={setEditAttachments}
-              />
-              <ExternalContextChipsDisplay
-                attachments={editAttachments}
-                onRemove={fileName =>
-                  setEditAttachments(prev => prev.filter(a => a.fileName !== fileName))
-                }
-              />
-              <PromptAttachmentsField
-                attachments={editAttachments}
-                errorMessage={attachmentError}
-                onChange={setEditAttachments}
-                onErrorChange={setAttachmentError}
-                onPendingChange={setIsAttachmentPending}
-              />
-            </div>
+            {isEditType ? (
+              <div className="space-y-2">
+                <Label htmlFor="edit-source-media">
+                  {t('create.sourceMediaUrlLabel', { ns: 'batch' })}
+                </Label>
+                <Input
+                  id="edit-source-media"
+                  value={editSourceMediaUrl}
+                  onChange={event => setEditSourceMediaUrl(event.target.value)}
+                  placeholder={t('create.sourceMediaUrlPlaceholder', { ns: 'batch' })}
+                />
+              </div>
+            ) : null}
+
+            {isTextType ? (
+              <div className="space-y-4 border-t pt-4">
+                <ExternalContextImportSection
+                  attachments={editAttachments}
+                  disabled={isUpdating || isAttachmentPending}
+                  promptId={promptId}
+                  onAttachmentsChange={setEditAttachments}
+                />
+                <ExternalContextChipsDisplay
+                  attachments={editAttachments}
+                  onRemove={fileName =>
+                    setEditAttachments(prev => prev.filter(a => a.fileName !== fileName))
+                  }
+                />
+                <PromptAttachmentsField
+                  attachments={editAttachments}
+                  errorMessage={attachmentError}
+                  onChange={setEditAttachments}
+                  onErrorChange={setAttachmentError}
+                  onPendingChange={setIsAttachmentPending}
+                />
+              </div>
+            ) : null}
           </CardContent>
           <CardFooter className="flex justify-end gap-3 border-t pt-4">
             <Button
@@ -254,7 +323,10 @@ export function PromptEditPage() {
             >
               {t('actions.cancel', { ns: 'common' })}
             </Button>
-            <Button type="submit" disabled={isUpdating || isAttachmentPending || !editUserPrompt}>
+            <Button
+              type="submit"
+              disabled={isUpdating || (isTextType && isAttachmentPending) || !editUserPrompt}
+            >
               {isUpdating || isAttachmentPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
