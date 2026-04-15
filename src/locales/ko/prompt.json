@@ -17,6 +17,7 @@
     "markdown": "Markdown",
     "text": "Text",
     "noResponseContent": "응답 내용이 없습니다.",
+    "mediaPreparing": "미디어 준비 중...",
     "failedHelper": "프롬프트 처리 중 오류가 발생했습니다. 배치 상세 페이지에서 재동기화를 시도할 수 있습니다."
   },
   "edit": {

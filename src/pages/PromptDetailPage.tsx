@@ -281,40 +281,85 @@ export function PromptDetailPage() {
 
         <Card>
           {prompt.status === 'COMPLETED' ? (
-            <Tabs defaultValue="text" className="flex w-full flex-col gap-0">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">
-                    {t('detail.modelAnswer', { ns: 'prompt' })}
-                  </CardTitle>
-                </div>
-                <TabsList variant="line" className="h-8">
-                  <TabsTrigger value="markdown" className="gap-1 px-3 py-1 text-xs">
-                    <Layout className="h-3 w-3" />
-                    {t('detail.markdown', { ns: 'prompt' })}
-                  </TabsTrigger>
-                  <TabsTrigger value="text" className="gap-1 px-3 py-1 text-xs">
-                    <FileText className="h-3 w-3" />
-                    {t('detail.text', { ns: 'prompt' })}
-                  </TabsTrigger>
-                </TabsList>
-              </CardHeader>
-              <CardContent>
-                <div className="grid min-h-[200px] min-w-0 overflow-hidden rounded-md border bg-background shadow-sm">
-                  <TabsContent value="markdown" className="col-start-1 row-start-1 mt-0 min-w-0">
-                    <div className="prose prose-sm dark:prose-invert h-full max-w-none p-6 break-words">
-                      <ReactMarkdown>{prompt.responseContent || ''}</ReactMarkdown>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="text" className="col-start-1 row-start-1 mt-0 min-w-0">
-                    <div className="h-full p-6 font-mono text-sm break-words whitespace-pre-wrap">
-                      {prompt.responseContent || t('detail.noResponseContent', { ns: 'prompt' })}
-                    </div>
-                  </TabsContent>
-                </div>
-              </CardContent>
-            </Tabs>
+            prompt.promptType &&
+            (prompt.promptType === 'IMAGE_GENERATION' ||
+              prompt.promptType === 'IMAGE_EDIT' ||
+              prompt.promptType === 'VIDEO_GENERATION' ||
+              prompt.promptType === 'VIDEO_EDIT') ? (
+              <>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">
+                      {t('detail.modelAnswer', { ns: 'prompt' })}
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex min-h-[300px] items-center justify-center rounded-md border bg-background p-6 shadow-sm">
+                    {prompt.promptType.startsWith('IMAGE') ? (
+                      prompt.resultMediaUrl ? (
+                        <img
+                          src={prompt.resultMediaUrl}
+                          alt={prompt.label}
+                          className="max-h-[600px] rounded-md shadow-md"
+                        />
+                      ) : (
+                        <p className="text-muted-foreground italic">
+                          {t('detail.mediaPreparing', { ns: 'prompt' })}
+                        </p>
+                      )
+                    ) : prompt.resultMediaUrl ? (
+                      /* eslint-disable-next-line jsx-a11y/media-has-caption */
+                      <video
+                        controls
+                        src={prompt.resultMediaUrl}
+                        className="max-h-[600px] w-full rounded-md shadow-md"
+                      />
+                    ) : (
+                      <p className="text-muted-foreground italic">
+                        {t('detail.mediaPreparing', { ns: 'prompt' })}
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </>
+            ) : (
+              <Tabs defaultValue="text" className="flex w-full flex-col gap-0">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">
+                      {t('detail.modelAnswer', { ns: 'prompt' })}
+                    </CardTitle>
+                  </div>
+                  <TabsList variant="line" className="h-8">
+                    <TabsTrigger value="markdown" className="gap-1 px-3 py-1 text-xs">
+                      <Layout className="h-3 w-3" />
+                      {t('detail.markdown', { ns: 'prompt' })}
+                    </TabsTrigger>
+                    <TabsTrigger value="text" className="gap-1 px-3 py-1 text-xs">
+                      <FileText className="h-3 w-3" />
+                      {t('detail.text', { ns: 'prompt' })}
+                    </TabsTrigger>
+                  </TabsList>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid min-h-[200px] min-w-0 overflow-hidden rounded-md border bg-background shadow-sm">
+                    <TabsContent value="markdown" className="col-start-1 row-start-1 mt-0 min-w-0">
+                      <div className="prose prose-sm dark:prose-invert h-full max-w-none p-6 break-words">
+                        <ReactMarkdown>{prompt.responseContent || ''}</ReactMarkdown>
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="text" className="col-start-1 row-start-1 mt-0 min-w-0">
+                      <div className="h-full p-6 font-mono text-sm break-words whitespace-pre-wrap">
+                        {prompt.responseContent || t('detail.noResponseContent', { ns: 'prompt' })}
+                      </div>
+                    </TabsContent>
+                  </div>
+                </CardContent>
+              </Tabs>
+            )
           ) : prompt.status === 'FAILED' ? (
             <>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

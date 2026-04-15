@@ -832,14 +832,47 @@ export function BatchDetailPage() {
                       </AccordionItem>
                     ) : null}
 
-                    {prompt.status === 'COMPLETED' && prompt.responseContent ? (
+                    {prompt.status === 'COMPLETED' ? (
                       <AccordionItem value="output" className="border-none">
                         <AccordionTrigger className="px-4 py-2 text-xs font-semibold tracking-wider text-green-600 uppercase hover:no-underline dark:text-green-400">
                           {t('detail.answerSection', { ns: 'batch' })}
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-4">
                           <div className="prose prose-sm dark:prose-invert max-h-[400px] max-w-none overflow-y-auto rounded-md border bg-background p-4 shadow-sm">
-                            <ReactMarkdown>{prompt.responseContent}</ReactMarkdown>
+                            {prompt.promptType === 'IMAGE_GENERATION' ||
+                            prompt.promptType === 'IMAGE_EDIT' ? (
+                              prompt.resultMediaUrl ? (
+                                <img
+                                  src={prompt.resultMediaUrl}
+                                  alt={prompt.label}
+                                  className="mx-auto rounded-md"
+                                />
+                              ) : (
+                                <p className="text-muted-foreground italic">
+                                  {t('detail.mediaPreparing', { ns: 'prompt' })}
+                                </p>
+                              )
+                            ) : prompt.promptType === 'VIDEO_GENERATION' ||
+                              prompt.promptType === 'VIDEO_EDIT' ? (
+                              prompt.resultMediaUrl ? (
+                                /* eslint-disable-next-line jsx-a11y/media-has-caption */
+                                <video
+                                  controls
+                                  src={prompt.resultMediaUrl}
+                                  className="mx-auto w-full rounded-md"
+                                />
+                              ) : (
+                                <p className="text-muted-foreground italic">
+                                  {t('detail.mediaPreparing', { ns: 'prompt' })}
+                                </p>
+                              )
+                            ) : prompt.responseContent ? (
+                              <ReactMarkdown>{prompt.responseContent}</ReactMarkdown>
+                            ) : (
+                              <p className="text-muted-foreground italic">
+                                {t('detail.noResponseContent', { ns: 'prompt' })}
+                              </p>
+                            )}
                           </div>
                         </AccordionContent>
                       </AccordionItem>
