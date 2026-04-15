@@ -10,6 +10,7 @@ interface MediaResultDisplayProps {
   className?: string
   imageClassName?: string
   videoClassName?: string
+  nullDisplay?: 'preparing' | 'empty'
 }
 
 export function MediaResultDisplay({
@@ -17,6 +18,7 @@ export function MediaResultDisplay({
   className,
   imageClassName,
   videoClassName,
+  nullDisplay = 'preparing',
 }: MediaResultDisplayProps) {
   const { t } = useTranslation('prompt')
   const { promptType, resultMediaUrl, label } = prompt
@@ -29,9 +31,11 @@ export function MediaResultDisplay({
   if (!isImage && !isVideo) return null
 
   if (!resultMediaUrl) {
+    const message =
+      nullDisplay === 'empty' ? t('detail.noResponseContent') : t('detail.mediaPreparing')
     return (
       <div className={cn('flex items-center justify-center py-4', className)}>
-        <p className="text-sm text-muted-foreground italic">{t('detail.mediaPreparing')}</p>
+        <p className="text-sm text-muted-foreground italic">{message}</p>
       </div>
     )
   }

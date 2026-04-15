@@ -839,21 +839,25 @@ export function BatchDetailPage() {
                           {t('detail.answerSection', { ns: 'batch' })}
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-4">
-                          <div className="prose prose-sm dark:prose-invert max-h-[400px] max-w-none overflow-y-auto rounded-md border bg-background p-4 shadow-sm">
-                            {prompt.promptType && prompt.promptType !== 'TEXT' ? (
+                          {prompt.promptType && prompt.promptType !== 'TEXT' ? (
+                            <div className="flex items-center justify-center rounded-md border bg-background p-4 shadow-sm">
                               <MediaResultDisplay
                                 prompt={prompt}
-                                imageClassName="mx-auto"
+                                imageClassName="mx-auto max-h-[360px]"
                                 videoClassName="mx-auto w-full"
                               />
-                            ) : prompt.responseContent ? (
-                              <ReactMarkdown>{prompt.responseContent}</ReactMarkdown>
-                            ) : (
-                              <p className="text-muted-foreground italic">
-                                {t('detail.noResponseContent', { ns: 'prompt' })}
-                              </p>
-                            )}
-                          </div>
+                            </div>
+                          ) : (
+                            <div className="prose prose-sm dark:prose-invert max-h-[400px] max-w-none overflow-y-auto rounded-md border bg-background p-4 shadow-sm">
+                              {prompt.responseContent ? (
+                                <ReactMarkdown>{prompt.responseContent}</ReactMarkdown>
+                              ) : (
+                                <p className="text-muted-foreground italic">
+                                  {t('detail.noResponseContent', { ns: 'prompt' })}
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </AccordionContent>
                       </AccordionItem>
                     ) : null}

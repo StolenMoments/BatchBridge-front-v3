@@ -263,23 +263,27 @@ export function PromptDetailPage() {
           </Card>
         </Tabs>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div className="flex items-center gap-2">
-              <Paperclip className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-lg">{t('detail.attachments', { ns: 'prompt' })}</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ExternalContextChipsDisplay attachments={prompt.attachments ?? []} disabled />
-            <PromptAttachmentsField
-              attachments={prompt.attachments ?? []}
-              disabled
-              helperText={t('detail.attachmentsHelper', { ns: 'prompt' })}
-              onChange={() => undefined}
-            />
-          </CardContent>
-        </Card>
+        {(!prompt.promptType || prompt.promptType === 'TEXT') && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="flex items-center gap-2">
+                <Paperclip className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-lg">
+                  {t('detail.attachments', { ns: 'prompt' })}
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ExternalContextChipsDisplay attachments={prompt.attachments ?? []} disabled />
+              <PromptAttachmentsField
+                attachments={prompt.attachments ?? []}
+                disabled
+                helperText={t('detail.attachmentsHelper', { ns: 'prompt' })}
+                onChange={() => undefined}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           {prompt.status === 'COMPLETED' ? (
@@ -299,6 +303,7 @@ export function PromptDetailPage() {
                       prompt={prompt}
                       imageClassName="max-h-[600px]"
                       videoClassName="max-h-[600px] w-full"
+                      nullDisplay="empty"
                     />
                   </div>
                 </CardContent>
