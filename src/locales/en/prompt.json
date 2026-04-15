@@ -17,6 +17,7 @@
     "markdown": "Markdown",
     "text": "Text",
     "noResponseContent": "No response content.",
+    "mediaPreparing": "Media preparing...",
     "failedHelper": "An error occurred while processing the prompt. You can try resyncing from the batch detail page."
   },
   "edit": {

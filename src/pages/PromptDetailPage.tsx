@@ -23,6 +23,7 @@ import type { BatchStatus, Prompt } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { ExternalContextChipsDisplay } from '@/components/prompt/ExternalContextChipsDisplay'
+import { MediaResultDisplay } from '@/components/prompt/MediaResultDisplay'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -39,6 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { usePromptTypeLabels } from '@/hooks/usePromptType'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
 import { batchService } from '@/services/api'
+import { isMediaPromptType } from '@/types/api'
 
 export function PromptDetailPage() {
   const { t } = useTranslation(['prompt', 'common', 'batch'])
@@ -261,60 +263,87 @@ export function PromptDetailPage() {
           </Card>
         </Tabs>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <div className="flex items-center gap-2">
-              <Paperclip className="h-5 w-5 text-muted-foreground" />
-              <CardTitle className="text-lg">{t('detail.attachments', { ns: 'prompt' })}</CardTitle>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ExternalContextChipsDisplay attachments={prompt.attachments ?? []} disabled />
-            <PromptAttachmentsField
-              attachments={prompt.attachments ?? []}
-              disabled
-              helperText={t('detail.attachmentsHelper', { ns: 'prompt' })}
-              onChange={() => undefined}
-            />
-          </CardContent>
-        </Card>
+        {(!prompt.promptType || prompt.promptType === 'TEXT') && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="flex items-center gap-2">
+                <Paperclip className="h-5 w-5 text-muted-foreground" />
+                <CardTitle className="text-lg">
+                  {t('detail.attachments', { ns: 'prompt' })}
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ExternalContextChipsDisplay attachments={prompt.attachments ?? []} disabled />
+              <PromptAttachmentsField
+                attachments={prompt.attachments ?? []}
+                disabled
+                helperText={t('detail.attachmentsHelper', { ns: 'prompt' })}
+                onChange={() => undefined}
+              />
+            </CardContent>
+          </Card>
+        )}
 
         <Card>
           {prompt.status === 'COMPLETED' ? (
-            <Tabs defaultValue="text" className="flex w-full flex-col gap-0">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <div className="flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">
-                    {t('detail.modelAnswer', { ns: 'prompt' })}
-                  </CardTitle>
-                </div>
-                <TabsList variant="line" className="h-8">
-                  <TabsTrigger value="markdown" className="gap-1 px-3 py-1 text-xs">
-                    <Layout className="h-3 w-3" />
-                    {t('detail.markdown', { ns: 'prompt' })}
-                  </TabsTrigger>
-                  <TabsTrigger value="text" className="gap-1 px-3 py-1 text-xs">
-                    <FileText className="h-3 w-3" />
-                    {t('detail.text', { ns: 'prompt' })}
-                  </TabsTrigger>
-                </TabsList>
-              </CardHeader>
-              <CardContent>
-                <div className="grid min-h-[200px] min-w-0 overflow-hidden rounded-md border bg-background shadow-sm">
-                  <TabsContent value="markdown" className="col-start-1 row-start-1 mt-0 min-w-0">
-                    <div className="prose prose-sm dark:prose-invert h-full max-w-none p-6 break-words">
-                      <ReactMarkdown>{prompt.responseContent || ''}</ReactMarkdown>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="text" className="col-start-1 row-start-1 mt-0 min-w-0">
-                    <div className="h-full p-6 font-mono text-sm break-words whitespace-pre-wrap">
-                      {prompt.responseContent || t('detail.noResponseContent', { ns: 'prompt' })}
-                    </div>
-                  </TabsContent>
-                </div>
-              </CardContent>
-            </Tabs>
+            isMediaPromptType(prompt.promptType) ? (
+              <>
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">
+                      {t('detail.modelAnswer', { ns: 'prompt' })}
+                    </CardTitle>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex min-h-[300px] items-center justify-center rounded-md border bg-background p-6 shadow-sm">
+                    <MediaResultDisplay
+                      prompt={prompt}
+                      imageClassName="max-h-[600px]"
+                      videoClassName="max-h-[600px] w-full"
+                      nullDisplay="empty"
+                    />
+                  </div>
+                </CardContent>
+              </>
+            ) : (
+              <Tabs defaultValue="text" className="flex w-full flex-col gap-0">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">
+                      {t('detail.modelAnswer', { ns: 'prompt' })}
+                    </CardTitle>
+                  </div>
+                  <TabsList variant="line" className="h-8">
+                    <TabsTrigger value="markdown" className="gap-1 px-3 py-1 text-xs">
+                      <Layout className="h-3 w-3" />
+                      {t('detail.markdown', { ns: 'prompt' })}
+                    </TabsTrigger>
+                    <TabsTrigger value="text" className="gap-1 px-3 py-1 text-xs">
+                      <FileText className="h-3 w-3" />
+                      {t('detail.text', { ns: 'prompt' })}
+                    </TabsTrigger>
+                  </TabsList>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid min-h-[200px] min-w-0 overflow-hidden rounded-md border bg-background shadow-sm">
+                    <TabsContent value="markdown" className="col-start-1 row-start-1 mt-0 min-w-0">
+                      <div className="prose prose-sm dark:prose-invert h-full max-w-none p-6 break-words">
+                        <ReactMarkdown>{prompt.responseContent || ''}</ReactMarkdown>
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="text" className="col-start-1 row-start-1 mt-0 min-w-0">
+                      <div className="h-full p-6 font-mono text-sm break-words whitespace-pre-wrap">
+                        {prompt.responseContent || t('detail.noResponseContent', { ns: 'prompt' })}
+                      </div>
+                    </TabsContent>
+                  </div>
+                </CardContent>
+              </Tabs>
+            )
           ) : prompt.status === 'FAILED' ? (
             <>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

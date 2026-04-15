@@ -29,6 +29,7 @@ import type { Attachment, Batch, BatchStatus, Model, PromptType } from '@/types/
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
+import { MediaResultDisplay } from '@/components/prompt/MediaResultDisplay'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import { ReferenceMediaSection } from '@/components/prompt/ReferenceMediaSection'
@@ -832,15 +833,31 @@ export function BatchDetailPage() {
                       </AccordionItem>
                     ) : null}
 
-                    {prompt.status === 'COMPLETED' && prompt.responseContent ? (
+                    {prompt.status === 'COMPLETED' ? (
                       <AccordionItem value="output" className="border-none">
                         <AccordionTrigger className="px-4 py-2 text-xs font-semibold tracking-wider text-green-600 uppercase hover:no-underline dark:text-green-400">
                           {t('detail.answerSection', { ns: 'batch' })}
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-4">
-                          <div className="prose prose-sm dark:prose-invert max-h-[400px] max-w-none overflow-y-auto rounded-md border bg-background p-4 shadow-sm">
-                            <ReactMarkdown>{prompt.responseContent}</ReactMarkdown>
-                          </div>
+                          {prompt.promptType && prompt.promptType !== 'TEXT' ? (
+                            <div className="flex items-center justify-center rounded-md border bg-background p-4 shadow-sm">
+                              <MediaResultDisplay
+                                prompt={prompt}
+                                imageClassName="mx-auto max-h-[360px]"
+                                videoClassName="mx-auto w-full"
+                              />
+                            </div>
+                          ) : (
+                            <div className="prose prose-sm dark:prose-invert max-h-[400px] max-w-none overflow-y-auto rounded-md border bg-background p-4 shadow-sm">
+                              {prompt.responseContent ? (
+                                <ReactMarkdown>{prompt.responseContent}</ReactMarkdown>
+                              ) : (
+                                <p className="text-muted-foreground italic">
+                                  {t('detail.noResponseContent', { ns: 'prompt' })}
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </AccordionContent>
                       </AccordionItem>
                     ) : null}
