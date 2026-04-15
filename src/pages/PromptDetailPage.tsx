@@ -23,6 +23,7 @@ import type { BatchStatus, Prompt } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { ExternalContextChipsDisplay } from '@/components/prompt/ExternalContextChipsDisplay'
+import { MediaResultDisplay } from '@/components/prompt/MediaResultDisplay'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -39,6 +40,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { usePromptTypeLabels } from '@/hooks/usePromptType'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
 import { batchService } from '@/services/api'
+import { isMediaPromptType } from '@/types/api'
 
 export function PromptDetailPage() {
   const { t } = useTranslation(['prompt', 'common', 'batch'])
@@ -281,11 +283,7 @@ export function PromptDetailPage() {
 
         <Card>
           {prompt.status === 'COMPLETED' ? (
-            prompt.promptType &&
-            (prompt.promptType === 'IMAGE_GENERATION' ||
-              prompt.promptType === 'IMAGE_EDIT' ||
-              prompt.promptType === 'VIDEO_GENERATION' ||
-              prompt.promptType === 'VIDEO_EDIT') ? (
+            isMediaPromptType(prompt.promptType) ? (
               <>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <div className="flex items-center gap-2">
@@ -297,30 +295,11 @@ export function PromptDetailPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex min-h-[300px] items-center justify-center rounded-md border bg-background p-6 shadow-sm">
-                    {prompt.promptType.startsWith('IMAGE') ? (
-                      prompt.resultMediaUrl ? (
-                        <img
-                          src={prompt.resultMediaUrl}
-                          alt={prompt.label}
-                          className="max-h-[600px] rounded-md shadow-md"
-                        />
-                      ) : (
-                        <p className="text-muted-foreground italic">
-                          {t('detail.mediaPreparing', { ns: 'prompt' })}
-                        </p>
-                      )
-                    ) : prompt.resultMediaUrl ? (
-                      /* eslint-disable-next-line jsx-a11y/media-has-caption */
-                      <video
-                        controls
-                        src={prompt.resultMediaUrl}
-                        className="max-h-[600px] w-full rounded-md shadow-md"
-                      />
-                    ) : (
-                      <p className="text-muted-foreground italic">
-                        {t('detail.mediaPreparing', { ns: 'prompt' })}
-                      </p>
-                    )}
+                    <MediaResultDisplay
+                      prompt={prompt}
+                      imageClassName="max-h-[600px]"
+                      videoClassName="max-h-[600px] w-full"
+                    />
                   </div>
                 </CardContent>
               </>

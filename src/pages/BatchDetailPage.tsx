@@ -29,6 +29,7 @@ import type { Attachment, Batch, BatchStatus, Model, PromptType } from '@/types/
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
+import { MediaResultDisplay } from '@/components/prompt/MediaResultDisplay'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import { ReferenceMediaSection } from '@/components/prompt/ReferenceMediaSection'
@@ -839,33 +840,12 @@ export function BatchDetailPage() {
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-4">
                           <div className="prose prose-sm dark:prose-invert max-h-[400px] max-w-none overflow-y-auto rounded-md border bg-background p-4 shadow-sm">
-                            {prompt.promptType === 'IMAGE_GENERATION' ||
-                            prompt.promptType === 'IMAGE_EDIT' ? (
-                              prompt.resultMediaUrl ? (
-                                <img
-                                  src={prompt.resultMediaUrl}
-                                  alt={prompt.label}
-                                  className="mx-auto rounded-md"
-                                />
-                              ) : (
-                                <p className="text-muted-foreground italic">
-                                  {t('detail.mediaPreparing', { ns: 'prompt' })}
-                                </p>
-                              )
-                            ) : prompt.promptType === 'VIDEO_GENERATION' ||
-                              prompt.promptType === 'VIDEO_EDIT' ? (
-                              prompt.resultMediaUrl ? (
-                                /* eslint-disable-next-line jsx-a11y/media-has-caption */
-                                <video
-                                  controls
-                                  src={prompt.resultMediaUrl}
-                                  className="mx-auto w-full rounded-md"
-                                />
-                              ) : (
-                                <p className="text-muted-foreground italic">
-                                  {t('detail.mediaPreparing', { ns: 'prompt' })}
-                                </p>
-                              )
+                            {prompt.promptType && prompt.promptType !== 'TEXT' ? (
+                              <MediaResultDisplay
+                                prompt={prompt}
+                                imageClassName="mx-auto"
+                                videoClassName="mx-auto w-full"
+                              />
                             ) : prompt.responseContent ? (
                               <ReactMarkdown>{prompt.responseContent}</ReactMarkdown>
                             ) : (

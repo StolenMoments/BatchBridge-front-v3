@@ -126,3 +126,10 @@ export interface PromptTemplateRequest {
   systemPrompt?: string
   userPrompt: string
 }
+
+/**
+ * Helper to check if a prompt type is a media type
+ */
+export const isMediaPromptType = (type?: PromptType): boolean => {
+  return !!type && (type.startsWith('IMAGE') || type.startsWith('VIDEO'))
+}
