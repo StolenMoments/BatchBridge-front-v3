@@ -1,4 +1,13 @@
 {
+  "common": {
+    "promptTypes": {
+      "TEXT": "Text",
+      "IMAGE_GENERATION": "Image Generation",
+      "IMAGE_EDIT": "Image Edit",
+      "VIDEO_GENERATION": "Video Generation",
+      "VIDEO_EDIT": "Video Edit"
+    }
+  },
   "list": {
     "title": "Batch List",
     "description": "Check the status and results of created batches at a glance.",
@@ -28,11 +37,6 @@
     "creating": "Creating...",
     "promptTypeLabel": "Prompt Type",
     "promptTypePlaceholder": "Select a type",
-    "promptTypeText": "Text",
-    "promptTypeImageGeneration": "Image Generation",
-    "promptTypeImageEdit": "Image Edit",
-    "promptTypeVideoGeneration": "Video Generation",
-    "promptTypeVideoEdit": "Video Edit",
     "sourceMediaUrlLabel": "Source Media URL",
     "sourceMediaUrlPlaceholder": "Enter the public URL of the original image/video to edit"
   },
@@ -51,11 +55,6 @@
     "addPromptDescription": "Add a new prompt to the batch.",
     "promptTypeLabel": "Prompt Type",
     "promptTypePlaceholder": "Select a type",
-    "promptTypeText": "Text",
-    "promptTypeImageGeneration": "Image Generation",
-    "promptTypeImageEdit": "Image Edit",
-    "promptTypeVideoGeneration": "Video Generation",
-    "promptTypeVideoEdit": "Video Edit",
     "sourceMediaUrlLabel": "Source Media URL",
     "sourceMediaUrlPlaceholder": "Enter the public URL of the original image/video to edit",
     "labelField": "Label (Optional)",

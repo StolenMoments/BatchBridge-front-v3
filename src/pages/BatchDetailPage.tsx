@@ -57,6 +57,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
 import { batchService, modelService } from '@/services/api'
 
@@ -108,18 +109,9 @@ export function BatchDetailPage() {
   }, [])
 
   const currentBatchModel = models.find(m => m.id === batch?.model)
-  const currentBatchSupportedTypes = currentBatchModel?.supportedPromptTypes ?? null
-  const showPromptTypeSelect =
-    currentBatchSupportedTypes !== null &&
-    !(currentBatchSupportedTypes.length === 1 && currentBatchSupportedTypes[0] === 'TEXT')
-
-  const promptTypeLabels: Record<PromptType, string> = {
-    TEXT: t('detail.promptTypeText', { ns: 'batch' }),
-    IMAGE_GENERATION: t('detail.promptTypeImageGeneration', { ns: 'batch' }),
-    IMAGE_EDIT: t('detail.promptTypeImageEdit', { ns: 'batch' }),
-    VIDEO_GENERATION: t('detail.promptTypeVideoGeneration', { ns: 'batch' }),
-    VIDEO_EDIT: t('detail.promptTypeVideoEdit', { ns: 'batch' }),
-  }
+  const { supportedTypes: currentBatchSupportedTypes, showTypeSelect: showPromptTypeSelect } =
+    useSupportedPromptTypes(currentBatchModel)
+  const promptTypeLabels = usePromptTypeLabels()
 
   const batchStatusLabelMap: Record<BatchStatus, string> = {
     DRAFT: t('status.draft', { ns: 'common' }),
@@ -662,7 +654,7 @@ export function BatchDetailPage() {
                             />
                           </SelectTrigger>
                           <SelectContent>
-                            {currentBatchSupportedTypes!.map(type => (
+                            {(currentBatchSupportedTypes ?? []).map(type => (
                               <SelectItem key={type} value={type}>
                                 {promptTypeLabels[type]}
                               </SelectItem>

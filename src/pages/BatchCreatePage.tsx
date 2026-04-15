@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { usePromptType, usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { batchService, modelService } from '@/services/api'
 
@@ -79,19 +80,9 @@ export function BatchCreatePage() {
   }, [])
 
   const selectedModel = models.find(m => m.id === formData.model)
-  const supportedTypes = selectedModel?.supportedPromptTypes ?? null
-  const showTypeSelect =
-    supportedTypes !== null && !(supportedTypes.length === 1 && supportedTypes[0] === 'TEXT')
-  const isTextType = formData.promptType === 'TEXT'
-  const isEditType = formData.promptType === 'IMAGE_EDIT' || formData.promptType === 'VIDEO_EDIT'
-
-  const promptTypeLabels: Record<PromptType, string> = {
-    TEXT: t('create.promptTypeText', { ns: 'batch' }),
-    IMAGE_GENERATION: t('create.promptTypeImageGeneration', { ns: 'batch' }),
-    IMAGE_EDIT: t('create.promptTypeImageEdit', { ns: 'batch' }),
-    VIDEO_GENERATION: t('create.promptTypeVideoGeneration', { ns: 'batch' }),
-    VIDEO_EDIT: t('create.promptTypeVideoEdit', { ns: 'batch' }),
-  }
+  const { supportedTypes, showTypeSelect } = useSupportedPromptTypes(selectedModel)
+  const { isTextType, isEditType } = usePromptType(formData.promptType)
+  const promptTypeLabels = usePromptTypeLabels()
 
   const handleModelChange = (value: string) => {
     const model = models.find(m => m.id === value)
@@ -222,7 +213,7 @@ export function BatchCreatePage() {
                     <SelectValue placeholder={t('create.promptTypePlaceholder', { ns: 'batch' })} />
                   </SelectTrigger>
                   <SelectContent>
-                    {supportedTypes!.map(type => (
+                    {(supportedTypes ?? []).map(type => (
                       <SelectItem key={type} value={type}>
                         {promptTypeLabels[type]}
                       </SelectItem>

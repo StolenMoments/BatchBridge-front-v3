@@ -16,7 +16,8 @@
     "waitingResponse": "Waiting for model response. (status: {{status}})",
     "markdown": "Markdown",
     "text": "Text",
-    "noResponseContent": "No response content."
+    "noResponseContent": "No response content.",
+    "failedHelper": "An error occurred while processing the prompt. You can try resyncing from the batch detail page."
   },
   "edit": {
     "notAllowed": "Not allowed to edit in this status.",

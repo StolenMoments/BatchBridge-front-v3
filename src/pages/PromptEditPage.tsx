@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
+import { usePromptType, usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
 import { batchService, modelService } from '@/services/api'
 
@@ -110,21 +111,10 @@ export function PromptEditPage() {
     })
   }
 
-  const isTextType = editPromptType === 'TEXT'
-  const isEditType = editPromptType === 'IMAGE_EDIT' || editPromptType === 'VIDEO_EDIT'
-
+  const { isTextType, isEditType } = usePromptType(editPromptType)
   const currentModel = models.find(m => m.id === batchModel)
-  const supportedTypes = currentModel?.supportedPromptTypes ?? null
-  const showTypeSelect =
-    supportedTypes !== null && !(supportedTypes.length === 1 && supportedTypes[0] === 'TEXT')
-
-  const promptTypeLabels: Record<PromptType, string> = {
-    TEXT: t('create.promptTypeText', { ns: 'batch' }),
-    IMAGE_GENERATION: t('create.promptTypeImageGeneration', { ns: 'batch' }),
-    IMAGE_EDIT: t('create.promptTypeImageEdit', { ns: 'batch' }),
-    VIDEO_GENERATION: t('create.promptTypeVideoGeneration', { ns: 'batch' }),
-    VIDEO_EDIT: t('create.promptTypeVideoEdit', { ns: 'batch' }),
-  }
+  const { supportedTypes, showTypeSelect } = useSupportedPromptTypes(currentModel)
+  const promptTypeLabels = usePromptTypeLabels()
 
   const handleUpdate = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -243,7 +233,7 @@ export function PromptEditPage() {
                     <SelectValue placeholder={t('create.promptTypePlaceholder', { ns: 'batch' })} />
                   </SelectTrigger>
                   <SelectContent>
-                    {supportedTypes!.map(type => (
+                    {(supportedTypes ?? []).map(type => (
                       <SelectItem key={type} value={type}>
                         {promptTypeLabels[type]}
                       </SelectItem>
