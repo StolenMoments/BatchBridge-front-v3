@@ -10,6 +10,7 @@ import { ExternalContextChipsDisplay } from '@/components/prompt/ExternalContext
 import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
+import { ReferenceMediaSection } from '@/components/prompt/ReferenceMediaSection'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -52,7 +53,9 @@ export function PromptEditPage() {
   const [editUserPrompt, setEditUserPrompt] = useState('')
   const [editAttachments, setEditAttachments] = useState<Attachment[]>([])
   const [editPromptType, setEditPromptType] = useState<PromptType>('TEXT')
-  const [editSourceMediaUrl, setEditSourceMediaUrl] = useState('')
+  const [editReferenceMediaUrl, setEditReferenceMediaUrl] = useState('')
+  const [editReferencePromptId, setEditReferencePromptId] = useState<number | null>(null)
+  const [batchPrompts, setBatchPrompts] = useState<Prompt[]>([])
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const [isAttachmentPending, setIsAttachmentPending] = useState(false)
 
@@ -79,11 +82,14 @@ export function PromptEditPage() {
           setEditUserPrompt(p.userPrompt || '')
           setEditAttachments(p.attachments ?? [])
           setEditPromptType(p.promptType ?? 'TEXT')
+          setEditReferenceMediaUrl(p.referenceMediaUrl || '')
+          setEditReferencePromptId(p.referencePromptId ?? null)
         }
 
         if (batchResponse.success) {
           setBatchStatus(batchResponse.data.status)
           setBatchModel(batchResponse.data.model)
+          setBatchPrompts(batchResponse.data.prompts ?? [])
         }
 
         if (modelsResponse.success) {
@@ -149,7 +155,8 @@ export function PromptEditPage() {
         userPrompt: editUserPrompt,
         attachments: isTextType ? editAttachments : [],
         promptType: editPromptType !== 'TEXT' ? editPromptType : undefined,
-        sourceMediaUrl: isEditType ? editSourceMediaUrl || undefined : undefined,
+        referenceMediaUrl: isEditType ? editReferenceMediaUrl || undefined : undefined,
+        referencePromptId: isEditType ? (editReferencePromptId ?? undefined) : undefined,
       })
 
       if (updateResponse.success) {
@@ -226,7 +233,8 @@ export function PromptEditPage() {
                   value={editPromptType}
                   onValueChange={value => {
                     setEditPromptType(value as PromptType)
-                    setEditSourceMediaUrl('')
+                    setEditReferenceMediaUrl('')
+                    setEditReferencePromptId(null)
                   }}
                 >
                   <SelectTrigger id="edit-type">
@@ -277,17 +285,13 @@ export function PromptEditPage() {
             </div>
 
             {isEditType ? (
-              <div className="space-y-2">
-                <Label htmlFor="edit-source-media">
-                  {t('create.sourceMediaUrlLabel', { ns: 'batch' })}
-                </Label>
-                <Input
-                  id="edit-source-media"
-                  value={editSourceMediaUrl}
-                  onChange={event => setEditSourceMediaUrl(event.target.value)}
-                  placeholder={t('create.sourceMediaUrlPlaceholder', { ns: 'batch' })}
-                />
-              </div>
+              <ReferenceMediaSection
+                batchPrompts={batchPrompts}
+                referenceMediaUrl={editReferenceMediaUrl}
+                referencePromptId={editReferencePromptId}
+                onReferenceMediaUrlChange={setEditReferenceMediaUrl}
+                onReferencePromptIdChange={setEditReferencePromptId}
+              />
             ) : null}
 
             {isTextType ? (
