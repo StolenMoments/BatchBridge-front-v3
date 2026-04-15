@@ -12,6 +12,7 @@ import type {
   Prompt,
   PromptTemplate,
   PromptTemplateRequest,
+  PromptType,
   SyncPromptsResponse,
 } from '../types/api'
 
@@ -76,6 +77,8 @@ export const batchService = {
       systemPrompt?: string
       userPrompt: string
       attachments?: Attachment[]
+      promptType?: PromptType
+      sourceMediaUrl?: string
     }
   ) => {
     const response = await api.post<ApiResponse<Prompt>>(`/batches/${batchId}/prompts`, data)
@@ -95,6 +98,8 @@ export const batchService = {
       systemPrompt?: string
       userPrompt: string
       attachments?: Attachment[]
+      promptType?: PromptType
+      sourceMediaUrl?: string
     }
   ) => {
     const response = await api.put<ApiResponse<Prompt>>(

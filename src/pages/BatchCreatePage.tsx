@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
-import type { Attachment, Model } from '@/types/api'
+import type { Attachment, Model, PromptType } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert.tsx'
 import { ExternalContextChipsDisplay } from '@/components/prompt/ExternalContextChipsDisplay'
@@ -49,6 +49,8 @@ export function BatchCreatePage() {
     systemPrompt: '',
     userPrompt: '',
     attachments: [] as Attachment[],
+    promptType: 'TEXT' as PromptType,
+    sourceMediaUrl: '',
   })
 
   useEffect(() => {
@@ -60,7 +62,9 @@ export function BatchCreatePage() {
           setModels(response.data)
           setErrorMessage(null)
           if (response.data.length > 0) {
-            setFormData(prev => ({ ...prev, model: response.data[0].id }))
+            const firstModel = response.data[0]
+            const defaultType = firstModel.supportedPromptTypes?.[0] ?? 'TEXT'
+            setFormData(prev => ({ ...prev, model: firstModel.id, promptType: defaultType }))
           }
         }
       } catch (error) {
@@ -74,6 +78,27 @@ export function BatchCreatePage() {
     void fetchModels()
   }, [])
 
+  const selectedModel = models.find(m => m.id === formData.model)
+  const supportedTypes = selectedModel?.supportedPromptTypes ?? null
+  const showTypeSelect =
+    supportedTypes !== null && !(supportedTypes.length === 1 && supportedTypes[0] === 'TEXT')
+  const isTextType = formData.promptType === 'TEXT'
+  const isEditType = formData.promptType === 'IMAGE_EDIT' || formData.promptType === 'VIDEO_EDIT'
+
+  const promptTypeLabels: Record<PromptType, string> = {
+    TEXT: t('create.promptTypeText', { ns: 'batch' }),
+    IMAGE_GENERATION: t('create.promptTypeImageGeneration', { ns: 'batch' }),
+    IMAGE_EDIT: t('create.promptTypeImageEdit', { ns: 'batch' }),
+    VIDEO_GENERATION: t('create.promptTypeVideoGeneration', { ns: 'batch' }),
+    VIDEO_EDIT: t('create.promptTypeVideoEdit', { ns: 'batch' }),
+  }
+
+  const handleModelChange = (value: string) => {
+    const model = models.find(m => m.id === value)
+    const defaultType = model?.supportedPromptTypes?.[0] ?? 'TEXT'
+    setFormData(prev => ({ ...prev, model: value, promptType: defaultType, sourceMediaUrl: '' }))
+  }
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!formData.model || !formData.userPrompt || attachmentsPending) return
@@ -85,9 +110,18 @@ export function BatchCreatePage() {
         model: formData.model,
         prompt: {
           label: formData.promptLabel || undefined,
-          systemPrompt: formData.systemPrompt || undefined,
+          systemPrompt:
+            formData.promptType === 'TEXT' ? formData.systemPrompt || undefined : undefined,
           userPrompt: formData.userPrompt,
-          attachments: formData.attachments.length > 0 ? formData.attachments : undefined,
+          attachments:
+            formData.promptType === 'TEXT' && formData.attachments.length > 0
+              ? formData.attachments
+              : undefined,
+          promptType: formData.promptType !== 'TEXT' ? formData.promptType : undefined,
+          sourceMediaUrl:
+            formData.promptType === 'IMAGE_EDIT' || formData.promptType === 'VIDEO_EDIT'
+              ? formData.sourceMediaUrl || undefined
+              : undefined,
         },
       })
 
@@ -123,10 +157,7 @@ export function BatchCreatePage() {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="model">{t('create.modelLabel', { ns: 'batch' })}</Label>
-              <Select
-                value={formData.model}
-                onValueChange={value => setFormData({ ...formData, model: value })}
-              >
+              <Select value={formData.model} onValueChange={handleModelChange}>
                 <SelectTrigger id="model">
                   <SelectValue
                     placeholder={
@@ -174,39 +205,70 @@ export function BatchCreatePage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-auto p-0 hover:bg-transparent"
-                  onClick={() => setShowSystemPrompt(prev => !prev)}
+            {showTypeSelect ? (
+              <div className="space-y-2">
+                <Label htmlFor="promptType">{t('create.promptTypeLabel', { ns: 'batch' })}</Label>
+                <Select
+                  value={formData.promptType}
+                  onValueChange={value =>
+                    setFormData(prev => ({
+                      ...prev,
+                      promptType: value as PromptType,
+                      sourceMediaUrl: '',
+                    }))
+                  }
                 >
-                  {showSystemPrompt ? (
-                    <ChevronUp className="mr-1 h-4 w-4" />
-                  ) : (
-                    <ChevronDown className="mr-1 h-4 w-4" />
-                  )}
-                  {t('create.systemPromptLabel', { ns: 'batch' })}
-                </Button>
-                <PromptTemplateSelect
-                  onSelectTemplate={({ systemPrompt, userPrompt }) => {
-                    setShowSystemPrompt(true)
-                    setFormData(prev => ({ ...prev, systemPrompt, userPrompt }))
-                  }}
-                />
+                  <SelectTrigger id="promptType">
+                    <SelectValue placeholder={t('create.promptTypePlaceholder', { ns: 'batch' })} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {supportedTypes!.map(type => (
+                      <SelectItem key={type} value={type}>
+                        {promptTypeLabels[type]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              {showSystemPrompt ? (
-                <Textarea
-                  id="systemPrompt"
-                  placeholder={t('create.systemPromptPlaceholder', { ns: 'batch' })}
-                  className="min-h-25"
-                  value={formData.systemPrompt}
-                  onChange={event => setFormData({ ...formData, systemPrompt: event.target.value })}
-                />
-              ) : null}
-            </div>
+            ) : null}
+
+            {isTextType ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-auto p-0 hover:bg-transparent"
+                    onClick={() => setShowSystemPrompt(prev => !prev)}
+                  >
+                    {showSystemPrompt ? (
+                      <ChevronUp className="mr-1 h-4 w-4" />
+                    ) : (
+                      <ChevronDown className="mr-1 h-4 w-4" />
+                    )}
+                    {t('create.systemPromptLabel', { ns: 'batch' })}
+                  </Button>
+                  <PromptTemplateSelect
+                    onSelectTemplate={({ systemPrompt, userPrompt }) => {
+                      setShowSystemPrompt(true)
+                      setFormData(prev => ({ ...prev, systemPrompt, userPrompt }))
+                    }}
+                  />
+                </div>
+                {showSystemPrompt ? (
+                  <Textarea
+                    id="systemPrompt"
+                    placeholder={t('create.systemPromptPlaceholder', { ns: 'batch' })}
+                    className="min-h-25"
+                    value={formData.systemPrompt}
+                    onChange={event =>
+                      setFormData({ ...formData, systemPrompt: event.target.value })
+                    }
+                  />
+                ) : null}
+              </div>
+            ) : null}
 
             <div className="space-y-2">
               <Label htmlFor="userPrompt">{t('create.userPromptLabel', { ns: 'batch' })}</Label>
@@ -220,31 +282,53 @@ export function BatchCreatePage() {
               />
             </div>
 
-            <ExternalContextImportSection
-              disabled={submitting || attachmentsPending}
-              attachments={formData.attachments}
-              onAttachmentsChange={attachments => setFormData(prev => ({ ...prev, attachments }))}
-            />
+            {isEditType ? (
+              <div className="space-y-2">
+                <Label htmlFor="sourceMediaUrl">
+                  {t('create.sourceMediaUrlLabel', { ns: 'batch' })}
+                </Label>
+                <Input
+                  id="sourceMediaUrl"
+                  placeholder={t('create.sourceMediaUrlPlaceholder', { ns: 'batch' })}
+                  value={formData.sourceMediaUrl}
+                  onChange={event =>
+                    setFormData({ ...formData, sourceMediaUrl: event.target.value })
+                  }
+                />
+              </div>
+            ) : null}
 
-            <ExternalContextChipsDisplay
-              attachments={formData.attachments}
-              disabled={submitting}
-              onRemove={fileName =>
-                setFormData(prev => ({
-                  ...prev,
-                  attachments: prev.attachments.filter(a => a.fileName !== fileName),
-                }))
-              }
-            />
+            {isTextType ? (
+              <>
+                <ExternalContextImportSection
+                  disabled={submitting || attachmentsPending}
+                  attachments={formData.attachments}
+                  onAttachmentsChange={attachments =>
+                    setFormData(prev => ({ ...prev, attachments }))
+                  }
+                />
 
-            <PromptAttachmentsField
-              attachments={formData.attachments}
-              disabled={submitting}
-              errorMessage={attachmentsErrorMessage}
-              onChange={attachments => setFormData(prev => ({ ...prev, attachments }))}
-              onErrorChange={setAttachmentsErrorMessage}
-              onPendingChange={setAttachmentsPending}
-            />
+                <ExternalContextChipsDisplay
+                  attachments={formData.attachments}
+                  disabled={submitting}
+                  onRemove={fileName =>
+                    setFormData(prev => ({
+                      ...prev,
+                      attachments: prev.attachments.filter(a => a.fileName !== fileName),
+                    }))
+                  }
+                />
+
+                <PromptAttachmentsField
+                  attachments={formData.attachments}
+                  disabled={submitting}
+                  errorMessage={attachmentsErrorMessage}
+                  onChange={attachments => setFormData(prev => ({ ...prev, attachments }))}
+                  onErrorChange={setAttachmentsErrorMessage}
+                  onPendingChange={setAttachmentsPending}
+                />
+              </>
+            ) : null}
           </CardContent>
           <CardFooter className="flex justify-end gap-2 border-t pt-6">
             <Button type="button" variant="outline" onClick={() => navigate(-1)}>
@@ -252,7 +336,12 @@ export function BatchCreatePage() {
             </Button>
             <Button
               type="submit"
-              disabled={submitting || !formData.model || !formData.userPrompt || attachmentsPending}
+              disabled={
+                submitting ||
+                !formData.model ||
+                !formData.userPrompt ||
+                (isTextType && attachmentsPending)
+              }
             >
               {submitting ? (
                 <>

@@ -19,7 +19,7 @@ import { useTranslation } from 'react-i18next'
 import ReactMarkdown from 'react-markdown'
 import { useNavigate, useParams } from 'react-router-dom'
 
-import type { BatchStatus, Prompt } from '@/types/api'
+import type { BatchStatus, Prompt, PromptType } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { ExternalContextChipsDisplay } from '@/components/prompt/ExternalContextChipsDisplay'
@@ -162,6 +162,20 @@ export function PromptDetailPage() {
                 ? t('detail.draftBadge', { ns: 'batch' })
                 : statusLabelMap[prompt.status]}
             </Badge>
+            {prompt.promptType && prompt.promptType !== 'TEXT' ? (
+              <Badge variant="secondary" className="h-6 px-2 py-0.5 text-[10px] font-medium">
+                {
+                  (
+                    {
+                      IMAGE_GENERATION: t('create.promptTypeImageGeneration', { ns: 'batch' }),
+                      IMAGE_EDIT: t('create.promptTypeImageEdit', { ns: 'batch' }),
+                      VIDEO_GENERATION: t('create.promptTypeVideoGeneration', { ns: 'batch' }),
+                      VIDEO_EDIT: t('create.promptTypeVideoEdit', { ns: 'batch' }),
+                    } as Record<Exclude<PromptType, 'TEXT'>, string>
+                  )[prompt.promptType as Exclude<PromptType, 'TEXT'>]
+                }
+              </Badge>
+            ) : null}
           </div>
           <p className="text-muted-foreground">{t('detail.subtitle', { ns: 'prompt' })}</p>
         </div>
