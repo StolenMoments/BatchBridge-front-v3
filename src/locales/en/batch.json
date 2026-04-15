@@ -42,7 +42,8 @@
     "referenceMediaTabPrevious": "Previous Prompt Result",
     "referenceMediaUrlPlaceholder": "https://example.com/image.png",
     "referenceMediaPreviousEmpty": "No completed prompt results available",
-    "referenceMediaPreviousPlaceholder": "Select a prompt"
+    "referenceMediaPreviousPlaceholder": "Select a prompt",
+    "referenceMediaPreviousNone": "None"
   },
   "detail": {
     "notFound": "Batch not found.",

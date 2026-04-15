@@ -58,7 +58,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
+import { usePromptType, usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
 import { batchService, modelService } from '@/services/api'
 
@@ -114,6 +114,7 @@ export function BatchDetailPage() {
   const { supportedTypes: currentBatchSupportedTypes, showTypeSelect: showPromptTypeSelect } =
     useSupportedPromptTypes(currentBatchModel)
   const promptTypeLabels = usePromptTypeLabels()
+  const { isEditType: newPromptIsEditType } = usePromptType(newPrompt.promptType)
 
   const batchStatusLabelMap: Record<BatchStatus, string> = {
     DRAFT: t('status.draft', { ns: 'common' }),
@@ -709,8 +710,7 @@ export function BatchDetailPage() {
                       />
                     </div>
 
-                    {newPrompt.promptType === 'IMAGE_EDIT' ||
-                    newPrompt.promptType === 'VIDEO_EDIT' ? (
+                    {newPromptIsEditType ? (
                       <ReferenceMediaSection
                         batchPrompts={batch.prompts ?? []}
                         referenceMediaUrl={newPrompt.referenceMediaUrl}

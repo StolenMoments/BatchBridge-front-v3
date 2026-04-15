@@ -286,6 +286,7 @@ export function PromptEditPage() {
 
             {isEditType ? (
               <ReferenceMediaSection
+                key={editPromptType}
                 batchPrompts={batchPrompts}
                 referenceMediaUrl={editReferenceMediaUrl}
                 referencePromptId={editReferencePromptId}

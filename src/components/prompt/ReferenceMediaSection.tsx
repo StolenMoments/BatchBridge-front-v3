@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { usePromptTypeLabels } from '@/hooks/usePromptType'
 
 interface ReferenceMediaSectionProps {
   batchPrompts: Prompt[]
@@ -32,6 +33,7 @@ export function ReferenceMediaSection({
   onReferencePromptIdChange,
 }: ReferenceMediaSectionProps) {
   const { t } = useTranslation('batch')
+  const promptTypeLabels = usePromptTypeLabels()
 
   const [activeTab, setActiveTab] = useState<TabValue>(
     referencePromptId !== null ? 'previous' : 'url'
@@ -69,7 +71,13 @@ export function ReferenceMediaSection({
         <TabsContent value="previous" className="mt-2">
           <Select
             value={referencePromptId !== null ? String(referencePromptId) : ''}
-            onValueChange={value => onReferencePromptIdChange(Number(value))}
+            onValueChange={value => {
+              if (value === '__none__') {
+                onReferencePromptIdChange(null)
+              } else {
+                onReferencePromptIdChange(Number.parseInt(value, 10))
+              }
+            }}
             disabled={completedPrompts.length === 0}
           >
             <SelectTrigger>
@@ -82,9 +90,13 @@ export function ReferenceMediaSection({
               />
             </SelectTrigger>
             <SelectContent>
+              {referencePromptId !== null ? (
+                <SelectItem value="__none__">{t('create.referenceMediaPreviousNone')}</SelectItem>
+              ) : null}
               {completedPrompts.map((prompt, index) => (
                 <SelectItem key={prompt.id} value={String(prompt.id)}>
-                  {prompt.label ? prompt.label : `#${index + 1}`} — {prompt.promptType ?? 'TEXT'}
+                  {prompt.label ? prompt.label : `#${index + 1}`} —{' '}
+                  {promptTypeLabels[prompt.promptType ?? 'TEXT']}
                 </SelectItem>
               ))}
             </SelectContent>

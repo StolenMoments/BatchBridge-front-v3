@@ -282,6 +282,7 @@ export function BatchCreatePage() {
 
             {isEditType ? (
               <ReferenceMediaSection
+                key={formData.promptType}
                 batchPrompts={[]}
                 referenceMediaUrl={formData.referenceMediaUrl}
                 referencePromptId={formData.referencePromptId}

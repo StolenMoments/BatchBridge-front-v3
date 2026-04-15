@@ -42,7 +42,8 @@
     "referenceMediaTabPrevious": "이전 프롬프트 결과",
     "referenceMediaUrlPlaceholder": "https://example.com/image.png",
     "referenceMediaPreviousEmpty": "완료된 이전 프롬프트 결과가 없습니다",
-    "referenceMediaPreviousPlaceholder": "프롬프트 선택"
+    "referenceMediaPreviousPlaceholder": "프롬프트 선택",
+    "referenceMediaPreviousNone": "선택 안 함"
   },
   "detail": {
     "notFound": "배치를 찾을 수 없습니다.",
