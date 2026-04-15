@@ -31,6 +31,7 @@ import { ErrorAlert } from '@/components/feedback/ErrorAlert'
 import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
+import { ReferenceMediaSection } from '@/components/prompt/ReferenceMediaSection'
 import {
   Accordion,
   AccordionContent,
@@ -57,7 +58,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
+import { usePromptType, usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
 import { batchService, modelService } from '@/services/api'
 
@@ -84,7 +85,8 @@ export function BatchDetailPage() {
     userPrompt: '',
     attachments: [] as Attachment[],
     promptType: 'TEXT' as PromptType,
-    sourceMediaUrl: '',
+    referenceMediaUrl: '',
+    referencePromptId: null as number | null,
   })
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const [isAttachmentPending, setIsAttachmentPending] = useState(false)
@@ -112,6 +114,7 @@ export function BatchDetailPage() {
   const { supportedTypes: currentBatchSupportedTypes, showTypeSelect: showPromptTypeSelect } =
     useSupportedPromptTypes(currentBatchModel)
   const promptTypeLabels = usePromptTypeLabels()
+  const { isEditType: newPromptIsEditType } = usePromptType(newPrompt.promptType)
 
   const batchStatusLabelMap: Record<BatchStatus, string> = {
     DRAFT: t('status.draft', { ns: 'common' }),
@@ -236,7 +239,8 @@ export function BatchDetailPage() {
         userPrompt: newPrompt.userPrompt,
         attachments: isTextType ? newPrompt.attachments : [],
         promptType: newPrompt.promptType !== 'TEXT' ? newPrompt.promptType : undefined,
-        sourceMediaUrl: isEditType ? newPrompt.sourceMediaUrl || undefined : undefined,
+        referenceMediaUrl: isEditType ? newPrompt.referenceMediaUrl || undefined : undefined,
+        referencePromptId: isEditType ? (newPrompt.referencePromptId ?? undefined) : undefined,
       })
 
       if (response.success) {
@@ -246,7 +250,8 @@ export function BatchDetailPage() {
           userPrompt: '',
           attachments: [],
           promptType: currentBatchSupportedTypes?.[0] ?? 'TEXT',
-          sourceMediaUrl: '',
+          referenceMediaUrl: '',
+          referencePromptId: null,
         })
         setAttachmentError(null)
         setErrorMessage(null)
@@ -644,7 +649,8 @@ export function BatchDetailPage() {
                             setNewPrompt(prev => ({
                               ...prev,
                               promptType: value as PromptType,
-                              sourceMediaUrl: '',
+                              referenceMediaUrl: '',
+                              referencePromptId: null,
                             }))
                           }
                         >
@@ -704,24 +710,18 @@ export function BatchDetailPage() {
                       />
                     </div>
 
-                    {newPrompt.promptType === 'IMAGE_EDIT' ||
-                    newPrompt.promptType === 'VIDEO_EDIT' ? (
-                      <div className="space-y-2">
-                        <Label
-                          htmlFor="p-source-media"
-                          className="text-sm font-medium text-foreground"
-                        >
-                          {t('detail.sourceMediaUrlLabel', { ns: 'batch' })}
-                        </Label>
-                        <Input
-                          id="p-source-media"
-                          placeholder={t('detail.sourceMediaUrlPlaceholder', { ns: 'batch' })}
-                          value={newPrompt.sourceMediaUrl}
-                          onChange={event =>
-                            setNewPrompt({ ...newPrompt, sourceMediaUrl: event.target.value })
-                          }
-                        />
-                      </div>
+                    {newPromptIsEditType ? (
+                      <ReferenceMediaSection
+                        batchPrompts={batch.prompts ?? []}
+                        referenceMediaUrl={newPrompt.referenceMediaUrl}
+                        referencePromptId={newPrompt.referencePromptId}
+                        onReferenceMediaUrlChange={url =>
+                          setNewPrompt(prev => ({ ...prev, referenceMediaUrl: url }))
+                        }
+                        onReferencePromptIdChange={id =>
+                          setNewPrompt(prev => ({ ...prev, referencePromptId: id }))
+                        }
+                      />
                     ) : null}
 
                     {newPrompt.promptType === 'TEXT' ? (

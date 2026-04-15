@@ -26,7 +26,9 @@ export interface Prompt {
   responseContent?: string
   errorMessage?: string
   promptType?: PromptType
-  sourceMediaUrl?: string
+  referenceMediaUrl?: string
+  referencePromptId?: number | null
+  resultMediaUrl?: string
 }
 
 export interface Batch {

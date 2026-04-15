@@ -10,6 +10,7 @@ import { ExternalContextChipsDisplay } from '@/components/prompt/ExternalContext
 import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
+import { ReferenceMediaSection } from '@/components/prompt/ReferenceMediaSection'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -51,7 +52,8 @@ export function BatchCreatePage() {
     userPrompt: '',
     attachments: [] as Attachment[],
     promptType: 'TEXT' as PromptType,
-    sourceMediaUrl: '',
+    referenceMediaUrl: '',
+    referencePromptId: null as number | null,
   })
 
   useEffect(() => {
@@ -87,7 +89,13 @@ export function BatchCreatePage() {
   const handleModelChange = (value: string) => {
     const model = models.find(m => m.id === value)
     const defaultType = model?.supportedPromptTypes?.[0] ?? 'TEXT'
-    setFormData(prev => ({ ...prev, model: value, promptType: defaultType, sourceMediaUrl: '' }))
+    setFormData(prev => ({
+      ...prev,
+      model: value,
+      promptType: defaultType,
+      referenceMediaUrl: '',
+      referencePromptId: null,
+    }))
   }
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -109,10 +117,8 @@ export function BatchCreatePage() {
               ? formData.attachments
               : undefined,
           promptType: formData.promptType !== 'TEXT' ? formData.promptType : undefined,
-          sourceMediaUrl:
-            formData.promptType === 'IMAGE_EDIT' || formData.promptType === 'VIDEO_EDIT'
-              ? formData.sourceMediaUrl || undefined
-              : undefined,
+          referenceMediaUrl: isEditType ? formData.referenceMediaUrl || undefined : undefined,
+          referencePromptId: isEditType ? (formData.referencePromptId ?? undefined) : undefined,
         },
       })
 
@@ -205,7 +211,8 @@ export function BatchCreatePage() {
                     setFormData(prev => ({
                       ...prev,
                       promptType: value as PromptType,
-                      sourceMediaUrl: '',
+                      referenceMediaUrl: '',
+                      referencePromptId: null,
                     }))
                   }
                 >
@@ -274,19 +281,18 @@ export function BatchCreatePage() {
             </div>
 
             {isEditType ? (
-              <div className="space-y-2">
-                <Label htmlFor="sourceMediaUrl">
-                  {t('create.sourceMediaUrlLabel', { ns: 'batch' })}
-                </Label>
-                <Input
-                  id="sourceMediaUrl"
-                  placeholder={t('create.sourceMediaUrlPlaceholder', { ns: 'batch' })}
-                  value={formData.sourceMediaUrl}
-                  onChange={event =>
-                    setFormData({ ...formData, sourceMediaUrl: event.target.value })
-                  }
-                />
-              </div>
+              <ReferenceMediaSection
+                key={formData.promptType}
+                batchPrompts={[]}
+                referenceMediaUrl={formData.referenceMediaUrl}
+                referencePromptId={formData.referencePromptId}
+                onReferenceMediaUrlChange={url =>
+                  setFormData(prev => ({ ...prev, referenceMediaUrl: url }))
+                }
+                onReferencePromptIdChange={id =>
+                  setFormData(prev => ({ ...prev, referencePromptId: id }))
+                }
+              />
             ) : null}
 
             {isTextType ? (
