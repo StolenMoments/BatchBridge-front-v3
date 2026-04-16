@@ -196,15 +196,25 @@ export function BatchListPage() {
                     {batch.status !== 'DRAFT' &&
                     (batch.successCount > 0 || batch.failedCount > 0) ? (
                       <div className="flex items-center gap-1 text-sm">
-                        <CheckCircle2 className="h-4 w-4 text-green-500" />
-                        <span className="text-green-600 dark:text-green-400">
-                          {t('list.successCount', { ns: 'batch', count: batch.successCount })}
-                        </span>
-                        <span className="mx-1 text-muted-foreground">/</span>
-                        <XCircle className="h-4 w-4 text-red-500" />
-                        <span className="text-red-600 dark:text-red-400">
-                          {t('list.failedCount', { ns: 'batch', count: batch.failedCount })}
-                        </span>
+                        {batch.successCount > 0 ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 text-green-500" />
+                            <span className="text-green-600 dark:text-green-400">
+                              {t('list.successCount', { ns: 'batch', count: batch.successCount })}
+                            </span>
+                          </>
+                        ) : null}
+                        {batch.successCount > 0 && batch.failedCount > 0 ? (
+                          <span className="mx-1 text-muted-foreground">/</span>
+                        ) : null}
+                        {batch.failedCount > 0 ? (
+                          <>
+                            <XCircle className="h-4 w-4 text-red-500" />
+                            <span className="text-red-600 dark:text-red-400">
+                              {t('list.failedCount', { ns: 'batch', count: batch.failedCount })}
+                            </span>
+                          </>
+                        ) : null}
                       </div>
                     ) : null}
                     <div className="flex items-center text-sm">
