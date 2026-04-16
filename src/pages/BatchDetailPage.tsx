@@ -6,7 +6,6 @@ import {
   Clock,
   Cpu,
   ExternalLink,
-  FileText,
   Loader2,
   MessageSquare,
   Paperclip,
@@ -16,8 +15,6 @@ import {
   Save,
   Send,
   Trash2,
-  XCircle,
-  type LucideIcon,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -61,14 +58,8 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { usePromptType, usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
+import { statusAppearanceMap } from '@/lib/batch-status'
 import { batchService, modelService } from '@/services/api'
-
-const statusAppearanceMap: Record<BatchStatus, { color: string; icon: LucideIcon }> = {
-  DRAFT: { color: 'bg-slate-500', icon: FileText },
-  IN_PROGRESS: { color: 'bg-blue-500', icon: Loader2 },
-  COMPLETED: { color: 'bg-green-500', icon: CheckCircle2 },
-  FAILED: { color: 'bg-red-500', icon: XCircle },
-}
 
 export function BatchDetailPage() {
   const { t } = useTranslation(['batch', 'common', 'external_context'])

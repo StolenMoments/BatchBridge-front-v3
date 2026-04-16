@@ -6,12 +6,12 @@ import {
   Cpu,
   FileText,
   Loader2,
+  Minus,
   Plus,
   RefreshCw,
   Search,
   Trash2,
   XCircle,
-  type LucideIcon,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -42,25 +42,8 @@ import {
 } from '@/components/ui/select'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getApiErrorMessage } from '@/lib/api-error'
+import { statusAppearanceMap } from '@/lib/batch-status'
 import { batchService } from '@/services/api'
-
-const statusAppearanceMap: Record<
-  BatchStatus,
-  { color: string; gradient: string; icon: LucideIcon }
-> = {
-  DRAFT: { color: 'bg-slate-500', gradient: 'from-slate-500/10 to-transparent', icon: FileText },
-  IN_PROGRESS: {
-    color: 'bg-blue-500',
-    gradient: 'from-blue-500/10 to-transparent',
-    icon: Loader2,
-  },
-  COMPLETED: {
-    color: 'bg-green-500',
-    gradient: 'from-green-500/10 to-transparent',
-    icon: CheckCircle2,
-  },
-  FAILED: { color: 'bg-red-500', gradient: 'from-red-500/10 to-transparent', icon: XCircle },
-}
 
 export function BatchListPage() {
   const { t } = useTranslation(['batch', 'common'])
@@ -210,6 +193,26 @@ export function BatchListPage() {
                       <span>
                         {t('list.promptCount', { ns: 'batch', count: batch.promptCount })}
                       </span>
+                    </div>
+                    <div className="flex items-center gap-1 text-sm">
+                      {batch.status === 'DRAFT' ? (
+                        <>
+                          <Minus className="mr-1 h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">-</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <span className="text-green-600 dark:text-green-400">
+                            {t('list.successCount', { ns: 'batch', count: batch.successCount })}
+                          </span>
+                          <span className="mx-1 text-muted-foreground">/</span>
+                          <XCircle className="h-4 w-4 text-red-500" />
+                          <span className="text-red-600 dark:text-red-400">
+                            {t('list.failedCount', { ns: 'batch', count: batch.failedCount })}
+                          </span>
+                        </>
+                      )}
                     </div>
                     <div className="flex items-center text-sm">
                       <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
