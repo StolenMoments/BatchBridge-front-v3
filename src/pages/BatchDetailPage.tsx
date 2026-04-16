@@ -843,7 +843,7 @@ export function BatchDetailPage() {
                             <div className="flex items-center justify-center rounded-md border bg-background p-4 shadow-sm">
                               <MediaResultDisplay
                                 prompt={prompt}
-                                imageClassName="mx-auto max-h-[360px]"
+                                imageClassName="mx-auto max-w-full"
                                 videoClassName="mx-auto w-full"
                               />
                             </div>
