@@ -211,6 +211,26 @@ export function BatchListPage() {
                         {t('list.promptCount', { ns: 'batch', count: batch.promptCount })}
                       </span>
                     </div>
+                    <div className="flex items-center gap-1 text-sm">
+                      {batch.status === 'DRAFT' ? (
+                        <>
+                          <CheckCircle2 className="mr-1 h-4 w-4 text-muted-foreground" />
+                          <span className="text-muted-foreground">-</span>
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="h-4 w-4 text-green-500" />
+                          <span className="text-green-600 dark:text-green-400">
+                            {t('list.successCount', { ns: 'batch', count: batch.successCount })}
+                          </span>
+                          <span className="mx-1 text-muted-foreground">/</span>
+                          <XCircle className="h-4 w-4 text-red-500" />
+                          <span className="text-red-600 dark:text-red-400">
+                            {t('list.failedCount', { ns: 'batch', count: batch.failedCount })}
+                          </span>
+                        </>
+                      )}
+                    </div>
                     <div className="flex items-center text-sm">
                       <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
                       <span>{format(new Date(batch.createdAt), 'yyyy-MM-dd HH:mm')}</span>
