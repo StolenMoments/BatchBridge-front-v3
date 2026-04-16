@@ -45,6 +45,7 @@ export function MediaResultDisplay({
         <img
           src={resultMediaUrl}
           alt={label || 'AI generated image'}
+          loading="eager"
           className={cn('rounded-md shadow-sm', imageClassName)}
         />
       ) : (

@@ -840,7 +840,7 @@ export function BatchDetailPage() {
                         </AccordionTrigger>
                         <AccordionContent className="px-4 pb-4">
                           {prompt.promptType && prompt.promptType !== 'TEXT' ? (
-                            <div className="flex items-center justify-center rounded-md border bg-background p-4 shadow-sm">
+                            <div className="flex min-h-[300px] items-center justify-center rounded-md border bg-background p-4 shadow-sm">
                               <MediaResultDisplay
                                 prompt={prompt}
                                 imageClassName="mx-auto max-w-full"
