@@ -37,6 +37,8 @@ export interface Batch {
   model: string
   status: BatchStatus
   promptCount: number
+  successCount?: number
+  failedCount?: number
   createdAt: string
   submittedAt?: string
   completedAt?: string
