@@ -75,6 +75,40 @@
   --radius-2xl: calc(var(--radius) * 1.8);
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Text color axis */
+  --color-text-strong: var(--text-strong);
+  --color-text-default: var(--text-default);
+  --color-text-muted: var(--text-muted);
+  --color-text-inverse: var(--text-inverse);
+
+  /* Border axis */
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+  --color-border-strong: var(--border-strong);
+  --color-border-active: var(--border-active);
+
+  /* Spacing scale (4pt grid) */
+  --spacing-1: 0.25rem;
+  --spacing-2: 0.5rem;
+  --spacing-3: 0.75rem;
+  --spacing-4: 1rem;
+  --spacing-6: 1.5rem;
+  --spacing-8: 2rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+  --spacing-24: 6rem;
+
+  /* Typography hierarchy */
+  --font-size-page-title: 1.25rem;
+  --font-size-section-title: 1rem;
+  --font-size-row-title: 0.875rem;
+  --font-size-meta-label: 0.75rem;
+  --font-size-control: 0.875rem;
+
+  --line-height-tight: 1.25;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
 }
 
 :root {
@@ -103,6 +137,12 @@
   --input: oklch(0.9 0.012 150);
   --ring: oklch(0.5 0.17 150);
 
+  /* Border axis */
+  --border-subtle: oklch(0.95 0.008 150);
+  --border-default: oklch(0.9 0.012 150);
+  --border-strong: oklch(0.72 0.02 150);
+  --border-active: oklch(0.5 0.17 150);
+
   /* Destructive (danger) */
   --destructive: oklch(0.577 0.245 27.325);
 
@@ -121,6 +161,12 @@
   --surface-elevated: var(--card);
   --surface-inset: var(--muted);
   --surface-hover: var(--accent);
+
+  /* Text axis */
+  --text-strong: oklch(0.1 0.008 150);
+  --text-default: oklch(0.14 0.008 150);
+  --text-muted: oklch(0.52 0.008 150);
+  --text-inverse: oklch(0.98 0.006 150);
 
   /* Chart — green-tinted neutral scale */
   --chart-1: oklch(0.87 0.012 150);
@@ -169,6 +215,12 @@
   --input: oklch(0.85 0.015 150 / 18%);
   --ring: oklch(0.6 0.16 150);
 
+  /* Border axis */
+  --border-subtle: oklch(0.85 0.015 150 / 8%);
+  --border-default: oklch(0.85 0.015 150 / 14%);
+  --border-strong: oklch(0.85 0.015 150 / 30%);
+  --border-active: oklch(0.6 0.16 150);
+
   /* Destructive */
   --destructive: oklch(0.704 0.191 22.216);
 
@@ -187,6 +239,12 @@
   --surface-elevated: var(--card);
   --surface-inset: var(--muted);
   --surface-hover: var(--accent);
+
+  /* Text axis */
+  --text-strong: oklch(0.99 0.004 150);
+  --text-default: oklch(0.964 0.008 150);
+  --text-muted: oklch(0.65 0.008 150);
+  --text-inverse: oklch(0.12 0.008 150);
 
   /* Chart */
   --chart-1: oklch(0.87 0.012 150);
