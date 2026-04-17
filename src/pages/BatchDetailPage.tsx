@@ -357,6 +357,17 @@ export function BatchDetailPage() {
 
   const headerActions = (
     <>
+      {batch.status === 'DRAFT' && !isEditing ? (
+        <Button size="sm" onClick={handleSubmitBatch} disabled={submitting}>
+          {submitting ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Send className="mr-2 h-4 w-4" />
+          )}
+          {t('detail.submitBatch', { ns: 'batch' })}
+        </Button>
+      ) : null}
+
       {(batch.status === 'COMPLETED' || batch.status === 'FAILED') && hasResyncablePrompts ? (
         <Button variant="outline" size="sm" onClick={handleResyncPrompts} disabled={resyncing}>
           <RefreshCw className={`mr-2 h-4 w-4 ${resyncing ? 'animate-spin' : ''}`} />
@@ -402,7 +413,7 @@ export function BatchDetailPage() {
         <Button
           variant="outline"
           size="sm"
-          className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
+          className="order-last border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 md:order-none dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
           disabled={deleting}
           onClick={() => void handleDeleteBatch()}
         >
@@ -412,17 +423,6 @@ export function BatchDetailPage() {
             <Trash2 className="mr-2 h-4 w-4" />
           )}
           {t('detail.deleteBatch', { ns: 'batch' })}
-        </Button>
-      ) : null}
-
-      {batch.status === 'DRAFT' && !isEditing ? (
-        <Button size="sm" onClick={handleSubmitBatch} disabled={submitting}>
-          {submitting ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Send className="mr-2 h-4 w-4" />
-          )}
-          {t('detail.submitBatch', { ns: 'batch' })}
         </Button>
       ) : null}
     </>
