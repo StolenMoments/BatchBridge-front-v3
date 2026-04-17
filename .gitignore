@@ -28,3 +28,5 @@ GEMINI.md
 AGENTS.md
 /.aiassistant/
 .claude/
+.agents
+skills-lock.json
