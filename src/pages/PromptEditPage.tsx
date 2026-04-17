@@ -54,8 +54,6 @@ export function PromptEditPage() {
   const [editAttachments, setEditAttachments] = useState<Attachment[]>([])
   const [editPromptType, setEditPromptType] = useState<PromptType>('TEXT')
   const [editReferenceMediaUrl, setEditReferenceMediaUrl] = useState('')
-  const [editReferencePromptId, setEditReferencePromptId] = useState<number | null>(null)
-  const [batchPrompts, setBatchPrompts] = useState<Prompt[]>([])
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const [isAttachmentPending, setIsAttachmentPending] = useState(false)
 
@@ -83,13 +81,11 @@ export function PromptEditPage() {
           setEditAttachments(p.attachments ?? [])
           setEditPromptType(p.promptType ?? 'TEXT')
           setEditReferenceMediaUrl(p.referenceMediaUrl || '')
-          setEditReferencePromptId(p.referencePromptId ?? null)
         }
 
         if (batchResponse.success) {
           setBatchStatus(batchResponse.data.status)
           setBatchModel(batchResponse.data.model)
-          setBatchPrompts(batchResponse.data.prompts ?? [])
         }
 
         if (modelsResponse.success) {
@@ -156,7 +152,6 @@ export function PromptEditPage() {
         attachments: isTextType ? editAttachments : [],
         promptType: editPromptType !== 'TEXT' ? editPromptType : undefined,
         referenceMediaUrl: isEditType ? editReferenceMediaUrl || undefined : undefined,
-        referencePromptId: isEditType ? (editReferencePromptId ?? undefined) : undefined,
       })
 
       if (updateResponse.success) {
@@ -234,7 +229,6 @@ export function PromptEditPage() {
                   onValueChange={value => {
                     setEditPromptType(value as PromptType)
                     setEditReferenceMediaUrl('')
-                    setEditReferencePromptId(null)
                   }}
                 >
                   <SelectTrigger id="edit-type">
@@ -287,11 +281,8 @@ export function PromptEditPage() {
             {isEditType ? (
               <ReferenceMediaSection
                 key={editPromptType}
-                batchPrompts={batchPrompts}
                 referenceMediaUrl={editReferenceMediaUrl}
-                referencePromptId={editReferencePromptId}
                 onReferenceMediaUrlChange={setEditReferenceMediaUrl}
-                onReferencePromptIdChange={setEditReferencePromptId}
               />
             ) : null}
 

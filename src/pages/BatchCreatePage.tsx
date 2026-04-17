@@ -53,7 +53,6 @@ export function BatchCreatePage() {
     attachments: [] as Attachment[],
     promptType: 'TEXT' as PromptType,
     referenceMediaUrl: '',
-    referencePromptId: null as number | null,
   })
 
   useEffect(() => {
@@ -94,7 +93,6 @@ export function BatchCreatePage() {
       model: value,
       promptType: defaultType,
       referenceMediaUrl: '',
-      referencePromptId: null,
     }))
   }
 
@@ -118,7 +116,6 @@ export function BatchCreatePage() {
               : undefined,
           promptType: formData.promptType !== 'TEXT' ? formData.promptType : undefined,
           referenceMediaUrl: isEditType ? formData.referenceMediaUrl || undefined : undefined,
-          referencePromptId: isEditType ? (formData.referencePromptId ?? undefined) : undefined,
         },
       })
 
@@ -212,7 +209,6 @@ export function BatchCreatePage() {
                       ...prev,
                       promptType: value as PromptType,
                       referenceMediaUrl: '',
-                      referencePromptId: null,
                     }))
                   }
                 >
@@ -283,14 +279,9 @@ export function BatchCreatePage() {
             {isEditType ? (
               <ReferenceMediaSection
                 key={formData.promptType}
-                batchPrompts={[]}
                 referenceMediaUrl={formData.referenceMediaUrl}
-                referencePromptId={formData.referencePromptId}
                 onReferenceMediaUrlChange={url =>
                   setFormData(prev => ({ ...prev, referenceMediaUrl: url }))
-                }
-                onReferencePromptIdChange={id =>
-                  setFormData(prev => ({ ...prev, referencePromptId: id }))
                 }
               />
             ) : null}

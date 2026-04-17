@@ -78,7 +78,6 @@ export function BatchDetailPage() {
     attachments: [] as Attachment[],
     promptType: 'TEXT' as PromptType,
     referenceMediaUrl: '',
-    referencePromptId: null as number | null,
   })
   const [attachmentError, setAttachmentError] = useState<string | null>(null)
   const [isAttachmentPending, setIsAttachmentPending] = useState(false)
@@ -232,7 +231,6 @@ export function BatchDetailPage() {
         attachments: isTextType ? newPrompt.attachments : [],
         promptType: newPrompt.promptType !== 'TEXT' ? newPrompt.promptType : undefined,
         referenceMediaUrl: isEditType ? newPrompt.referenceMediaUrl || undefined : undefined,
-        referencePromptId: isEditType ? (newPrompt.referencePromptId ?? undefined) : undefined,
       })
 
       if (response.success) {
@@ -243,7 +241,6 @@ export function BatchDetailPage() {
           attachments: [],
           promptType: currentBatchSupportedTypes?.[0] ?? 'TEXT',
           referenceMediaUrl: '',
-          referencePromptId: null,
         })
         setAttachmentError(null)
         setErrorMessage(null)
@@ -642,7 +639,6 @@ export function BatchDetailPage() {
                               ...prev,
                               promptType: value as PromptType,
                               referenceMediaUrl: '',
-                              referencePromptId: null,
                             }))
                           }
                         >
@@ -704,14 +700,9 @@ export function BatchDetailPage() {
 
                     {newPromptIsEditType ? (
                       <ReferenceMediaSection
-                        batchPrompts={batch.prompts ?? []}
                         referenceMediaUrl={newPrompt.referenceMediaUrl}
-                        referencePromptId={newPrompt.referencePromptId}
                         onReferenceMediaUrlChange={url =>
                           setNewPrompt(prev => ({ ...prev, referenceMediaUrl: url }))
-                        }
-                        onReferencePromptIdChange={id =>
-                          setNewPrompt(prev => ({ ...prev, referencePromptId: id }))
                         }
                       />
                     ) : null}

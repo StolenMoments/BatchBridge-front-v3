@@ -40,12 +40,7 @@
     "promptTypeLabel": "프롬프트 유형",
     "promptTypePlaceholder": "유형 선택",
     "referenceMediaLabel": "원본 미디어 지정",
-    "referenceMediaTabUrl": "외부 URL",
-    "referenceMediaTabPrevious": "이전 프롬프트 결과",
-    "referenceMediaUrlPlaceholder": "https://example.com/image.png",
-    "referenceMediaPreviousEmpty": "완료된 이전 프롬프트 결과가 없습니다",
-    "referenceMediaPreviousPlaceholder": "프롬프트 선택",
-    "referenceMediaPreviousNone": "선택 안 함"
+    "referenceMediaUrlPlaceholder": "https://example.com/image.png"
   },
   "detail": {
     "notFound": "배치를 찾을 수 없습니다.",
@@ -63,11 +58,7 @@
     "promptTypeLabel": "프롬프트 유형",
     "promptTypePlaceholder": "유형 선택",
     "referenceMediaLabel": "원본 미디어 지정",
-    "referenceMediaTabUrl": "외부 URL",
-    "referenceMediaTabPrevious": "이전 프롬프트 결과",
     "referenceMediaUrlPlaceholder": "https://example.com/image.png",
-    "referenceMediaPreviousEmpty": "완료된 이전 프롬프트 결과가 없습니다",
-    "referenceMediaPreviousPlaceholder": "프롬프트 선택",
     "labelField": "라벨 (선택)",
     "labelPlaceholder": "프롬프트 구분용 라벨",
     "userPromptInput": "입력 내용 (User Prompt)",

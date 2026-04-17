@@ -27,7 +27,6 @@ export interface Prompt {
   errorMessage?: string
   promptType?: PromptType
   referenceMediaUrl?: string
-  referencePromptId?: number | null
   resultMediaUrl?: string
 }
 

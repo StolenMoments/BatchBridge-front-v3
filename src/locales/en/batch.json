@@ -40,12 +40,7 @@
     "promptTypeLabel": "Prompt Type",
     "promptTypePlaceholder": "Select a type",
     "referenceMediaLabel": "Reference Media",
-    "referenceMediaTabUrl": "External URL",
-    "referenceMediaTabPrevious": "Previous Prompt Result",
-    "referenceMediaUrlPlaceholder": "https://example.com/image.png",
-    "referenceMediaPreviousEmpty": "No completed prompt results available",
-    "referenceMediaPreviousPlaceholder": "Select a prompt",
-    "referenceMediaPreviousNone": "None"
+    "referenceMediaUrlPlaceholder": "https://example.com/image.png"
   },
   "detail": {
     "notFound": "Batch not found.",
@@ -63,11 +58,7 @@
     "promptTypeLabel": "Prompt Type",
     "promptTypePlaceholder": "Select a type",
     "referenceMediaLabel": "Reference Media",
-    "referenceMediaTabUrl": "External URL",
-    "referenceMediaTabPrevious": "Previous Prompt Result",
     "referenceMediaUrlPlaceholder": "https://example.com/image.png",
-    "referenceMediaPreviousEmpty": "No completed prompt results available",
-    "referenceMediaPreviousPlaceholder": "Select a prompt",
     "labelField": "Label (Optional)",
     "labelPlaceholder": "Label to identify the prompt",
     "userPromptInput": "Input Content (User Prompt)",

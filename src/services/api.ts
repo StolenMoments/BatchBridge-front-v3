@@ -42,7 +42,6 @@ export const batchService = {
       attachments?: Attachment[]
       promptType?: PromptType
       referenceMediaUrl?: string
-      referencePromptId?: number | null
     }
   }) => {
     const response = await api.post<ApiResponse<Batch>>('/batches', data)
@@ -82,7 +81,6 @@ export const batchService = {
       attachments?: Attachment[]
       promptType?: PromptType
       referenceMediaUrl?: string
-      referencePromptId?: number | null
     }
   ) => {
     const response = await api.post<ApiResponse<Prompt>>(`/batches/${batchId}/prompts`, data)
@@ -104,7 +102,6 @@ export const batchService = {
       attachments?: Attachment[]
       promptType?: PromptType
       referenceMediaUrl?: string
-      referencePromptId?: number | null
     }
   ) => {
     const response = await api.put<ApiResponse<Prompt>>(
