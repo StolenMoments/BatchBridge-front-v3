@@ -11,14 +11,33 @@
   "list": {
     "title": "Batch List",
     "description": "Check the status and results of created batches at a glance.",
+    "loading": "Loading the latest batch status.",
     "empty": "There are no batches to display.",
+    "emptyTitle": "No batches found",
+    "emptyFiltered": "There are no batches in {{status}} status.",
     "createFirst": "Create your first batch",
     "promptCount": "{{count}} prompts",
     "successCount": "Success {{count}}",
     "failedCount": "Failed {{count}}",
+    "notSubmitted": "Not submitted yet",
     "viewDetails": "View details",
     "newBatch": "Create new batch",
-    "totalBatches": "Total batches"
+    "totalBatches": "Total batches",
+    "open": "Open",
+    "loadFailed": "Failed to load batch list.",
+    "columns": {
+      "batch": "Batch / Model",
+      "status": "Status / Counts",
+      "createdAt": "Created At",
+      "actions": "Actions"
+    },
+    "summary": {
+      "total": "Total",
+      "inProgress": "In Progress",
+      "failed": "Failed",
+      "lastRefreshed": "Last refreshed {{time}} · auto refresh every 2 min",
+      "lastRefreshedPending": "Last refresh pending · auto refresh every 2 min"
+    }
   },
   "create": {
     "title": "Create New Batch",

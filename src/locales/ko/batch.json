@@ -11,14 +11,33 @@
   "list": {
     "title": "배치 목록",
     "description": "생성된 배치의 상태와 결과를 한눈에 확인하세요.",
+    "loading": "최신 배치 상태를 불러오는 중입니다.",
     "empty": "표시할 배치가 없습니다.",
+    "emptyTitle": "표시할 배치가 없습니다",
+    "emptyFiltered": "{{status}} 상태의 배치가 없습니다.",
     "createFirst": "첫 배치를 만들어보세요",
     "promptCount": "프롬프트 {{count}}개",
     "successCount": "성공 {{count}}",
     "failedCount": "실패 {{count}}",
+    "notSubmitted": "아직 제출되지 않음",
     "viewDetails": "자세히 보기",
     "newBatch": "새 배치 만들기",
-    "totalBatches": "전체 배치"
+    "totalBatches": "전체 배치",
+    "open": "열기",
+    "loadFailed": "배치 목록을 불러오지 못했습니다.",
+    "columns": {
+      "batch": "배치 / 모델",
+      "status": "상태 / 집계",
+      "createdAt": "생성 시각",
+      "actions": "행 액션"
+    },
+    "summary": {
+      "total": "전체",
+      "inProgress": "진행 중",
+      "failed": "실패",
+      "lastRefreshed": "마지막 새로고침 {{time}} · 2분마다 자동 갱신",
+      "lastRefreshedPending": "마지막 새로고침 대기 중 · 2분마다 자동 갱신"
+    }
   },
   "create": {
     "title": "새 배치 만들기",
