@@ -1,22 +1,24 @@
 import { format } from 'date-fns'
 import { useAtom } from 'jotai'
 import {
+  ArrowUpRight,
   CheckCircle2,
   Clock,
   FileText,
   Layers,
   Loader2,
-  Plus,
   RefreshCw,
   Search,
   Trash2,
+  TriangleAlert,
+  XCircle,
 } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 
-import type { BatchStatus } from '@/types/api'
+import type { BatchListItem, BatchStatus } from '@/types/api'
 
 import { batchesAtom, batchesParamsAtom } from '@/atoms/batches'
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
@@ -40,23 +42,55 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getApiErrorMessage } from '@/lib/api-error'
 import { batchService } from '@/services/api'
+
+interface BatchSummary {
+  total: number | null
+  inProgress: number | null
+  failed: number | null
+  lastRefreshedAt: Date | null
+}
+
+const STATUS_OPTIONS: Array<{ value: BatchStatus | 'ALL'; labelKey: string }> = [
+  { value: 'ALL', labelKey: 'status.all' },
+  { value: 'DRAFT', labelKey: 'status.draft' },
+  { value: 'IN_PROGRESS', labelKey: 'status.inProgress' },
+  { value: 'COMPLETED', labelKey: 'status.completed' },
+  { value: 'FAILED', labelKey: 'status.failed' },
+]
+
+const PAGE_SIZE_OPTIONS = ['3', '6', '9']
 
 export function BatchListPage() {
   const { t } = useTranslation(['batch', 'common'])
   const [batches, setBatches] = useAtom(batchesAtom)
   const [params, setParams] = useAtom(batchesParamsAtom)
+  const [summary, setSummary] = useState<BatchSummary>({
+    total: null,
+    inProgress: null,
+    failed: null,
+    lastRefreshedAt: null,
+  })
   const [loading, setLoading] = useState(false)
   const [deletingBatchId, setDeletingBatchId] = useState<number | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
-  const fetchBatches = useCallback(
+  const refreshBatches = useCallback(
     async (signal?: AbortSignal) => {
       setLoading(true)
+
       try {
-        const response = await batchService.getBatches(
+        const listRequest = batchService.getBatches(
           {
             status: params.status === 'ALL' ? undefined : params.status,
             page: params.page,
@@ -65,10 +99,53 @@ export function BatchListPage() {
           { signal }
         )
 
-        if (response.success) {
-          setBatches(response.data)
-          setErrorMessage(null)
+        const inProgressRequest = batchService.getBatches(
+          { status: 'IN_PROGRESS', page: 1, size: 1 },
+          { signal }
+        )
+
+        const failedRequest = batchService.getBatches(
+          { status: 'FAILED', page: 1, size: 1 },
+          { signal }
+        )
+
+        const [listResponse, inProgressResponse, failedResponse] = await Promise.allSettled([
+          listRequest,
+          inProgressRequest,
+          failedRequest,
+        ])
+
+        if (listResponse.status === 'rejected') {
+          throw listResponse.reason
         }
+
+        if (!listResponse.value.success) {
+          throw new Error(t('list.loadFailed', { ns: 'batch' }))
+        }
+
+        setBatches(listResponse.value.data)
+        setErrorMessage(null)
+
+        const nextSummary: BatchSummary = {
+          total: listResponse.value.data.totalElements,
+          inProgress: null,
+          failed: null,
+          lastRefreshedAt: summary.lastRefreshedAt,
+        }
+
+        const summaryLoaded =
+          inProgressResponse.status === 'fulfilled' &&
+          inProgressResponse.value.success &&
+          failedResponse.status === 'fulfilled' &&
+          failedResponse.value.success
+
+        if (summaryLoaded) {
+          nextSummary.inProgress = inProgressResponse.value.data.totalElements
+          nextSummary.failed = failedResponse.value.data.totalElements
+          nextSummary.lastRefreshedAt = new Date()
+        }
+
+        setSummary(nextSummary)
       } catch (error: unknown) {
         if (error instanceof Error && error.name === 'AbortError') return
         console.error('Failed to fetch batches:', error)
@@ -77,22 +154,22 @@ export function BatchListPage() {
         setLoading(false)
       }
     },
-    [params.page, params.size, params.status, setBatches]
+    [params.page, params.size, params.status, setBatches, summary.lastRefreshedAt, t]
   )
 
   useEffect(() => {
     const controller = new AbortController()
-    void fetchBatches(controller.signal)
+    void refreshBatches(controller.signal)
 
     const interval = setInterval(() => {
-      void fetchBatches()
+      void refreshBatches()
     }, 120000)
 
     return () => {
       controller.abort()
       clearInterval(interval)
     }
-  }, [fetchBatches])
+  }, [refreshBatches])
 
   const handleStatusChange = (status: string) => {
     setParams(prev => ({ ...prev, status: status as BatchStatus | 'ALL', page: 1 }))
@@ -116,7 +193,7 @@ export function BatchListPage() {
     try {
       await batchService.deleteBatch(batchId)
       toast.warning(t('detail.deleteBatchSuccess', { ns: 'batch' }))
-      void fetchBatches()
+      void refreshBatches()
     } catch (error) {
       console.error('Failed to delete batch:', error)
       setErrorMessage(getApiErrorMessage(error))
@@ -125,86 +202,228 @@ export function BatchListPage() {
     }
   }
 
-  const renderContent = () => {
-    if (loading && !batches) {
-      return (
-        <div className="flex h-60 items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      )
-    }
+  const formatSummaryValue = (value: number | null) => value ?? '-'
 
-    if (batches?.content.length === 0) {
+  const formatCreatedAt = (createdAt: string) => format(new Date(createdAt), 'yyyy-MM-dd HH:mm')
+
+  const renderCountSummary = (batch: BatchListItem) => {
+    if (batch.status === 'DRAFT') {
       return (
-        <div className="flex h-60 flex-col items-center justify-center rounded-lg border border-dashed">
-          <Search className="mb-2 h-10 w-10 text-muted-foreground" />
-          <p className="text-muted-foreground">{t('list.empty', { ns: 'batch' })}</p>
-          <Link to="/batches/new" className="mt-4">
-            <Button variant="link">{t('list.createFirst', { ns: 'batch' })}</Button>
-          </Link>
-        </div>
+        <span className="text-sm text-muted-foreground">
+          {t('list.notSubmitted', { ns: 'batch' })}
+        </span>
       )
     }
 
     return (
-      <div className="divide-y divide-border rounded-lg border">
-        {batches?.content.map(batch => (
-          <Link key={batch.id} to={`/batches/${batch.id}`} className="block">
-            <div className="flex items-center justify-between gap-4 px-4 py-3 transition-colors hover:bg-muted/50">
-              <div className="min-w-0 flex-1">
-                <p className="truncate font-medium">{batch.label}</p>
-                <p className="mt-0.5 truncate text-sm text-muted-foreground">{batch.model}</p>
-              </div>
+      <div className="flex flex-wrap items-center gap-3 text-sm">
+        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+          <CheckCircle2 className="h-3.5 w-3.5" />
+          {t('list.successCount', { ns: 'batch', count: batch.successCount })}
+        </span>
+        <span className="flex items-center gap-1 text-red-500 dark:text-red-400">
+          <XCircle className="h-3.5 w-3.5" />
+          {t('list.failedCount', { ns: 'batch', count: batch.failedCount })}
+        </span>
+      </div>
+    )
+  }
 
-              <div className="flex shrink-0 items-center gap-3">
-                <StatusBadge status={batch.status} size="sm" />
+  const renderRowActions = (batch: BatchListItem) => (
+    <div className="flex items-center justify-end gap-2">
+      <Link to={`/batches/${batch.id}`}>
+        <Button variant="outline" size="sm">
+          <ArrowUpRight className="mr-2 h-4 w-4" />
+          {t('list.open', { ns: 'batch' })}
+        </Button>
+      </Link>
 
-                <span className="hidden items-center gap-1 text-sm text-muted-foreground sm:flex">
-                  <FileText className="h-3.5 w-3.5" />
-                  {t('list.promptCount', { ns: 'batch', count: batch.promptCount })}
-                </span>
+      {batch.status === 'DRAFT' ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+          disabled={deletingBatchId === batch.id}
+          onClick={event => void handleDeleteBatch(event, batch.id)}
+        >
+          {deletingBatchId === batch.id ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="mr-2 h-4 w-4" />
+          )}
+          {t('actions.delete', { ns: 'common' })}
+        </Button>
+      ) : null}
+    </div>
+  )
 
-                {batch.status !== 'DRAFT' && (batch.successCount > 0 || batch.failedCount > 0) ? (
-                  <span className="hidden items-center gap-2 text-sm md:flex">
-                    {batch.successCount > 0 ? (
-                      <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                        {batch.successCount}
-                      </span>
-                    ) : null}
-                    {batch.failedCount > 0 ? (
-                      <span className="flex items-center gap-1 text-red-500 dark:text-red-400">
-                        <Search className="h-3.5 w-3.5" />
-                        {batch.failedCount}
-                      </span>
-                    ) : null}
-                  </span>
-                ) : null}
-
-                <span className="hidden items-center gap-1 text-sm text-muted-foreground lg:flex">
-                  <Clock className="h-3.5 w-3.5" />
-                  {format(new Date(batch.createdAt), 'yyyy-MM-dd HH:mm')}
-                </span>
-
-                {batch.status === 'DRAFT' ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7 text-muted-foreground hover:text-red-500"
-                    disabled={deletingBatchId === batch.id}
-                    onClick={event => void handleDeleteBatch(event, batch.id)}
+  const renderDesktopTable = () => (
+    <div className="hidden overflow-hidden rounded-xl border bg-card shadow-sm md:block">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/40 hover:bg-muted/40">
+            <TableHead>{t('list.columns.batch', { ns: 'batch' })}</TableHead>
+            <TableHead>{t('list.columns.status', { ns: 'batch' })}</TableHead>
+            <TableHead>{t('list.columns.createdAt', { ns: 'batch' })}</TableHead>
+            <TableHead className="text-right">
+              {t('list.columns.actions', { ns: 'batch' })}
+            </TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {batches?.content.map(batch => (
+            <TableRow key={batch.id}>
+              <TableCell className="py-4">
+                <div className="min-w-0 space-y-1">
+                  <Link
+                    to={`/batches/${batch.id}`}
+                    className="block truncate font-medium text-foreground hover:text-primary"
                   >
-                    {deletingBatchId === batch.id ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                ) : null}
-              </div>
+                    {batch.label}
+                  </Link>
+                  <p className="truncate text-sm text-muted-foreground">{batch.model}</p>
+                </div>
+              </TableCell>
+              <TableCell className="py-4">
+                <div className="space-y-2">
+                  <StatusBadge status={batch.status} size="sm" />
+                  <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <FileText className="h-3.5 w-3.5" />
+                      {t('list.promptCount', { ns: 'batch', count: batch.promptCount })}
+                    </span>
+                  </div>
+                  {renderCountSummary(batch)}
+                </div>
+              </TableCell>
+              <TableCell className="py-4 text-sm text-muted-foreground">
+                {formatCreatedAt(batch.createdAt)}
+              </TableCell>
+              <TableCell className="py-4">{renderRowActions(batch)}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  )
+
+  const renderMobileRows = () => (
+    <div className="space-y-3 md:hidden">
+      {batches?.content.map(batch => (
+        <div key={batch.id} className="rounded-xl border bg-card p-4 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <Link
+                to={`/batches/${batch.id}`}
+                className="block truncate font-medium text-foreground hover:text-primary"
+              >
+                {batch.label}
+              </Link>
+              <p className="mt-1 truncate text-sm text-muted-foreground">{batch.model}</p>
             </div>
+            <StatusBadge status={batch.status} size="sm" className="shrink-0" />
+          </div>
+
+          <div className="mt-4 grid gap-2 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span>{t('list.promptCount', { ns: 'batch', count: batch.promptCount })}</span>
+            </div>
+            {renderCountSummary(batch)}
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              <span>{formatCreatedAt(batch.createdAt)}</span>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link to={`/batches/${batch.id}`} className="flex-1">
+              <Button variant="outline" size="sm" className="w-full">
+                <ArrowUpRight className="mr-2 h-4 w-4" />
+                {t('list.open', { ns: 'batch' })}
+              </Button>
+            </Link>
+            {batch.status === 'DRAFT' ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                disabled={deletingBatchId === batch.id}
+                onClick={event => void handleDeleteBatch(event, batch.id)}
+              >
+                {deletingBatchId === batch.id ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                {t('actions.delete', { ns: 'common' })}
+              </Button>
+            ) : null}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderEmptyState = () => {
+    const isFiltered = params.status && params.status !== 'ALL'
+
+    return (
+      <div className="rounded-xl border border-dashed bg-muted/20 px-6 py-14 text-center">
+        <Search className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
+        <h2 className="text-lg font-semibold">{t('list.emptyTitle', { ns: 'batch' })}</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          {isFiltered
+            ? t('list.emptyFiltered', {
+                ns: 'batch',
+                status: t(
+                  STATUS_OPTIONS.find(option => option.value === params.status)?.labelKey ??
+                    'status.all',
+                  { ns: 'common' }
+                ),
+              })
+            : t('list.empty', { ns: 'batch' })}
+        </p>
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void refreshBatches()}
+            disabled={loading}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            {t('actions.refresh', { ns: 'common' })}
+          </Button>
+          <Link to="/batches/new">
+            <Button size="sm">{t('list.newBatch', { ns: 'batch' })}</Button>
           </Link>
-        ))}
+        </div>
+      </div>
+    )
+  }
+
+  const renderLoadingState = () => (
+    <div className="rounded-xl border bg-card px-6 py-18">
+      <div className="flex flex-col items-center justify-center gap-3 text-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">{t('list.loading', { ns: 'batch' })}</p>
+      </div>
+    </div>
+  )
+
+  const renderContent = () => {
+    if (loading && !batches) {
+      return renderLoadingState()
+    }
+
+    if (!batches || batches.content.length === 0) {
+      return renderEmptyState()
+    }
+
+    return (
+      <div className="space-y-3">
+        {renderDesktopTable()}
+        {renderMobileRows()}
       </div>
     )
   }
@@ -214,65 +433,87 @@ export function BatchListPage() {
       <PageHeader
         title={t('list.title', { ns: 'batch' })}
         description={t('list.description', { ns: 'batch' })}
-        actions={
-          <Link to="/batches/new">
-            <Button size="sm">
-              <Plus className="mr-2 h-4 w-4" />
-              {t('list.newBatch', { ns: 'batch' })}
-            </Button>
-          </Link>
-        }
       />
 
       <MetaStrip
+        className="rounded-xl border bg-muted/20 px-4 py-3"
         items={[
           {
             icon: Layers,
-            label: t('list.totalBatches', { ns: 'batch' }),
-            value: batches?.totalElements ?? '-',
+            label: t('list.summary.total', { ns: 'batch' }),
+            value: formatSummaryValue(summary.total),
+          },
+          {
+            icon: RefreshCw,
+            label: t('list.summary.inProgress', { ns: 'batch' }),
+            value: formatSummaryValue(summary.inProgress),
+          },
+          {
+            icon: TriangleAlert,
+            label: t('list.summary.failed', { ns: 'batch' }),
+            value: formatSummaryValue(summary.failed),
+          },
+          {
+            icon: Clock,
+            value: summary.lastRefreshedAt
+              ? t('list.summary.lastRefreshed', {
+                  ns: 'batch',
+                  time: format(summary.lastRefreshedAt, 'HH:mm'),
+                })
+              : t('list.summary.lastRefreshedPending', { ns: 'batch' }),
           },
         ]}
       />
 
       <Toolbar
+        className="gap-3 border-b-0 pb-0"
         filters={
           <Tabs value={params.status || 'ALL'} onValueChange={handleStatusChange}>
-            <TabsList>
-              <TabsTrigger value="ALL">{t('status.all', { ns: 'common' })}</TabsTrigger>
-              <TabsTrigger value="DRAFT">{t('status.draft', { ns: 'common' })}</TabsTrigger>
-              <TabsTrigger value="IN_PROGRESS">
-                {t('status.inProgress', { ns: 'common' })}
-              </TabsTrigger>
-              <TabsTrigger value="COMPLETED">{t('status.completed', { ns: 'common' })}</TabsTrigger>
-              <TabsTrigger value="FAILED">{t('status.failed', { ns: 'common' })}</TabsTrigger>
+            <TabsList className="flex h-auto flex-wrap justify-start">
+              {STATUS_OPTIONS.map(option => (
+                <TabsTrigger key={option.value} value={option.value}>
+                  {t(option.labelKey, { ns: 'common' })}
+                </TabsTrigger>
+              ))}
             </TabsList>
           </Tabs>
         }
         controls={
-          <>
-            <span className="text-sm whitespace-nowrap text-muted-foreground">
-              {t('labels.pageSize', { ns: 'common' })}
-            </span>
-            <Select value={params.size.toString()} onValueChange={handleSizeChange}>
-              <SelectTrigger className="w-[80px]">
-                <SelectValue placeholder="Size" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="3">3</SelectItem>
-                <SelectItem value="6">6</SelectItem>
-                <SelectItem value="9">9</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+            <div className="flex items-center gap-2">
+              <span className="text-sm whitespace-nowrap text-muted-foreground">
+                {t('labels.pageSize', { ns: 'common' })}
+              </span>
+              <Select value={params.size.toString()} onValueChange={handleSizeChange}>
+                <SelectTrigger className="w-[88px]">
+                  <SelectValue placeholder="Size" />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAGE_SIZE_OPTIONS.map(option => (
+                    <SelectItem key={option} value={option}>
+                      {option}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <Button
               variant="outline"
               size="sm"
-              onClick={() => void fetchBatches()}
+              onClick={() => void refreshBatches()}
               disabled={loading}
             >
               <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
               {t('actions.refresh', { ns: 'common' })}
             </Button>
-          </>
+
+            <Link to="/batches/new">
+              <Button size="sm" className="w-full sm:w-auto">
+                {t('list.newBatch', { ns: 'batch' })}
+              </Button>
+            </Link>
+          </div>
         }
       />
 
