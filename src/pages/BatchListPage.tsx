@@ -99,6 +99,11 @@ export function BatchListPage() {
           { signal }
         )
 
+        const totalRequest =
+          params.status === 'ALL'
+            ? Promise.resolve(null)
+            : batchService.getBatches({ page: 1, size: 1 }, { signal })
+
         const inProgressRequest = batchService.getBatches(
           { status: 'IN_PROGRESS', page: 1, size: 1 },
           { signal }
@@ -109,11 +114,8 @@ export function BatchListPage() {
           { signal }
         )
 
-        const [listResponse, inProgressResponse, failedResponse] = await Promise.allSettled([
-          listRequest,
-          inProgressRequest,
-          failedRequest,
-        ])
+        const [listResponse, totalResponse, inProgressResponse, failedResponse] =
+          await Promise.allSettled([listRequest, totalRequest, inProgressRequest, failedRequest])
 
         if (listResponse.status === 'rejected') {
           throw listResponse.reason
@@ -126,26 +128,30 @@ export function BatchListPage() {
         setBatches(listResponse.value.data)
         setErrorMessage(null)
 
-        const nextSummary: BatchSummary = {
-          total: listResponse.value.data.totalElements,
-          inProgress: null,
-          failed: null,
-          lastRefreshedAt: summary.lastRefreshedAt,
-        }
+        const totalValue =
+          params.status === 'ALL'
+            ? listResponse.value.data.totalElements
+            : totalResponse.status === 'fulfilled' && totalResponse.value?.success
+              ? totalResponse.value.data.totalElements
+              : null
 
-        const summaryLoaded =
-          inProgressResponse.status === 'fulfilled' &&
-          inProgressResponse.value.success &&
-          failedResponse.status === 'fulfilled' &&
-          failedResponse.value.success
+        const totalLoaded = params.status === 'ALL' || totalValue !== null
 
-        if (summaryLoaded) {
-          nextSummary.inProgress = inProgressResponse.value.data.totalElements
-          nextSummary.failed = failedResponse.value.data.totalElements
-          nextSummary.lastRefreshedAt = new Date()
-        }
+        const inProgressLoaded =
+          inProgressResponse.status === 'fulfilled' && inProgressResponse.value.success
 
-        setSummary(nextSummary)
+        const failedLoaded = failedResponse.status === 'fulfilled' && failedResponse.value.success
+
+        const refreshedAt = totalLoaded && inProgressLoaded && failedLoaded ? new Date() : null
+
+        setSummary(prev => ({
+          total: totalLoaded ? totalValue : prev.total,
+          inProgress: inProgressLoaded
+            ? inProgressResponse.value.data.totalElements
+            : prev.inProgress,
+          failed: failedLoaded ? failedResponse.value.data.totalElements : prev.failed,
+          lastRefreshedAt: refreshedAt ?? prev.lastRefreshedAt,
+        }))
       } catch (error: unknown) {
         if (error instanceof Error && error.name === 'AbortError') return
         console.error('Failed to fetch batches:', error)
@@ -154,7 +160,7 @@ export function BatchListPage() {
         setLoading(false)
       }
     },
-    [params.page, params.size, params.status, setBatches, summary.lastRefreshedAt, t]
+    [params.page, params.size, params.status, setBatches, t]
   )
 
   useEffect(() => {
