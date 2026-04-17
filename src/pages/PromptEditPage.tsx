@@ -1,25 +1,31 @@
-import { ArrowLeft, Loader2, Save } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import {
+  AlertTriangle,
+  FileText,
+  Layers3,
+  Loader2,
+  Paperclip,
+  RefreshCcw,
+  Save,
+  Sparkles,
+} from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
 
 import type { Attachment, BatchStatus, Model, Prompt, PromptType } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
+import { MetaStrip } from '@/components/layout/MetaStrip'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { StatusBadge } from '@/components/layout/StatusBadge'
 import { ExternalContextChipsDisplay } from '@/components/prompt/ExternalContextChipsDisplay'
 import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
 import { PromptTemplateSelect } from '@/components/prompt/PromptTemplateSelect'
 import { ReferenceMediaSection } from '@/components/prompt/ReferenceMediaSection'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -31,14 +37,49 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { usePromptType, usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
-import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
+import { getApiErrorMessage, parseApiError, showApiErrorAlert } from '@/lib/api-error'
 import { batchService, modelService } from '@/services/api'
+
+function SummaryRow({
+  label,
+  value,
+  description,
+}: {
+  label: string
+  value: string
+  description: string
+}) {
+  return (
+    <div className="grid gap-1 rounded-2xl border bg-background/80 px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-xs font-semibold tracking-[0.14em] text-muted-foreground uppercase">
+          {label}
+        </span>
+        <span className="text-sm font-semibold text-foreground">{value}</span>
+      </div>
+      <p className="text-sm text-muted-foreground">{description}</p>
+    </div>
+  )
+}
+
+function haveAttachmentsChanged(current: Attachment[], next: Attachment[]) {
+  if (current.length !== next.length) return true
+
+  return current.some((attachment, index) => {
+    const nextAttachment = next[index]
+    return (
+      attachment.fileName !== nextAttachment?.fileName ||
+      attachment.fileContent !== nextAttachment?.fileContent
+    )
+  })
+}
 
 export function PromptEditPage() {
   const { t } = useTranslation(['prompt', 'common', 'batch'])
   const { batchId, promptId } = useParams<{ batchId: string; promptId: string }>()
   const navigate = useNavigate()
 
+  const [reloadToken, setReloadToken] = useState(0)
   const [loading, setLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -46,6 +87,7 @@ export function PromptEditPage() {
   const [prompt, setPrompt] = useState<Prompt | null>(null)
   const [batchStatus, setBatchStatus] = useState<BatchStatus | null>(null)
   const [batchModel, setBatchModel] = useState<string>('')
+  const [batchLabel, setBatchLabel] = useState<string>('')
   const [models, setModels] = useState<Model[]>([])
 
   const [editLabel, setEditLabel] = useState('')
@@ -62,74 +104,138 @@ export function PromptEditPage() {
       if (!batchId || !promptId) return
 
       setLoading(true)
-      try {
-        const batchIdNum = Number.parseInt(batchId, 10)
-        const promptIdNum = Number.parseInt(promptId, 10)
+      setErrorMessage(null)
 
-        const [promptResponse, batchResponse, modelsResponse] = await Promise.all([
-          batchService.getPrompt(batchIdNum, promptIdNum),
-          batchService.getBatch(batchIdNum),
-          modelService.getModels(),
-        ])
+      const batchIdNum = Number.parseInt(batchId, 10)
+      const promptIdNum = Number.parseInt(promptId, 10)
 
-        if (promptResponse.success) {
-          const p = promptResponse.data
-          setPrompt(p)
-          setEditLabel(p.label || '')
-          setEditSystemPrompt(p.systemPrompt || '')
-          setEditUserPrompt(p.userPrompt || '')
-          setEditAttachments(p.attachments ?? [])
-          setEditPromptType(p.promptType ?? 'TEXT')
-          setEditReferenceMediaUrl(p.referenceMediaUrl || '')
+      const [promptResult, batchResult, modelsResult] = await Promise.allSettled([
+        batchService.getPrompt(batchIdNum, promptIdNum),
+        batchService.getBatch(batchIdNum),
+        modelService.getModels(),
+      ])
+
+      let nextErrorMessage: string | null = null
+
+      if (promptResult.status === 'fulfilled') {
+        if (promptResult.value.success) {
+          const nextPrompt = promptResult.value.data
+          setPrompt(nextPrompt)
+          setEditLabel(nextPrompt.label || '')
+          setEditSystemPrompt(nextPrompt.systemPrompt || '')
+          setEditUserPrompt(nextPrompt.userPrompt || '')
+          setEditAttachments(nextPrompt.attachments ?? [])
+          setEditPromptType(nextPrompt.promptType ?? 'TEXT')
+          setEditReferenceMediaUrl(nextPrompt.referenceMediaUrl || '')
+        } else {
+          setPrompt(null)
         }
-
-        if (batchResponse.success) {
-          setBatchStatus(batchResponse.data.status)
-          setBatchModel(batchResponse.data.model)
+      } else {
+        const promptError = parseApiError(promptResult.reason)
+        if (promptError.code === 'PROMPT_NOT_FOUND') {
+          setPrompt(null)
+        } else {
+          nextErrorMessage = getApiErrorMessage(promptResult.reason)
         }
-
-        if (modelsResponse.success) {
-          setModels(modelsResponse.data)
-        }
-      } catch (error) {
-        console.error('Failed to fetch data for edit:', error)
-        setErrorMessage(getApiErrorMessage(error))
-      } finally {
-        setLoading(false)
       }
+
+      if (batchResult.status === 'fulfilled') {
+        if (batchResult.value.success) {
+          setBatchStatus(batchResult.value.data.status)
+          setBatchModel(batchResult.value.data.model)
+          setBatchLabel(batchResult.value.data.label)
+        } else {
+          setBatchStatus(null)
+          setBatchModel('')
+          setBatchLabel('')
+          nextErrorMessage ??= t('edit.fetchErrorDescription')
+        }
+      } else {
+        setBatchStatus(null)
+        setBatchModel('')
+        setBatchLabel('')
+        nextErrorMessage ??= getApiErrorMessage(batchResult.reason)
+      }
+
+      if (modelsResult.status === 'fulfilled' && modelsResult.value.success) {
+        setModels(modelsResult.value.data)
+      } else {
+        setModels([])
+      }
+
+      setErrorMessage(nextErrorMessage)
+      setLoading(false)
     }
 
     void fetchData()
-  }, [batchId, promptId])
-
-  const haveAttachmentsChanged = (current: Attachment[], next: Attachment[]) => {
-    if (current.length !== next.length) return true
-    return current.some((attachment, index) => {
-      const nextAttachment = next[index]
-      return (
-        attachment.fileName !== nextAttachment?.fileName ||
-        attachment.fileContent !== nextAttachment?.fileContent
-      )
-    })
-  }
+  }, [batchId, promptId, reloadToken, t])
 
   const { isTextType, isEditType } = usePromptType(editPromptType)
-  const currentModel = models.find(m => m.id === batchModel)
+  const currentModel = models.find(model => model.id === batchModel)
   const { supportedTypes, showTypeSelect } = useSupportedPromptTypes(currentModel)
   const promptTypeLabels = usePromptTypeLabels()
+  const statusLabels = {
+    DRAFT: t('status.draft', { ns: 'common' }),
+    IN_PROGRESS: t('status.inProgress', { ns: 'common' }),
+    COMPLETED: t('status.completed', { ns: 'common' }),
+    FAILED: t('status.failed', { ns: 'common' }),
+    PENDING: t('status.pending', { ns: 'common' }),
+  } as const
+
+  const attachmentsChanged = useMemo(
+    () => (prompt ? haveAttachmentsChanged(prompt.attachments ?? [], editAttachments) : false),
+    [prompt, editAttachments]
+  )
+  const recreationRequired = isTextType && attachmentsChanged
+  const isSaveReady = !!editUserPrompt.trim() && !(isTextType && isAttachmentPending) && !isUpdating
+
+  const saveReadinessDescription = useMemo(() => {
+    if (isUpdating) return t('edit.summary.saveUpdating')
+    if (!editUserPrompt.trim()) return t('edit.summary.saveNeedsPrompt')
+    if (isTextType && isAttachmentPending) return t('edit.summary.savePendingAttachments')
+    return t('edit.summary.saveReadyDescription')
+  }, [editUserPrompt, isAttachmentPending, isTextType, isUpdating, t])
+
+  const referenceMediaValue = isEditType
+    ? editReferenceMediaUrl.trim()
+      ? t('edit.summary.referenceConfigured')
+      : t('edit.summary.referenceMissing')
+    : t('edit.summary.referenceNotRequired')
+
+  const referenceMediaDescription = isEditType
+    ? editReferenceMediaUrl.trim()
+      ? t('edit.summary.referenceConfiguredDescription')
+      : t('edit.summary.referenceMissingDescription')
+    : t('edit.summary.referenceNotRequiredDescription')
+
+  const hasFetchFailure = !!errorMessage && (!prompt || !batchStatus)
+  const editBlockedReason = hasFetchFailure
+    ? null
+    : !prompt
+      ? t('edit.blockedPromptMissing')
+      : batchStatus !== 'DRAFT'
+        ? t('edit.blockedBatchStatus', {
+            status: batchStatus ? statusLabels[batchStatus] : t('edit.notAllowed'),
+          })
+        : prompt.status !== 'PENDING'
+          ? t('edit.blockedPromptStatus', {
+              status: statusLabels[prompt.status],
+            })
+          : null
+
+  const promptDetailTarget = prompt ? `/batches/${batchId}/prompts/${prompt.id}` : null
+  const backTarget = promptDetailTarget ?? `/batches/${batchId}`
 
   const handleUpdate = async (event: React.FormEvent) => {
     event.preventDefault()
-    if (!batchId || !promptId || !prompt || (isTextType && isAttachmentPending)) return
+    if (!batchId || !promptId || !prompt || !isSaveReady) return
 
     setIsUpdating(true)
     try {
       const batchIdNumber = Number.parseInt(batchId, 10)
       const promptIdNumber = Number.parseInt(promptId, 10)
-      const attachmentsChanged = haveAttachmentsChanged(prompt.attachments ?? [], editAttachments)
 
-      if (isTextType && attachmentsChanged) {
-        // If attachments changed, we must recreate the prompt (as per original logic in PromptDetailPage)
+      if (recreationRequired) {
         const createResponse = await batchService.addPrompt(batchIdNumber, {
           label: editLabel || undefined,
           systemPrompt: editSystemPrompt || undefined,
@@ -173,166 +279,357 @@ export function PromptEditPage() {
     )
   }
 
-  if (!prompt || batchStatus !== 'DRAFT' || prompt.status !== 'PENDING') {
+  if (hasFetchFailure) {
     return (
-      <div className="py-20 text-center">
-        <p className="text-muted-foreground">
-          {!prompt ? t('detail.notFound') : t('edit.notAllowed')}
-        </p>
-        <Button variant="link" onClick={() => navigate(`/batches/${batchId}/prompts/${promptId}`)}>
-          {t('edit.backToDetail')}
-        </Button>
+      <div className="mx-auto max-w-3xl space-y-6 py-10">
+        {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
+
+        <PageHeader
+          onBack={() => navigate(backTarget)}
+          title={t('detail.editTitle')}
+          description={t('edit.fetchErrorDescription')}
+        />
+
+        <section className="rounded-[28px] border bg-muted/20 px-6 py-8">
+          <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-3">
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/12 text-amber-700 dark:text-amber-300">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-semibold tracking-tight">
+                  {t('edit.fetchErrorTitle')}
+                </h2>
+                <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                  {t('edit.fetchErrorHelp')}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button variant="outline" onClick={() => setReloadToken(token => token + 1)}>
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                {t('edit.retryLoad')}
+              </Button>
+              <Button variant="outline" onClick={() => navigate(backTarget)}>
+                {promptDetailTarget ? t('edit.backToDetail') : t('detail.backToBatch')}
+              </Button>
+            </div>
+          </div>
+        </section>
       </div>
     )
   }
 
+  if (editBlockedReason) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6 py-10">
+        {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
+
+        <PageHeader
+          onBack={() => navigate(backTarget)}
+          title={t('detail.editTitle')}
+          description={t('edit.blockedDescription')}
+        />
+
+        <section className="rounded-[28px] border bg-muted/20 px-6 py-8">
+          <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-3">
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/12 text-amber-700 dark:text-amber-300">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-semibold tracking-tight">{t('edit.blockedTitle')}</h2>
+                <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                  {editBlockedReason}
+                </p>
+                <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                  {t('edit.blockedHelp')}
+                </p>
+              </div>
+            </div>
+
+            <Button variant="outline" onClick={() => navigate(backTarget)}>
+              {promptDetailTarget ? t('edit.backToDetail') : t('detail.backToBatch')}
+            </Button>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
+  if (!prompt) {
+    return null
+  }
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="mx-auto max-w-7xl space-y-6 pb-28">
       {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
 
-      <div className="flex items-center gap-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate(`/batches/${batchId}/prompts/${promptId}`)}
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('detail.editTitle')}</h1>
-          <p className="text-muted-foreground">{t('edit.description')}</p>
-        </div>
-      </div>
+      <PageHeader
+        onBack={() => navigate(backTarget)}
+        title={editLabel.trim() || prompt.label}
+        description={t('edit.description')}
+        meta={
+          <div className="flex flex-wrap items-center gap-2">
+            <StatusBadge status={prompt.status} size="sm" />
+            <Badge variant="secondary" className="h-6 px-2 py-0.5 text-[10px] font-medium">
+              {t('detail.editTitle')}
+            </Badge>
+          </div>
+        }
+      >
+        <MetaStrip
+          className="rounded-2xl border bg-muted/20 px-4 py-3"
+          items={[
+            {
+              icon: Layers3,
+              label: t('edit.metaBatchLabel'),
+              value: batchLabel,
+            },
+            {
+              icon: FileText,
+              label: t('edit.metaPromptLabel'),
+              value: prompt.label,
+            },
+            {
+              icon: Sparkles,
+              label: t('edit.metaPromptType'),
+              value: promptTypeLabels[editPromptType],
+            },
+            {
+              icon: Paperclip,
+              label: t('edit.metaBatchStatus'),
+              value: <StatusBadge status={batchStatus ?? 'DRAFT'} size="sm" />,
+            },
+          ]}
+        />
+      </PageHeader>
 
-      <form onSubmit={handleUpdate}>
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('detail.editTitle')}</CardTitle>
-            <CardDescription>{t('edit.description')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="edit-label">{t('detail.label')}</Label>
-              <Input
-                id="edit-label"
-                value={editLabel}
-                onChange={event => setEditLabel(event.target.value)}
-                placeholder={t('detail.labelPlaceholder')}
-              />
+      <form
+        id="prompt-edit-form"
+        onSubmit={handleUpdate}
+        className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem]"
+      >
+        <div className="space-y-6">
+          <section className="rounded-[28px] border bg-muted/10 p-6">
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="edit-label">{t('detail.label')}</Label>
+                <Input
+                  id="edit-label"
+                  value={editLabel}
+                  onChange={event => setEditLabel(event.target.value)}
+                  placeholder={t('detail.labelPlaceholder')}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t('edit.currentState')}</Label>
+                <div className="flex min-h-10 flex-wrap items-center gap-2 rounded-2xl border bg-background/80 px-3 py-2">
+                  <StatusBadge status={prompt.status} size="sm" />
+                  <StatusBadge status={batchStatus ?? 'DRAFT'} size="sm" />
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-[28px] border bg-background p-6 shadow-sm">
+            <div className="mb-6 flex flex-col gap-2">
+              <h2 className="text-xl font-semibold tracking-tight">{t('edit.formTitle')}</h2>
+              <p className="text-sm text-muted-foreground">{t('edit.formDescription')}</p>
             </div>
 
-            {showTypeSelect ? (
-              <div className="space-y-2">
-                <Label htmlFor="edit-type">{t('create.promptTypeLabel', { ns: 'batch' })}</Label>
-                <Select
-                  value={editPromptType}
-                  onValueChange={value => {
-                    setEditPromptType(value as PromptType)
-                    setEditReferenceMediaUrl('')
-                  }}
-                >
-                  <SelectTrigger id="edit-type">
-                    <SelectValue placeholder={t('create.promptTypePlaceholder', { ns: 'batch' })} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(supportedTypes ?? []).map(type => (
-                      <SelectItem key={type} value={type}>
-                        {promptTypeLabels[type]}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : null}
-
-            {isTextType ? (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="edit-system">{t('detail.systemPrompt', { ns: 'batch' })}</Label>
-                  <PromptTemplateSelect
-                    onSelectTemplate={({ systemPrompt, userPrompt }) => {
-                      setEditSystemPrompt(systemPrompt)
-                      setEditUserPrompt(userPrompt)
+            <div className="space-y-6">
+              {showTypeSelect ? (
+                <div className="space-y-2">
+                  <Label htmlFor="edit-type">{t('create.promptTypeLabel', { ns: 'batch' })}</Label>
+                  <Select
+                    value={editPromptType}
+                    onValueChange={value => {
+                      setEditPromptType(value as PromptType)
+                      setEditReferenceMediaUrl('')
                     }}
+                  >
+                    <SelectTrigger id="edit-type">
+                      <SelectValue
+                        placeholder={t('create.promptTypePlaceholder', { ns: 'batch' })}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(supportedTypes ?? []).map(type => (
+                        <SelectItem key={type} value={type}>
+                          {promptTypeLabels[type]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : null}
+
+              {isTextType ? (
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <Label htmlFor="edit-system">{t('detail.systemPrompt', { ns: 'batch' })}</Label>
+                    <PromptTemplateSelect
+                      onSelectTemplate={({ systemPrompt, userPrompt }) => {
+                        setEditSystemPrompt(systemPrompt)
+                        setEditUserPrompt(userPrompt)
+                      }}
+                    />
+                  </div>
+                  <Textarea
+                    id="edit-system"
+                    value={editSystemPrompt}
+                    onChange={event => setEditSystemPrompt(event.target.value)}
+                    placeholder={t('create.systemPromptPlaceholder', { ns: 'batch' })}
+                    className="min-h-[100px]"
                   />
                 </div>
+              ) : null}
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-user">{t('detail.userPrompt')}</Label>
                 <Textarea
-                  id="edit-system"
-                  value={editSystemPrompt}
-                  onChange={event => setEditSystemPrompt(event.target.value)}
-                  placeholder={t('create.systemPromptPlaceholder', { ns: 'batch' })}
-                  className="min-h-[80px]"
+                  id="edit-user"
+                  value={editUserPrompt}
+                  onChange={event => setEditUserPrompt(event.target.value)}
+                  placeholder={t('detail.userPromptPlaceholder')}
+                  required
+                  className="min-h-[220px]"
                 />
               </div>
-            ) : null}
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-user">{t('detail.userPrompt')}</Label>
-              <Textarea
-                id="edit-user"
-                value={editUserPrompt}
-                onChange={event => setEditUserPrompt(event.target.value)}
-                placeholder={t('detail.userPromptPlaceholder')}
-                required
-                className="min-h-[200px]"
-              />
+              {isEditType ? (
+                <div className="rounded-2xl border bg-muted/10 p-4">
+                  <ReferenceMediaSection
+                    key={editPromptType}
+                    referenceMediaUrl={editReferenceMediaUrl}
+                    onReferenceMediaUrlChange={setEditReferenceMediaUrl}
+                  />
+                </div>
+              ) : null}
+
+              {isTextType ? (
+                <div className="space-y-5 rounded-2xl border bg-muted/10 p-4">
+                  <ExternalContextImportSection
+                    attachments={editAttachments}
+                    disabled={isUpdating || isAttachmentPending}
+                    promptId={promptId}
+                    onAttachmentsChange={setEditAttachments}
+                  />
+                  <ExternalContextChipsDisplay
+                    attachments={editAttachments}
+                    onRemove={fileName =>
+                      setEditAttachments(prev => prev.filter(item => item.fileName !== fileName))
+                    }
+                  />
+                  <PromptAttachmentsField
+                    attachments={editAttachments}
+                    errorMessage={attachmentError}
+                    onChange={setEditAttachments}
+                    onErrorChange={setAttachmentError}
+                    onPendingChange={setIsAttachmentPending}
+                  />
+                </div>
+              ) : null}
             </div>
+          </section>
+        </div>
 
-            {isEditType ? (
-              <ReferenceMediaSection
-                key={editPromptType}
-                referenceMediaUrl={editReferenceMediaUrl}
-                onReferenceMediaUrlChange={setEditReferenceMediaUrl}
+        <aside className="space-y-6 xl:sticky xl:top-20 xl:self-start">
+          <Card className="border-border/70 bg-muted/10 shadow-none">
+            <CardHeader className="space-y-2">
+              <CardTitle className="text-lg">{t('edit.summary.title')}</CardTitle>
+              <CardDescription>{t('edit.summary.description')}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <SummaryRow
+                label={t('edit.summary.promptTypeLabel')}
+                value={promptTypeLabels[editPromptType]}
+                description={t('edit.summary.promptTypeDescription')}
               />
-            ) : null}
+              <SummaryRow
+                label={t('edit.summary.attachmentLabel')}
+                value={
+                  attachmentsChanged
+                    ? t('edit.summary.attachmentChanged')
+                    : t('edit.summary.attachmentUnchanged')
+                }
+                description={
+                  attachmentsChanged
+                    ? t('edit.summary.attachmentChangedDescription')
+                    : t('edit.summary.attachmentUnchangedDescription')
+                }
+              />
+              <SummaryRow
+                label={t('edit.summary.referenceLabel')}
+                value={referenceMediaValue}
+                description={referenceMediaDescription}
+              />
+              <SummaryRow
+                label={t('edit.summary.saveLabel')}
+                value={
+                  isSaveReady
+                    ? t('edit.summary.saveReadyValue')
+                    : t('edit.summary.saveBlockedValue')
+                }
+                description={saveReadinessDescription}
+              />
+            </CardContent>
+          </Card>
 
-            {isTextType ? (
-              <div className="space-y-4 border-t pt-4">
-                <ExternalContextImportSection
-                  attachments={editAttachments}
-                  disabled={isUpdating || isAttachmentPending}
-                  promptId={promptId}
-                  onAttachmentsChange={setEditAttachments}
-                />
-                <ExternalContextChipsDisplay
-                  attachments={editAttachments}
-                  onRemove={fileName =>
-                    setEditAttachments(prev => prev.filter(a => a.fileName !== fileName))
-                  }
-                />
-                <PromptAttachmentsField
-                  attachments={editAttachments}
-                  errorMessage={attachmentError}
-                  onChange={setEditAttachments}
-                  onErrorChange={setAttachmentError}
-                  onPendingChange={setIsAttachmentPending}
-                />
+          {recreationRequired ? (
+            <section className="rounded-[24px] border bg-amber-500/8 px-5 py-4">
+              <div className="flex items-start gap-3">
+                <div className="mt-0.5 inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-amber-500/12 text-amber-700 dark:text-amber-300">
+                  <AlertTriangle className="h-4 w-4" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-sm font-semibold">{t('edit.recreateNoticeTitle')}</h3>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    {t('edit.recreateNoticeDescription')}
+                  </p>
+                </div>
               </div>
-            ) : null}
-          </CardContent>
-          <CardFooter className="flex justify-end gap-3 border-t pt-4">
+            </section>
+          ) : null}
+        </aside>
+      </form>
+
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/92 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 md:flex-row md:items-center md:justify-between">
+          <div className="space-y-1">
+            <p className="text-sm font-medium">{t('edit.actionBarTitle')}</p>
+            <p className="text-sm text-muted-foreground">
+              {recreationRequired
+                ? t('edit.actionBarRecreate')
+                : isSaveReady
+                  ? t('edit.actionBarReady')
+                  : saveReadinessDescription}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2 sm:flex-row">
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate(`/batches/${batchId}/prompts/${promptId}`)}
+              onClick={() => navigate(backTarget)}
               disabled={isUpdating || isAttachmentPending}
             >
               {t('actions.cancel', { ns: 'common' })}
             </Button>
-            <Button
-              type="submit"
-              disabled={isUpdating || (isTextType && isAttachmentPending) || !editUserPrompt}
-            >
+            <Button type="submit" form="prompt-edit-form" disabled={!isSaveReady}>
               {isUpdating || isAttachmentPending ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
                 <Save className="mr-2 h-4 w-4" />
               )}
-              {t('actions.save', { ns: 'common' })}
+              {t('edit.saveAction')}
             </Button>
-          </CardFooter>
-        </Card>
-      </form>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
