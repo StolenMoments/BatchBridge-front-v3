@@ -19,6 +19,16 @@ export function Layout() {
             </Link>
             <nav className="flex items-center gap-4 text-sm">
               <NavLink
+                to="/batches"
+                className={({ isActive }) =>
+                  isActive
+                    ? 'font-medium text-foreground'
+                    : 'text-muted-foreground transition-colors hover:text-foreground'
+                }
+              >
+                {t('navigation.batches')}
+              </NavLink>
+              <NavLink
                 to="/templates"
                 className={({ isActive }) =>
                   isActive

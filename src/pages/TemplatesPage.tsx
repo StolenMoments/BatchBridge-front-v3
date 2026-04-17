@@ -7,6 +7,7 @@ import { toast } from 'sonner'
 import type { PromptTemplate, PromptTemplateRequest } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -322,16 +323,16 @@ export function TemplatesPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('page.title')}</h1>
-          <p className="text-muted-foreground">{t('page.description')}</p>
-        </div>
-        <Button size="sm" onClick={handleOpenCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          {t('page.newTemplate')}
-        </Button>
-      </div>
+      <PageHeader
+        title={t('page.title')}
+        description={t('page.description')}
+        actions={
+          <Button size="sm" onClick={handleOpenCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            {t('page.newTemplate')}
+          </Button>
+        }
+      />
 
       {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
 

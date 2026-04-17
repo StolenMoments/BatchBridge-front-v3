@@ -17,6 +17,7 @@
     "pending": "대기중"
   },
   "navigation": {
+    "batches": "배치 목록",
     "templates": "프롬프트 템플릿"
   },
   "labels": {

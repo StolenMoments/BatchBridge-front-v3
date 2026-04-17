@@ -1,9 +1,6 @@
 import {
   AlertTriangle,
-  ArrowLeft,
   Bot,
-  CheckCircle2,
-  Clock,
   Edit,
   FileText,
   Layout,
@@ -11,8 +8,6 @@ import {
   MessageSquare,
   Paperclip,
   Trash2,
-  XCircle,
-  type LucideIcon,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -22,6 +17,8 @@ import { useNavigate, useParams } from 'react-router-dom'
 import type { BatchStatus, Prompt } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { StatusBadge } from '@/components/layout/StatusBadge'
 import { ExternalContextChipsDisplay } from '@/components/prompt/ExternalContextChipsDisplay'
 import { MediaResultDisplay } from '@/components/prompt/MediaResultDisplay'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
@@ -61,14 +58,6 @@ export function PromptDetailPage() {
     COMPLETED: t('status.completed', { ns: 'common' }),
     FAILED: t('status.failed', { ns: 'common' }),
     PENDING: t('status.pending', { ns: 'common' }),
-  }
-
-  const statusAppearanceMap: Record<Prompt['status'], { color: string; icon: LucideIcon }> = {
-    DRAFT: { color: 'bg-slate-500', icon: FileText },
-    IN_PROGRESS: { color: 'bg-blue-500', icon: Loader2 },
-    COMPLETED: { color: 'bg-green-500', icon: CheckCircle2 },
-    FAILED: { color: 'bg-red-500', icon: XCircle },
-    PENDING: { color: 'bg-amber-500', icon: Clock },
   }
 
   useEffect(() => {
@@ -137,93 +126,74 @@ export function PromptDetailPage() {
     )
   }
 
-  const currentStatusAppearance =
-    batchStatus === 'DRAFT' ? statusAppearanceMap.DRAFT : statusAppearanceMap[prompt.status]
-  const StatusIcon = currentStatusAppearance.icon
-
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
 
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/batches/${batchId}`)}>
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div className="flex-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">{prompt.label}</h1>
-            <Badge
-              variant={batchStatus === 'DRAFT' ? 'outline' : 'default'}
-              className={`${
-                batchStatus === 'DRAFT' ? '' : currentStatusAppearance.color
-              } flex h-6 items-center px-2 py-0.5 text-[10px] font-medium ${
-                batchStatus === 'DRAFT' ? '' : 'text-white'
-              }`}
-            >
-              <StatusIcon
-                className={`mr-1.5 h-3 w-3 ${prompt.status === 'IN_PROGRESS' ? 'animate-spin' : ''}`}
-              />
-              {batchStatus === 'DRAFT'
-                ? t('detail.draftBadge', { ns: 'batch' })
-                : statusLabelMap[prompt.status]}
-            </Badge>
+      <PageHeader
+        onBack={() => navigate(`/batches/${batchId}`)}
+        title={prompt.label}
+        description={t('detail.subtitle', { ns: 'prompt' })}
+        meta={
+          <>
+            <StatusBadge status={batchStatus === 'DRAFT' ? 'DRAFT' : prompt.status} size="sm" />
             {prompt.promptType && prompt.promptType !== 'TEXT' ? (
               <Badge variant="secondary" className="h-6 px-2 py-0.5 text-[10px] font-medium">
                 {promptTypeLabels[prompt.promptType]}
               </Badge>
             ) : null}
-          </div>
-          <p className="text-muted-foreground">{t('detail.subtitle', { ns: 'prompt' })}</p>
-        </div>
+          </>
+        }
+        actions={
+          batchStatus === 'DRAFT' && prompt.status === 'PENDING' ? (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => navigate(`/batches/${batchId}/prompts/${promptId}/edit`)}
+              >
+                <Edit className="h-4 w-4" />
+                {t('actions.edit', { ns: 'common' })}
+              </Button>
 
-        {batchStatus === 'DRAFT' && prompt.status === 'PENDING' ? (
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => navigate(`/batches/${batchId}/prompts/${promptId}/edit`)}
-            >
-              <Edit className="h-4 w-4" />
-              {t('actions.edit', { ns: 'common' })}
-            </Button>
-
-            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-              <DialogTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="gap-2 text-destructive hover:text-destructive"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  {t('actions.delete', { ns: 'common' })}
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{t('detail.deleteTitle', { ns: 'prompt' })}</DialogTitle>
-                </DialogHeader>
-                <div className="py-4 text-muted-foreground">
-                  {t('detail.deleteDescription', { ns: 'prompt' })}
-                </div>
-                <DialogFooter>
+              <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                <DialogTrigger asChild>
                   <Button
                     variant="outline"
-                    onClick={() => setIsDeleteDialogOpen(false)}
-                    disabled={isDeleting}
+                    size="sm"
+                    className="gap-2 text-destructive hover:text-destructive"
                   >
-                    {t('actions.cancel', { ns: 'common' })}
-                  </Button>
-                  <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
-                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    <Trash2 className="h-4 w-4" />
                     {t('actions.delete', { ns: 'common' })}
                   </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </div>
-        ) : null}
-      </div>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t('detail.deleteTitle', { ns: 'prompt' })}</DialogTitle>
+                  </DialogHeader>
+                  <div className="py-4 text-muted-foreground">
+                    {t('detail.deleteDescription', { ns: 'prompt' })}
+                  </div>
+                  <DialogFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsDeleteDialogOpen(false)}
+                      disabled={isDeleting}
+                    >
+                      {t('actions.cancel', { ns: 'common' })}
+                    </Button>
+                    <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+                      {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      {t('actions.delete', { ns: 'common' })}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </>
+          ) : null
+        }
+      />
 
       <div className="grid gap-6">
         <Tabs defaultValue="text" className="flex w-full flex-col gap-0">

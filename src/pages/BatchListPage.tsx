@@ -21,6 +21,7 @@ import type { BatchStatus } from '@/types/api'
 
 import { batchesAtom, batchesParamsAtom } from '@/atoms/batches'
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
+import { PageHeader } from '@/components/layout/PageHeader'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -253,29 +254,29 @@ export function BatchListPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('list.title', { ns: 'batch' })}</h1>
-          <p className="text-muted-foreground">{t('list.description', { ns: 'batch' })}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => void fetchBatches()}
-            disabled={loading}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-            {t('actions.refresh', { ns: 'common' })}
-          </Button>
-          <Link to="/batches/new">
-            <Button size="sm">
-              <Plus className="mr-2 h-4 w-4" />
-              {t('list.newBatch', { ns: 'batch' })}
+      <PageHeader
+        title={t('list.title', { ns: 'batch' })}
+        description={t('list.description', { ns: 'batch' })}
+        actions={
+          <>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void fetchBatches()}
+              disabled={loading}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              {t('actions.refresh', { ns: 'common' })}
             </Button>
-          </Link>
-        </div>
-      </div>
+            <Link to="/batches/new">
+              <Button size="sm">
+                <Plus className="mr-2 h-4 w-4" />
+                {t('list.newBatch', { ns: 'batch' })}
+              </Button>
+            </Link>
+          </>
+        }
+      />
 
       <div className="flex flex-col items-center justify-between gap-4 border-b border-border pb-4 md:flex-row">
         <Tabs
