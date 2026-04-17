@@ -1,4 +1,13 @@
-import { AlertTriangle, FileText, Layers3, Loader2, Paperclip, Save, Sparkles } from 'lucide-react'
+import {
+  AlertTriangle,
+  FileText,
+  Layers3,
+  Loader2,
+  Paperclip,
+  RefreshCcw,
+  Save,
+  Sparkles,
+} from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate, useParams } from 'react-router-dom'
@@ -28,7 +37,7 @@ import {
 } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { usePromptType, usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
-import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
+import { getApiErrorMessage, parseApiError, showApiErrorAlert } from '@/lib/api-error'
 import { batchService, modelService } from '@/services/api'
 
 function SummaryRow({
@@ -53,11 +62,24 @@ function SummaryRow({
   )
 }
 
+function haveAttachmentsChanged(current: Attachment[], next: Attachment[]) {
+  if (current.length !== next.length) return true
+
+  return current.some((attachment, index) => {
+    const nextAttachment = next[index]
+    return (
+      attachment.fileName !== nextAttachment?.fileName ||
+      attachment.fileContent !== nextAttachment?.fileContent
+    )
+  })
+}
+
 export function PromptEditPage() {
   const { t } = useTranslation(['prompt', 'common', 'batch'])
   const { batchId, promptId } = useParams<{ batchId: string; promptId: string }>()
   const navigate = useNavigate()
 
+  const [reloadToken, setReloadToken] = useState(0)
   const [loading, setLoading] = useState(true)
   const [isUpdating, setIsUpdating] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -82,18 +104,22 @@ export function PromptEditPage() {
       if (!batchId || !promptId) return
 
       setLoading(true)
-      try {
-        const batchIdNum = Number.parseInt(batchId, 10)
-        const promptIdNum = Number.parseInt(promptId, 10)
+      setErrorMessage(null)
 
-        const [promptResponse, batchResponse, modelsResponse] = await Promise.all([
-          batchService.getPrompt(batchIdNum, promptIdNum),
-          batchService.getBatch(batchIdNum),
-          modelService.getModels(),
-        ])
+      const batchIdNum = Number.parseInt(batchId, 10)
+      const promptIdNum = Number.parseInt(promptId, 10)
 
-        if (promptResponse.success) {
-          const nextPrompt = promptResponse.data
+      const [promptResult, batchResult, modelsResult] = await Promise.allSettled([
+        batchService.getPrompt(batchIdNum, promptIdNum),
+        batchService.getBatch(batchIdNum),
+        modelService.getModels(),
+      ])
+
+      let nextErrorMessage: string | null = null
+
+      if (promptResult.status === 'fulfilled') {
+        if (promptResult.value.success) {
+          const nextPrompt = promptResult.value.data
           setPrompt(nextPrompt)
           setEditLabel(nextPrompt.label || '')
           setEditSystemPrompt(nextPrompt.systemPrompt || '')
@@ -104,39 +130,45 @@ export function PromptEditPage() {
         } else {
           setPrompt(null)
         }
-
-        if (batchResponse.success) {
-          setBatchStatus(batchResponse.data.status)
-          setBatchModel(batchResponse.data.model)
-          setBatchLabel(batchResponse.data.label)
+      } else {
+        const promptError = parseApiError(promptResult.reason)
+        if (promptError.code === 'PROMPT_NOT_FOUND') {
+          setPrompt(null)
+        } else {
+          nextErrorMessage = getApiErrorMessage(promptResult.reason)
         }
-
-        if (modelsResponse.success) {
-          setModels(modelsResponse.data)
-        }
-
-        setErrorMessage(null)
-      } catch (error) {
-        console.error('Failed to fetch data for edit:', error)
-        setErrorMessage(getApiErrorMessage(error))
-      } finally {
-        setLoading(false)
       }
+
+      if (batchResult.status === 'fulfilled') {
+        if (batchResult.value.success) {
+          setBatchStatus(batchResult.value.data.status)
+          setBatchModel(batchResult.value.data.model)
+          setBatchLabel(batchResult.value.data.label)
+        } else {
+          setBatchStatus(null)
+          setBatchModel('')
+          setBatchLabel('')
+          nextErrorMessage ??= t('edit.fetchErrorDescription')
+        }
+      } else {
+        setBatchStatus(null)
+        setBatchModel('')
+        setBatchLabel('')
+        nextErrorMessage ??= getApiErrorMessage(batchResult.reason)
+      }
+
+      if (modelsResult.status === 'fulfilled' && modelsResult.value.success) {
+        setModels(modelsResult.value.data)
+      } else {
+        setModels([])
+      }
+
+      setErrorMessage(nextErrorMessage)
+      setLoading(false)
     }
 
     void fetchData()
-  }, [batchId, promptId])
-
-  const haveAttachmentsChanged = (current: Attachment[], next: Attachment[]) => {
-    if (current.length !== next.length) return true
-    return current.some((attachment, index) => {
-      const nextAttachment = next[index]
-      return (
-        attachment.fileName !== nextAttachment?.fileName ||
-        attachment.fileContent !== nextAttachment?.fileContent
-      )
-    })
-  }
+  }, [batchId, promptId, reloadToken, t])
 
   const { isTextType, isEditType } = usePromptType(editPromptType)
   const currentModel = models.find(model => model.id === batchModel)
@@ -176,19 +208,23 @@ export function PromptEditPage() {
       : t('edit.summary.referenceMissingDescription')
     : t('edit.summary.referenceNotRequiredDescription')
 
-  const editBlockedReason = !prompt
-    ? t('edit.blockedPromptMissing')
-    : batchStatus !== 'DRAFT'
-      ? t('edit.blockedBatchStatus', {
-          status: batchStatus ? statusLabels[batchStatus] : t('edit.notAllowed'),
-        })
-      : prompt.status !== 'PENDING'
-        ? t('edit.blockedPromptStatus', {
-            status: statusLabels[prompt.status],
+  const hasFetchFailure = !!errorMessage && (!prompt || !batchStatus)
+  const editBlockedReason = hasFetchFailure
+    ? null
+    : !prompt
+      ? t('edit.blockedPromptMissing')
+      : batchStatus !== 'DRAFT'
+        ? t('edit.blockedBatchStatus', {
+            status: batchStatus ? statusLabels[batchStatus] : t('edit.notAllowed'),
           })
-        : null
+        : prompt.status !== 'PENDING'
+          ? t('edit.blockedPromptStatus', {
+              status: statusLabels[prompt.status],
+            })
+          : null
 
-  const backTarget = prompt ? `/batches/${batchId}/prompts/${prompt.id}` : `/batches/${batchId}`
+  const promptDetailTarget = prompt ? `/batches/${batchId}/prompts/${prompt.id}` : null
+  const backTarget = promptDetailTarget ?? `/batches/${batchId}`
 
   const handleUpdate = async (event: React.FormEvent) => {
     event.preventDefault()
@@ -243,6 +279,48 @@ export function PromptEditPage() {
     )
   }
 
+  if (hasFetchFailure) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6 py-10">
+        {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
+
+        <PageHeader
+          onBack={() => navigate(backTarget)}
+          title={t('detail.editTitle')}
+          description={t('edit.fetchErrorDescription')}
+        />
+
+        <section className="rounded-[28px] border bg-muted/20 px-6 py-8">
+          <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-3">
+              <div className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/12 text-amber-700 dark:text-amber-300">
+                <AlertTriangle className="h-5 w-5" />
+              </div>
+              <div className="space-y-2">
+                <h2 className="text-2xl font-semibold tracking-tight">
+                  {t('edit.fetchErrorTitle')}
+                </h2>
+                <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                  {t('edit.fetchErrorHelp')}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button variant="outline" onClick={() => setReloadToken(token => token + 1)}>
+                <RefreshCcw className="mr-2 h-4 w-4" />
+                {t('edit.retryLoad')}
+              </Button>
+              <Button variant="outline" onClick={() => navigate(backTarget)}>
+                {promptDetailTarget ? t('edit.backToDetail') : t('detail.backToBatch')}
+              </Button>
+            </div>
+          </div>
+        </section>
+      </div>
+    )
+  }
+
   if (editBlockedReason) {
     return (
       <div className="mx-auto max-w-3xl space-y-6 py-10">
@@ -272,7 +350,7 @@ export function PromptEditPage() {
             </div>
 
             <Button variant="outline" onClick={() => navigate(backTarget)}>
-              {t('edit.backToDetail')}
+              {promptDetailTarget ? t('edit.backToDetail') : t('detail.backToBatch')}
             </Button>
           </div>
         </section>
