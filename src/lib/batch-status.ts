@@ -13,8 +13,8 @@ export const statusAppearanceMap: Record<
     icon: Loader2,
   },
   COMPLETED: {
-    color: 'bg-green-500',
-    gradient: 'from-green-500/10 to-transparent',
+    color: 'bg-emerald-600',
+    gradient: 'from-emerald-600/10 to-transparent',
     icon: CheckCircle2,
   },
   FAILED: { color: 'bg-red-500', gradient: 'from-red-500/10 to-transparent', icon: XCircle },

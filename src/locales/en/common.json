@@ -17,6 +17,7 @@
     "pending": "Pending"
   },
   "navigation": {
+    "batches": "Batches",
     "templates": "Prompt Templates"
   },
   "labels": {

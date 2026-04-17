@@ -1,7 +1,6 @@
 import { format } from 'date-fns'
 import {
   AlertTriangle,
-  ArrowLeft,
   CheckCircle2,
   Clock,
   Cpu,
@@ -25,6 +24,9 @@ import { toast } from 'sonner'
 import type { Attachment, Batch, BatchStatus, Model, PromptType } from '@/types/api'
 
 import { ErrorAlert } from '@/components/feedback/ErrorAlert'
+import { MetaStrip } from '@/components/layout/MetaStrip'
+import { PageHeader } from '@/components/layout/PageHeader'
+import { StatusBadge } from '@/components/layout/StatusBadge'
 import { ExternalContextImportSection } from '@/components/prompt/ExternalContextImportSection'
 import { MediaResultDisplay } from '@/components/prompt/MediaResultDisplay'
 import { PromptAttachmentsField } from '@/components/prompt/PromptAttachmentsField'
@@ -58,7 +60,6 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { usePromptType, usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
-import { statusAppearanceMap } from '@/lib/batch-status'
 import { batchService, modelService } from '@/services/api'
 
 export function BatchDetailPage() {
@@ -106,13 +107,6 @@ export function BatchDetailPage() {
     useSupportedPromptTypes(currentBatchModel)
   const promptTypeLabels = usePromptTypeLabels()
   const { isEditType: newPromptIsEditType } = usePromptType(newPrompt.promptType)
-
-  const batchStatusLabelMap: Record<BatchStatus, string> = {
-    DRAFT: t('status.draft', { ns: 'common' }),
-    IN_PROGRESS: t('status.inProgress', { ns: 'common' }),
-    COMPLETED: t('status.completed', { ns: 'common' }),
-    FAILED: t('status.failed', { ns: 'common' }),
-  }
 
   const promptStatusLabelMap: Record<BatchStatus | 'PENDING', string> = {
     DRAFT: t('status.draft', { ns: 'common' }),
@@ -361,156 +355,164 @@ export function BatchDetailPage() {
     )
   }
 
-  const status = statusAppearanceMap[batch.status]
-  const StatusIcon = status.icon
-
   return (
     <div className="space-y-8 pb-20">
       {errorMessage ? <ErrorAlert message={errorMessage} /> : null}
 
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/batches')}>
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            {isEditing ? (
-              <Input
-                value={editLabel}
-                onChange={e => setEditLabel(e.target.value)}
-                className="max-w-sm text-xl font-bold"
-              />
-            ) : (
-              <h1 className="text-3xl font-bold tracking-tight">{batch.label}</h1>
-            )}
-          </div>
-          <div className="ml-11 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-            {isEditing ? (
-              <Select value={editModel} onValueChange={setEditModel} disabled={loadingModels}>
-                <SelectTrigger className="h-7 w-52 text-sm">
-                  <SelectValue
-                    placeholder={
-                      loadingModels
-                        ? t('create.modelLoading', { ns: 'batch' })
-                        : t('create.modelPlaceholder', { ns: 'batch' })
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {models.map(model => (
-                    <SelectItem key={model.id} value={model.id}>
-                      {model.displayName}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="flex items-center gap-1">
-                <Cpu className="h-4 w-4" /> {batch.model}
-              </div>
-            )}
-            <div className="flex items-center gap-1">
-              <Clock className="h-4 w-4" /> {t('labels.createdAt', { ns: 'common' })}:{' '}
-              {format(new Date(batch.createdAt), 'yyyy-MM-dd HH:mm')}
-            </div>
-            {batch.submittedAt ? (
-              <div className="flex items-center gap-1">
-                <Send className="h-4 w-4" /> {t('labels.submittedAt', { ns: 'common' })}:{' '}
-                {format(new Date(batch.submittedAt), 'yyyy-MM-dd HH:mm')}
-              </div>
-            ) : null}
-            {batch.completedAt ? (
-              <div className="flex items-center gap-1">
-                <CheckCircle2 className="h-4 w-4" /> {t('labels.completedAt', { ns: 'common' })}:{' '}
-                {format(new Date(batch.completedAt), 'yyyy-MM-dd HH:mm')}
-              </div>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 md:mt-1">
-          {batch.status === 'COMPLETED' &&
-          batch.prompts?.some(
-            prompt => prompt.status === 'PENDING' || prompt.status === 'FAILED'
-          ) ? (
-            <Button variant="outline" size="sm" onClick={handleResyncPrompts} disabled={resyncing}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${resyncing ? 'animate-spin' : ''}`} />
-              {t('detail.resyncPrompts', { ns: 'batch' })}
-            </Button>
-          ) : null}
-
-          {batch.status === 'DRAFT' && !isEditing ? (
-            <Button variant="outline" size="sm" onClick={handleStartEdit}>
-              <Pencil className="mr-2 h-4 w-4" />
-              {t('actions.edit', { ns: 'common' })}
-            </Button>
-          ) : null}
-
-          {isEditing ? (
-            <>
-              <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={saving}>
-                {t('actions.cancel', { ns: 'common' })}
-              </Button>
+      <PageHeader
+        onBack={() => navigate('/batches')}
+        title={
+          isEditing ? (
+            <Input
+              value={editLabel}
+              onChange={e => setEditLabel(e.target.value)}
+              className="max-w-sm text-xl font-bold"
+            />
+          ) : (
+            batch.label
+          )
+        }
+        meta={<StatusBadge status={batch.status} />}
+        actions={
+          <>
+            {batch.status === 'COMPLETED' &&
+            batch.prompts?.some(
+              prompt => prompt.status === 'PENDING' || prompt.status === 'FAILED'
+            ) ? (
               <Button
+                variant="outline"
                 size="sm"
-                onClick={() => void handleSaveEdit()}
-                disabled={saving || loadingModels}
+                onClick={handleResyncPrompts}
+                disabled={resyncing}
               >
-                {saving ? (
+                <RefreshCw className={`mr-2 h-4 w-4 ${resyncing ? 'animate-spin' : ''}`} />
+                {t('detail.resyncPrompts', { ns: 'batch' })}
+              </Button>
+            ) : null}
+
+            {batch.status === 'DRAFT' && !isEditing ? (
+              <Button variant="outline" size="sm" onClick={handleStartEdit}>
+                <Pencil className="mr-2 h-4 w-4" />
+                {t('actions.edit', { ns: 'common' })}
+              </Button>
+            ) : null}
+
+            {isEditing ? (
+              <>
+                <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={saving}>
+                  {t('actions.cancel', { ns: 'common' })}
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => void handleSaveEdit()}
+                  disabled={saving || loadingModels}
+                >
+                  {saving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  {t('actions.save', { ns: 'common' })}
+                </Button>
+              </>
+            ) : null}
+
+            {batch.status === 'DRAFT' && !isEditing ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
+                disabled={deleting}
+                onClick={() => void handleDeleteBatch()}
+              >
+                {deleting ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <Save className="mr-2 h-4 w-4" />
+                  <Trash2 className="mr-2 h-4 w-4" />
                 )}
-                {t('actions.save', { ns: 'common' })}
+                {t('detail.deleteBatch', { ns: 'batch' })}
               </Button>
-            </>
-          ) : null}
+            ) : null}
 
-          {batch.status === 'DRAFT' && !isEditing ? (
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
-              disabled={deleting}
-              onClick={() => void handleDeleteBatch()}
-            >
-              {deleting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Trash2 className="mr-2 h-4 w-4" />
-              )}
-              {t('detail.deleteBatch', { ns: 'batch' })}
-            </Button>
-          ) : null}
+            {batch.status === 'IN_PROGRESS' ? (
+              <Button variant="outline" size="sm" onClick={handleSyncBatch} disabled={syncing}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+                {t('detail.syncStatus', { ns: 'batch' })}
+              </Button>
+            ) : null}
 
-          <Badge
-            className={`${status.color} flex h-8 items-center px-3 py-1.5 text-sm font-medium text-white`}
-          >
-            <StatusIcon
-              className={`mr-2 h-4 w-4 ${batch.status === 'IN_PROGRESS' ? 'animate-spin' : ''}`}
-            />
-            {batchStatusLabelMap[batch.status]}
-          </Badge>
-
-          {batch.status === 'IN_PROGRESS' ? (
-            <Button variant="outline" size="sm" onClick={handleSyncBatch} disabled={syncing}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-              {t('detail.syncStatus', { ns: 'batch' })}
-            </Button>
-          ) : null}
-
-          {batch.status === 'DRAFT' && !isEditing ? (
-            <Button size="sm" onClick={handleSubmitBatch} disabled={submitting}>
-              {submitting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="mr-2 h-4 w-4" />
-              )}
-              {t('detail.submitBatch', { ns: 'batch' })}
-            </Button>
-          ) : null}
-        </div>
-      </div>
+            {batch.status === 'DRAFT' && !isEditing ? (
+              <Button size="sm" onClick={handleSubmitBatch} disabled={submitting}>
+                {submitting ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="mr-2 h-4 w-4" />
+                )}
+                {t('detail.submitBatch', { ns: 'batch' })}
+              </Button>
+            ) : null}
+          </>
+        }
+      >
+        <MetaStrip
+          items={[
+            ...(isEditing
+              ? [
+                  {
+                    icon: Cpu,
+                    value: (
+                      <Select
+                        value={editModel}
+                        onValueChange={setEditModel}
+                        disabled={loadingModels}
+                      >
+                        <SelectTrigger className="h-7 w-52 text-sm">
+                          <SelectValue
+                            placeholder={
+                              loadingModels
+                                ? t('create.modelLoading', { ns: 'batch' })
+                                : t('create.modelPlaceholder', { ns: 'batch' })
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {models.map(model => (
+                            <SelectItem key={model.id} value={model.id}>
+                              {model.displayName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ),
+                  },
+                ]
+              : [{ icon: Cpu, value: batch.model }]),
+            {
+              icon: Clock,
+              label: t('labels.createdAt', { ns: 'common' }),
+              value: format(new Date(batch.createdAt), 'yyyy-MM-dd HH:mm'),
+            },
+            ...(batch.submittedAt
+              ? [
+                  {
+                    icon: Send,
+                    label: t('labels.submittedAt', { ns: 'common' }),
+                    value: format(new Date(batch.submittedAt), 'yyyy-MM-dd HH:mm'),
+                  },
+                ]
+              : []),
+            ...(batch.completedAt
+              ? [
+                  {
+                    icon: CheckCircle2,
+                    label: t('labels.completedAt', { ns: 'common' }),
+                    value: format(new Date(batch.completedAt), 'yyyy-MM-dd HH:mm'),
+                  },
+                ]
+              : []),
+          ]}
+        />
+      </PageHeader>
 
       {batch.errorMessage ? (
         <Card className="border-red-200 bg-red-50 dark:bg-red-950/20">
