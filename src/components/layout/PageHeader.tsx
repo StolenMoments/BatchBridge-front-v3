@@ -45,7 +45,11 @@ export function PageHeader({
         ) : null}
         {children ? <div className={cn(indented && 'ml-11')}>{children}</div> : null}
       </div>
-      {actions ? <div className="flex shrink-0 items-center gap-2 md:mt-1">{actions}</div> : null}
+      {actions ? (
+        <div className="flex w-full flex-wrap items-center justify-end gap-2 md:mt-1 md:w-auto md:shrink-0">
+          {actions}
+        </div>
+      ) : null}
     </div>
   )
 }
