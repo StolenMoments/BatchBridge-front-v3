@@ -17,7 +17,8 @@
     "successCount": "성공 {{count}}",
     "failedCount": "실패 {{count}}",
     "viewDetails": "자세히 보기",
-    "newBatch": "새 배치 만들기"
+    "newBatch": "새 배치 만들기",
+    "totalBatches": "전체 배치"
   },
   "create": {
     "title": "새 배치 만들기",

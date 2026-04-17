@@ -453,63 +453,66 @@ export function BatchDetailPage() {
             ) : null}
           </>
         }
-      />
-
-      <MetaStrip
-        className="ml-11"
-        items={[
-          ...(isEditing
-            ? [
-                {
-                  icon: Cpu,
-                  value: (
-                    <Select value={editModel} onValueChange={setEditModel} disabled={loadingModels}>
-                      <SelectTrigger className="h-7 w-52 text-sm">
-                        <SelectValue
-                          placeholder={
-                            loadingModels
-                              ? t('create.modelLoading', { ns: 'batch' })
-                              : t('create.modelPlaceholder', { ns: 'batch' })
-                          }
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {models.map(model => (
-                          <SelectItem key={model.id} value={model.id}>
-                            {model.displayName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  ),
-                },
-              ]
-            : [{ icon: Cpu, value: batch.model }]),
-          {
-            icon: Clock,
-            label: t('labels.createdAt', { ns: 'common' }),
-            value: format(new Date(batch.createdAt), 'yyyy-MM-dd HH:mm'),
-          },
-          ...(batch.submittedAt
-            ? [
-                {
-                  icon: Send,
-                  label: t('labels.submittedAt', { ns: 'common' }),
-                  value: format(new Date(batch.submittedAt), 'yyyy-MM-dd HH:mm'),
-                },
-              ]
-            : []),
-          ...(batch.completedAt
-            ? [
-                {
-                  icon: CheckCircle2,
-                  label: t('labels.completedAt', { ns: 'common' }),
-                  value: format(new Date(batch.completedAt), 'yyyy-MM-dd HH:mm'),
-                },
-              ]
-            : []),
-        ]}
-      />
+      >
+        <MetaStrip
+          items={[
+            ...(isEditing
+              ? [
+                  {
+                    icon: Cpu,
+                    value: (
+                      <Select
+                        value={editModel}
+                        onValueChange={setEditModel}
+                        disabled={loadingModels}
+                      >
+                        <SelectTrigger className="h-7 w-52 text-sm">
+                          <SelectValue
+                            placeholder={
+                              loadingModels
+                                ? t('create.modelLoading', { ns: 'batch' })
+                                : t('create.modelPlaceholder', { ns: 'batch' })
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {models.map(model => (
+                            <SelectItem key={model.id} value={model.id}>
+                              {model.displayName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    ),
+                  },
+                ]
+              : [{ icon: Cpu, value: batch.model }]),
+            {
+              icon: Clock,
+              label: t('labels.createdAt', { ns: 'common' }),
+              value: format(new Date(batch.createdAt), 'yyyy-MM-dd HH:mm'),
+            },
+            ...(batch.submittedAt
+              ? [
+                  {
+                    icon: Send,
+                    label: t('labels.submittedAt', { ns: 'common' }),
+                    value: format(new Date(batch.submittedAt), 'yyyy-MM-dd HH:mm'),
+                  },
+                ]
+              : []),
+            ...(batch.completedAt
+              ? [
+                  {
+                    icon: CheckCircle2,
+                    label: t('labels.completedAt', { ns: 'common' }),
+                    value: format(new Date(batch.completedAt), 'yyyy-MM-dd HH:mm'),
+                  },
+                ]
+              : []),
+          ]}
+        />
+      </PageHeader>
 
       {batch.errorMessage ? (
         <Card className="border-red-200 bg-red-50 dark:bg-red-950/20">

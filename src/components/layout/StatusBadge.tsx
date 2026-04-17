@@ -5,6 +5,7 @@ import type { BatchStatus } from '@/types/api'
 
 import { Badge } from '@/components/ui/badge'
 import { statusAppearanceMap } from '@/lib/batch-status'
+import { cn } from '@/lib/utils'
 
 type PromptStatus = BatchStatus | 'PENDING'
 
@@ -15,6 +16,14 @@ const promptOnlyAppearance = {
 const allAppearance: Record<PromptStatus, { color: string; icon: React.ElementType }> = {
   ...statusAppearanceMap,
   ...promptOnlyAppearance,
+}
+
+const colorClassMap: Record<PromptStatus, string> = {
+  DRAFT: 'bg-slate-500 text-white',
+  IN_PROGRESS: 'bg-blue-500 text-white',
+  COMPLETED: 'bg-emerald-600 text-white',
+  FAILED: 'bg-red-500 text-white',
+  PENDING: 'bg-amber-500 text-white',
 }
 
 interface StatusBadgeProps {
@@ -34,8 +43,7 @@ export function StatusBadge({ status, size = 'default', className }: StatusBadge
     PENDING: t('status.pending'),
   }
 
-  const appearance = allAppearance[status]
-  const Icon = appearance.icon
+  const Icon = allAppearance[status].icon
   const isSpinning = status === 'IN_PROGRESS'
 
   const sizeClasses =
@@ -46,10 +54,8 @@ export function StatusBadge({ status, size = 'default', className }: StatusBadge
   const iconSize = size === 'sm' ? 'mr-1.5 h-3 w-3' : 'mr-2 h-4 w-4'
 
   return (
-    <Badge
-      className={`${appearance.color} flex items-center text-white ${sizeClasses} ${className ?? ''}`}
-    >
-      <Icon className={`${iconSize} ${isSpinning ? 'animate-spin' : ''}`} />
+    <Badge className={cn('flex items-center', colorClassMap[status], sizeClasses, className)}>
+      <Icon className={cn(iconSize, isSpinning && 'animate-spin')} />
       {labelMap[status]}
     </Badge>
   )

@@ -12,6 +12,7 @@ interface PageHeaderProps {
   actions?: ReactNode
   meta?: ReactNode
   className?: string
+  children?: ReactNode
 }
 
 export function PageHeader({
@@ -21,7 +22,10 @@ export function PageHeader({
   actions,
   meta,
   className,
+  children,
 }: PageHeaderProps) {
+  const indented = !!onBack
+
   return (
     <div
       className={cn('flex flex-col justify-between gap-4 md:flex-row md:items-start', className)}
@@ -37,8 +41,9 @@ export function PageHeader({
           {meta ? <div className="flex items-center gap-2">{meta}</div> : null}
         </div>
         {description ? (
-          <p className={cn('text-muted-foreground', onBack ? 'ml-11' : '')}>{description}</p>
+          <p className={cn('text-muted-foreground', indented && 'ml-11')}>{description}</p>
         ) : null}
+        {children ? <div className={cn(indented && 'ml-11')}>{children}</div> : null}
       </div>
       {actions ? <div className="flex shrink-0 items-center gap-2 md:mt-1">{actions}</div> : null}
     </div>

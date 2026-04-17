@@ -17,7 +17,8 @@
     "successCount": "Success {{count}}",
     "failedCount": "Failed {{count}}",
     "viewDetails": "View details",
-    "newBatch": "Create new batch"
+    "newBatch": "Create new batch",
+    "totalBatches": "Total batches"
   },
   "create": {
     "title": "Create New Batch",
