@@ -286,7 +286,29 @@ export function PromptDetailPage() {
       </PageHeader>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_22rem] xl:items-start">
-        {/* Meta Sidebar — DOM 첫 번째(모바일 상단), xl에서 오른쪽 컬럼 */}
+        {/* Content Viewer — xl에서 왼쪽 컬럼 */}
+        <Tabs
+          value={viewMode}
+          onValueChange={v => setViewMode(v as 'markdown' | 'text')}
+          className="flex w-full flex-col gap-8 xl:col-start-1 xl:row-start-1"
+        >
+          {/* 공유 Segmented Control */}
+          <div className="flex items-center justify-end">
+            <TabsList variant="line" className="h-8">
+              <TabsTrigger value="markdown" className="gap-1 px-3 py-1 text-xs">
+                <Layout className="h-3 w-3" />
+                {t('detail.markdown', { ns: 'prompt' })}
+              </TabsTrigger>
+              <TabsTrigger value="text" className="gap-1 px-3 py-1 text-xs">
+                <FileText className="h-3 w-3" />
+                {t('detail.text', { ns: 'prompt' })}
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          {contentSections}
+        </Tabs>
+
         <aside className="space-y-4 xl:sticky xl:top-20 xl:col-start-2 xl:row-start-1 xl:self-start">
           <Card className="border-border/70 bg-muted/10 shadow-none">
             <CardContent className="space-y-3 pt-5">
@@ -305,7 +327,7 @@ export function PromptDetailPage() {
                 <StatusBadge status={batchStatus ?? 'DRAFT'} size="sm" />
               </div>
 
-              {/* Type (TEXT 제외) */}
+              {/* Non-text prompt type */}
               {prompt.promptType && prompt.promptType !== 'TEXT' ? (
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -317,7 +339,7 @@ export function PromptDetailPage() {
                 </div>
               ) : null}
 
-              {/* 첨부 파일 수 (TEXT 전용) */}
+              {/* Attachment count for text prompts */}
               {!prompt.promptType || prompt.promptType === 'TEXT' ? (
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -327,7 +349,7 @@ export function PromptDetailPage() {
                 </div>
               ) : null}
 
-              {/* Batch 링크 */}
+              {/* Batch link */}
               {batchLabel ? (
                 <div className="flex items-center justify-between gap-2">
                   <span className="shrink-0 text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -343,7 +365,7 @@ export function PromptDetailPage() {
                 </div>
               ) : null}
 
-              {/* 배치 생성일 */}
+              {/* Batch created date */}
               {batchCreatedAt ? (
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
@@ -419,29 +441,6 @@ export function PromptDetailPage() {
             </CardContent>
           </Card>
         </aside>
-
-        {/* Content Viewer — xl에서 왼쪽 컬럼 */}
-        <Tabs
-          value={viewMode}
-          onValueChange={v => setViewMode(v as 'markdown' | 'text')}
-          className="flex w-full flex-col gap-8 xl:col-start-1 xl:row-start-1"
-        >
-          {/* 공유 Segmented Control */}
-          <div className="flex items-center justify-end">
-            <TabsList variant="line" className="h-8">
-              <TabsTrigger value="markdown" className="gap-1 px-3 py-1 text-xs">
-                <Layout className="h-3 w-3" />
-                {t('detail.markdown', { ns: 'prompt' })}
-              </TabsTrigger>
-              <TabsTrigger value="text" className="gap-1 px-3 py-1 text-xs">
-                <FileText className="h-3 w-3" />
-                {t('detail.text', { ns: 'prompt' })}
-              </TabsTrigger>
-            </TabsList>
-          </div>
-
-          {contentSections}
-        </Tabs>
       </div>
     </div>
   )
