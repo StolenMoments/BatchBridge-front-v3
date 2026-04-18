@@ -136,6 +136,114 @@ export function PromptDetailPage() {
   }
 
   const isDraftEditable = batchStatus === 'DRAFT' && prompt.status === 'PENDING'
+  const isCompleted = prompt.status === 'COMPLETED'
+
+  const modelAnswerSection = (
+    <section key="model-answer" className="space-y-3">
+      <div className="flex items-center gap-2">
+        <Bot
+          className={`h-5 w-5 ${prompt.status === 'FAILED' ? 'text-destructive' : 'text-primary'}`}
+        />
+        <h2 className="text-base font-semibold">{t('detail.modelAnswer', { ns: 'prompt' })}</h2>
+      </div>
+
+      {prompt.status === 'COMPLETED' ? (
+        isMediaPromptType(prompt.promptType) ? (
+          <div className="flex min-h-[300px] items-center justify-center rounded-md border bg-background p-6 shadow-sm">
+            <MediaResultDisplay
+              prompt={prompt}
+              imageClassName="max-h-[600px]"
+              videoClassName="max-h-[600px] w-full"
+              nullDisplay="empty"
+            />
+          </div>
+        ) : (
+          <div className="grid min-h-[200px] min-w-0 overflow-hidden rounded-md border bg-background shadow-sm">
+            <TabsContent value="markdown" className="col-start-1 row-start-1 mt-0 min-w-0">
+              <div className="prose prose-sm dark:prose-invert h-full max-w-none p-6 break-words">
+                <ReactMarkdown>{prompt.responseContent || ''}</ReactMarkdown>
+              </div>
+            </TabsContent>
+            <TabsContent value="text" className="col-start-1 row-start-1 mt-0 min-w-0">
+              <div className="h-full p-6 font-mono text-sm break-words whitespace-pre-wrap">
+                {prompt.responseContent || t('detail.noResponseContent', { ns: 'prompt' })}
+              </div>
+            </TabsContent>
+          </div>
+        )
+      ) : prompt.status === 'FAILED' ? (
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive shadow-sm">
+          <div className="mb-2 flex items-center gap-2 font-bold">
+            <AlertTriangle className="h-4 w-4" />
+            {t('detail.errorLabel', { ns: 'batch' })}
+          </div>
+          <div className="whitespace-pre-wrap opacity-90">
+            {prompt.errorMessage || t('detail.unknownError', { ns: 'batch' })}
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            {t('detail.failedHelper', { ns: 'prompt' })}
+          </p>
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center rounded-md border bg-muted/30 py-10 text-muted-foreground">
+          <Loader2 className="mb-2 h-10 w-10 animate-spin opacity-20" />
+          <p>
+            {t('detail.waitingResponse', {
+              ns: 'prompt',
+              status: statusLabelMap[prompt.status],
+            })}
+          </p>
+        </div>
+      )}
+    </section>
+  )
+
+  const userPromptSection = (
+    <section key="user-prompt" className="space-y-3">
+      <div className="flex items-center gap-2">
+        <MessageSquare className="h-5 w-5 text-muted-foreground" />
+        <h2 className="text-base font-semibold">{t('detail.userPrompt', { ns: 'prompt' })}</h2>
+      </div>
+      <div className="grid min-h-[200px] min-w-0 overflow-hidden rounded-md border bg-muted/50">
+        <TabsContent value="markdown" className="col-start-1 row-start-1 mt-0 min-w-0">
+          <div className="prose prose-sm dark:prose-invert h-full max-w-none p-6 break-words">
+            <ReactMarkdown>{prompt.userPrompt}</ReactMarkdown>
+          </div>
+        </TabsContent>
+        <TabsContent value="text" className="col-start-1 row-start-1 mt-0 min-w-0">
+          <div className="h-full p-6 font-mono text-sm break-words whitespace-pre-wrap">
+            {prompt.userPrompt}
+          </div>
+        </TabsContent>
+      </div>
+    </section>
+  )
+
+  const attachmentsSection =
+    !prompt.promptType || prompt.promptType === 'TEXT' ? (
+      <section key="attachments" className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Paperclip className="h-5 w-5 text-muted-foreground" />
+          <h2 className="text-base font-semibold">
+            {t('detail.attachments', { ns: 'prompt' })}
+            {prompt.attachments?.length ? ` (${prompt.attachments.length})` : ''}
+          </h2>
+        </div>
+        <div className="space-y-4">
+          <ExternalContextChipsDisplay attachments={prompt.attachments ?? []} disabled />
+          <PromptAttachmentsField
+            attachments={prompt.attachments ?? []}
+            disabled
+            helperText={t('detail.attachmentsHelper', { ns: 'prompt' })}
+            onChange={() => undefined}
+          />
+        </div>
+      </section>
+    ) : null
+
+  const contentSections = isCompleted
+    ? [modelAnswerSection, userPromptSection, attachmentsSection]
+    : [userPromptSection, modelAnswerSection, attachmentsSection]
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -231,7 +339,7 @@ export function PromptDetailPage() {
               {batchCreatedAt ? (
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    {t('labels.createdAt', { ns: 'common' })}
+                    {t('detail.sidebarCreatedAt', { ns: 'prompt' })}
                   </span>
                   <span className="text-sm text-muted-foreground">
                     {format(new Date(batchCreatedAt), 'yyyy-MM-dd')}
@@ -317,110 +425,7 @@ export function PromptDetailPage() {
             </TabsList>
           </div>
 
-          {/* Section 1: Model Answer (출력 우선 배치) */}
-          <section className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Bot
-                className={`h-5 w-5 ${prompt.status === 'FAILED' ? 'text-destructive' : 'text-primary'}`}
-              />
-              <h2 className="text-base font-semibold">
-                {t('detail.modelAnswer', { ns: 'prompt' })}
-              </h2>
-            </div>
-
-            {prompt.status === 'COMPLETED' ? (
-              isMediaPromptType(prompt.promptType) ? (
-                <div className="flex min-h-[300px] items-center justify-center rounded-md border bg-background p-6 shadow-sm">
-                  <MediaResultDisplay
-                    prompt={prompt}
-                    imageClassName="max-h-[600px]"
-                    videoClassName="max-h-[600px] w-full"
-                    nullDisplay="empty"
-                  />
-                </div>
-              ) : (
-                <div className="grid min-h-[200px] min-w-0 overflow-hidden rounded-md border bg-background shadow-sm">
-                  <TabsContent value="markdown" className="col-start-1 row-start-1 mt-0 min-w-0">
-                    <div className="prose prose-sm dark:prose-invert h-full max-w-none p-6 break-words">
-                      <ReactMarkdown>{prompt.responseContent || ''}</ReactMarkdown>
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="text" className="col-start-1 row-start-1 mt-0 min-w-0">
-                    <div className="h-full p-6 font-mono text-sm break-words whitespace-pre-wrap">
-                      {prompt.responseContent || t('detail.noResponseContent', { ns: 'prompt' })}
-                    </div>
-                  </TabsContent>
-                </div>
-              )
-            ) : prompt.status === 'FAILED' ? (
-              <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive shadow-sm">
-                <div className="mb-2 flex items-center gap-2 font-bold">
-                  <AlertTriangle className="h-4 w-4" />
-                  {t('detail.errorLabel', { ns: 'batch' })}
-                </div>
-                <div className="whitespace-pre-wrap opacity-90">
-                  {prompt.errorMessage || t('detail.unknownError', { ns: 'batch' })}
-                </div>
-                <p className="mt-3 text-xs text-muted-foreground">
-                  {t('detail.failedHelper', { ns: 'prompt' })}
-                </p>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center rounded-md border bg-muted/30 py-10 text-muted-foreground">
-                <Loader2 className="mb-2 h-10 w-10 animate-spin opacity-20" />
-                <p>
-                  {t('detail.waitingResponse', {
-                    ns: 'prompt',
-                    status: statusLabelMap[prompt.status],
-                  })}
-                </p>
-              </div>
-            )}
-          </section>
-
-          {/* Section 2: User Prompt */}
-          <section className="space-y-3">
-            <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-base font-semibold">
-                {t('detail.userPrompt', { ns: 'prompt' })}
-              </h2>
-            </div>
-            <div className="grid min-h-[200px] min-w-0 overflow-hidden rounded-md border bg-muted/50">
-              <TabsContent value="markdown" className="col-start-1 row-start-1 mt-0 min-w-0">
-                <div className="prose prose-sm dark:prose-invert h-full max-w-none p-6 break-words">
-                  <ReactMarkdown>{prompt.userPrompt}</ReactMarkdown>
-                </div>
-              </TabsContent>
-              <TabsContent value="text" className="col-start-1 row-start-1 mt-0 min-w-0">
-                <div className="h-full p-6 font-mono text-sm break-words whitespace-pre-wrap">
-                  {prompt.userPrompt}
-                </div>
-              </TabsContent>
-            </div>
-          </section>
-
-          {/* Section 3: Attachments (TEXT 전용) */}
-          {!prompt.promptType || prompt.promptType === 'TEXT' ? (
-            <section className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Paperclip className="h-5 w-5 text-muted-foreground" />
-                <h2 className="text-base font-semibold">
-                  {t('detail.attachments', { ns: 'prompt' })}
-                  {prompt.attachments?.length ? ` (${prompt.attachments.length})` : ''}
-                </h2>
-              </div>
-              <div className="space-y-4">
-                <ExternalContextChipsDisplay attachments={prompt.attachments ?? []} disabled />
-                <PromptAttachmentsField
-                  attachments={prompt.attachments ?? []}
-                  disabled
-                  helperText={t('detail.attachmentsHelper', { ns: 'prompt' })}
-                  onChange={() => undefined}
-                />
-              </div>
-            </section>
-          ) : null}
+          {contentSections}
         </Tabs>
       </div>
     </div>
