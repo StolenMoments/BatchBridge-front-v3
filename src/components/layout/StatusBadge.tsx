@@ -48,10 +48,10 @@ export function StatusBadge({ status, size = 'default', className }: StatusBadge
 
   const sizeClasses =
     size === 'sm'
-      ? 'h-6 px-2 py-0.5 text-[10px] font-medium'
+      ? 'h-7 px-2.5 py-1 text-xs font-semibold tracking-[0.01em]'
       : 'h-8 px-3 py-1.5 text-sm font-medium'
 
-  const iconSize = size === 'sm' ? 'mr-1.5 h-3 w-3' : 'mr-2 h-4 w-4'
+  const iconSize = size === 'sm' ? 'mr-1.5 h-3.5 w-3.5' : 'mr-2 h-4 w-4'
 
   return (
     <Badge className={cn('flex items-center', colorClassMap[status], sizeClasses, className)}>

@@ -215,19 +215,19 @@ export function BatchListPage() {
   const renderCountSummary = (batch: BatchListItem) => {
     if (batch.status === 'DRAFT') {
       return (
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm font-medium text-muted-foreground">
           {t('list.notSubmitted', { ns: 'batch' })}
         </span>
       )
     }
 
     return (
-      <div className="flex flex-wrap items-center gap-3 text-sm">
-        <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm font-medium tabular-nums">
+        <span className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
           <CheckCircle2 className="h-3.5 w-3.5" />
           {t('list.successCount', { ns: 'batch', count: batch.successCount })}
         </span>
-        <span className="flex items-center gap-1 text-red-500 dark:text-red-400">
+        <span className="flex items-center gap-1.5 text-red-600 dark:text-red-400">
           <XCircle className="h-3.5 w-3.5" />
           {t('list.failedCount', { ns: 'batch', count: batch.failedCount })}
         </span>
@@ -291,11 +291,11 @@ export function BatchListPage() {
                 </div>
               </TableCell>
               <TableCell className="py-4">
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <StatusBadge status={batch.status} size="sm" />
-                  <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <FileText className="h-3.5 w-3.5" />
+                  <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-muted-foreground">
+                    <span className="flex items-center gap-1.5 tabular-nums">
+                      <FileText className="h-3.5 w-3.5 opacity-80" />
                       {t('list.promptCount', { ns: 'batch', count: batch.promptCount })}
                     </span>
                   </div>
@@ -330,9 +330,9 @@ export function BatchListPage() {
             <StatusBadge status={batch.status} size="sm" className="shrink-0" />
           </div>
 
-          <div className="mt-4 grid gap-2 text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
+          <div className="mt-4 grid gap-2.5 text-sm text-muted-foreground">
+            <div className="flex items-center gap-2 text-sm font-medium tabular-nums">
+              <FileText className="h-4 w-4 opacity-80" />
               <span>{t('list.promptCount', { ns: 'batch', count: batch.promptCount })}</span>
             </div>
             {renderCountSummary(batch)}
