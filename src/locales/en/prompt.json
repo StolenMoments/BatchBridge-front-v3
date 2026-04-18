@@ -18,7 +18,12 @@
     "text": "Text",
     "noResponseContent": "No response content.",
     "mediaPreparing": "Media preparing...",
-    "failedHelper": "An error occurred while processing the prompt. You can try resyncing from the batch detail page."
+    "failedHelper": "An error occurred while processing the prompt. You can try resyncing from the batch detail page.",
+    "sidebarStatus": "Status",
+    "sidebarType": "Type",
+    "sidebarAttachments": "Attachments",
+    "sidebarBatch": "Batch",
+    "sidebarCreatedAt": "Created"
   },
   "edit": {
     "description": "Review the batch context, confirm what changed, and save with clear downstream impact.",
