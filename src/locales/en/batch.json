@@ -28,7 +28,7 @@
     "columns": {
       "batch": "Batch / Model",
       "status": "Status",
-      "summary": "Counts",
+      "summary": "Status / Counts",
       "createdAt": "Created At",
       "actions": "Actions"
     },
@@ -36,6 +36,7 @@
       "total": "Total",
       "inProgress": "In Progress",
       "failed": "Failed",
+      "completed": "Completed",
       "lastRefreshed": "Last refreshed {{time}} · auto refresh every 2 min",
       "lastRefreshedPending": "Last refresh pending · auto refresh every 2 min"
     }
