@@ -270,6 +270,7 @@ export function BatchListPage() {
           <TableRow className="bg-muted/40 hover:bg-muted/40">
             <TableHead>{t('list.columns.batch', { ns: 'batch' })}</TableHead>
             <TableHead>{t('list.columns.status', { ns: 'batch' })}</TableHead>
+            <TableHead>{t('list.columns.summary', { ns: 'batch' })}</TableHead>
             <TableHead>{t('list.columns.createdAt', { ns: 'batch' })}</TableHead>
             <TableHead className="w-[1%] pr-4 text-left">
               {t('list.columns.actions', { ns: 'batch' })}
@@ -291,8 +292,10 @@ export function BatchListPage() {
                 </div>
               </TableCell>
               <TableCell className="py-4">
-                <div className="space-y-2.5">
-                  <StatusBadge status={batch.status} size="sm" />
+                <StatusBadge status={batch.status} size="sm" />
+              </TableCell>
+              <TableCell className="py-4">
+                <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-3 text-sm font-medium text-muted-foreground">
                     <span className="flex items-center gap-1.5 tabular-nums">
                       <FileText className="h-3.5 w-3.5 opacity-80" />

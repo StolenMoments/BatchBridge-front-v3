@@ -27,7 +27,8 @@
     "loadFailed": "Failed to load batch list.",
     "columns": {
       "batch": "Batch / Model",
-      "status": "Status / Counts",
+      "status": "Status",
+      "summary": "Counts",
       "createdAt": "Created At",
       "actions": "Actions"
     },
