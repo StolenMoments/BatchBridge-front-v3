@@ -38,6 +38,7 @@ import {
 import { Textarea } from '@/components/ui/textarea'
 import { usePromptType, usePromptTypeLabels, useSupportedPromptTypes } from '@/hooks/usePromptType'
 import { getApiErrorMessage, parseApiError, showApiErrorAlert } from '@/lib/api-error'
+import { isDraftBatchEditable } from '@/lib/prompt-editability'
 import { batchService, modelService } from '@/services/api'
 
 function SummaryRow({
@@ -227,15 +228,11 @@ export function PromptEditPage() {
     ? null
     : !prompt
       ? t('edit.blockedPromptMissing')
-      : batchStatus !== 'DRAFT'
+      : !isDraftBatchEditable(batchStatus)
         ? t('edit.blockedBatchStatus', {
             status: batchStatus ? statusLabels[batchStatus] : t('edit.notAllowed'),
           })
-        : prompt.status !== 'PENDING'
-          ? t('edit.blockedPromptStatus', {
-              status: statusLabels[prompt.status],
-            })
-          : null
+        : null
 
   const promptDetailTarget = prompt ? `/batches/${batchId}/prompts/${prompt.id}` : null
   const backTarget = promptDetailTarget ?? `/batches/${batchId}`
@@ -386,7 +383,7 @@ export function PromptEditPage() {
         description={t('edit.description')}
         meta={
           <div className="flex flex-wrap items-center gap-2">
-            <StatusBadge status={prompt.status} size="sm" />
+            <StatusBadge status={batchStatus ?? 'DRAFT'} size="sm" />
             <Badge variant="secondary" className="h-6 px-2 py-0.5 text-[10px] font-medium">
               {t('detail.editTitle')}
             </Badge>
@@ -415,6 +412,11 @@ export function PromptEditPage() {
               icon: Paperclip,
               label: t('edit.metaBatchStatus'),
               value: <StatusBadge status={batchStatus ?? 'DRAFT'} size="sm" />,
+            },
+            {
+              icon: Sparkles,
+              label: t('edit.metaPromptStatus'),
+              value: <StatusBadge status={prompt.status} size="sm" />,
             },
           ]}
         />
