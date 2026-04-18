@@ -82,6 +82,7 @@
     "validationReadyDescription": "Model selection and prompt input are complete.",
     "validationModelRequired": "Select a model",
     "validationPromptRequired": "Enter a user prompt",
+    "validationReferenceMediaRequired": "Add reference media for this edit-type prompt",
     "validationAttachmentsPending": "Wait for attachment processing to finish",
     "promptTypeLabel": "Prompt Type",
     "promptTypePlaceholder": "Select a type",
@@ -99,7 +100,7 @@
       "empty": "Not set",
       "count": "{{count}} items",
       "present": "Present",
-      "requiredSoon": "Recommended for edit prompts",
+      "requiredSoon": "Required (missing)",
       "notRequired": "Not required",
       "ready": "Ready",
       "notReady": "Incomplete"
@@ -108,7 +109,7 @@
       "systemInstructionPresent": "Optional system instruction is already included.",
       "systemInstructionEmpty": "No optional system instruction yet.",
       "referenceMediaAdded": "Reference media has been prepared for the edit flow.",
-      "referenceMediaMissing": "Edit flow selected. Add reference media when available.",
+      "referenceMediaMissing": "Reference media is required for edit-type prompts. The action button will be disabled until it is provided.",
       "referenceMediaNotRequired": "Reference media is not required for this prompt type.",
       "externalContextReady": "{{count}} external context items are ready.",
       "externalContextEmpty": "No imported external context yet."

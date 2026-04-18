@@ -82,6 +82,7 @@
     "validationReadyDescription": "모델 선택과 프롬프트 입력이 완료되었습니다.",
     "validationModelRequired": "모델을 선택하세요",
     "validationPromptRequired": "User Prompt를 입력하세요",
+    "validationReferenceMediaRequired": "원본 미디어를 입력하세요",
     "validationAttachmentsPending": "첨부 처리 완료를 기다려 주세요",
     "promptTypeLabel": "프롬프트 유형",
     "promptTypePlaceholder": "유형 선택",
@@ -99,7 +100,7 @@
       "empty": "미설정",
       "count": "{{count}}개",
       "present": "있음",
-      "requiredSoon": "edit 유형에서 권장",
+      "requiredSoon": "필수 (미입력)",
       "notRequired": "불필요",
       "ready": "준비됨",
       "notReady": "미완료"
@@ -108,7 +109,7 @@
       "systemInstructionPresent": "Optional System Instruction 값이 입력되어 있습니다.",
       "systemInstructionEmpty": "Optional System Instruction은 아직 비어 있습니다.",
       "referenceMediaAdded": "edit 흐름에 필요한 reference media가 준비되었습니다.",
-      "referenceMediaMissing": "edit 흐름입니다. 가능하면 reference media를 추가하세요.",
+      "referenceMediaMissing": "edit 유형에서는 reference media가 필수입니다. 입력 전까지 생성/추가가 비활성화됩니다.",
       "referenceMediaNotRequired": "현재 프롬프트 유형에서는 reference media가 필요하지 않습니다.",
       "externalContextReady": "외부 컨텍스트 {{count}}개가 준비되었습니다.",
       "externalContextEmpty": "가져온 외부 컨텍스트가 아직 없습니다."
