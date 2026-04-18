@@ -575,15 +575,23 @@ export function BatchDetailPage() {
                 </p>
               </div>
 
-              {batch.prompts?.map((prompt, index) => (
-                <BatchDraftPromptRow
-                  key={prompt.id}
-                  batchId={batch.id}
-                  prompt={prompt}
-                  index={index}
-                  onDelete={handleDeletePrompt}
-                />
-              ))}
+              {batch.prompts && batch.prompts.length > 0 ? (
+                <div className="overflow-hidden rounded-2xl border border-border/70 bg-background">
+                  {batch.prompts.map((prompt, index) => (
+                    <div
+                      key={prompt.id}
+                      className={index > 0 ? 'border-t border-border/60' : undefined}
+                    >
+                      <BatchDraftPromptRow
+                        batchId={batch.id}
+                        prompt={prompt}
+                        index={index}
+                        onDelete={handleDeletePrompt}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
 
               {batch.prompts?.length === 0 ? (
                 <div className="rounded-2xl border border-dashed py-14 text-center">
@@ -769,9 +777,11 @@ export function BatchDetailPage() {
             </div>
           </div>
         ) : (
-          <div className="space-y-4">
-            {batch.prompts?.map(prompt => (
-              <BatchPromptSection key={prompt.id} batchId={batch.id} prompt={prompt} />
+          <div className="overflow-hidden rounded-2xl border border-border/70 bg-background">
+            {batch.prompts?.map((prompt, index) => (
+              <div key={prompt.id} className={index > 0 ? 'border-t border-border/60' : undefined}>
+                <BatchPromptSection batchId={batch.id} prompt={prompt} />
+              </div>
             ))}
           </div>
         )}

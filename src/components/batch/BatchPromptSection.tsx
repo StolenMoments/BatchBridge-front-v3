@@ -1,5 +1,6 @@
 import {
   AlertTriangle,
+  ArrowRight,
   ExternalLink,
   FileText,
   Layout,
@@ -56,43 +57,52 @@ export function BatchPromptSection({ batchId, prompt }: BatchPromptSectionProps)
   const hasResult = Boolean(prompt.responseContent || prompt.resultMediaUrl)
 
   return (
-    <Card className="overflow-hidden border-border/70 shadow-sm">
+    <Card className="overflow-hidden border-0 bg-transparent py-0 text-sm shadow-none ring-0">
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value={`prompt-${prompt.id}`} className="border-none">
-          <div className="flex flex-col gap-4 bg-muted/20 px-4 py-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0 space-y-3">
-              <div className="flex flex-wrap items-center gap-2">
-                <StatusBadge status={prompt.status} size="sm" />
-                <Badge variant="secondary" className="text-[11px]">
-                  {promptTypeLabels[prompt.promptType ?? 'TEXT']}
-                </Badge>
-                <Badge variant={hasResult ? 'default' : 'outline'} className="text-[11px]">
-                  {hasResult
-                    ? t('detail.resultAvailableYes', { ns: 'batch' })
-                    : t('detail.resultAvailableNo', { ns: 'batch' })}
-                </Badge>
+          <AccordionTrigger className="w-full items-stretch rounded-none px-4 py-4 hover:no-underline">
+            <div className="flex w-full flex-col gap-4 xl:grid xl:grid-cols-[minmax(0,1.5fr)_auto] xl:items-start">
+              <div className="min-w-0 flex-1 space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <StatusBadge status={prompt.status} size="sm" />
+                  <Badge variant="secondary" className="text-[11px]">
+                    {promptTypeLabels[prompt.promptType ?? 'TEXT']}
+                  </Badge>
+                  <Badge variant={hasResult ? 'default' : 'outline'} className="text-[11px]">
+                    {hasResult
+                      ? t('detail.resultAvailableYes', { ns: 'batch' })
+                      : t('detail.resultAvailableNo', { ns: 'batch' })}
+                  </Badge>
+                </div>
+
+                <div className="min-w-0">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="truncate text-base font-semibold text-foreground">
+                      {prompt.label}
+                    </span>
+                    <Link
+                      to={`/batches/${batchId}/prompts/${prompt.id}`}
+                      className="inline-flex shrink-0 items-center gap-1 rounded-md px-2 py-1 text-sm font-medium text-primary transition-colors hover:bg-primary/10 hover:text-primary focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+                      onClick={event => event.stopPropagation()}
+                    >
+                      {t('detail.openPromptInline', { ns: 'batch' })}
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Link>
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-sm whitespace-pre-wrap text-muted-foreground">
+                    {prompt.userPrompt}
+                  </p>
+                </div>
               </div>
 
-              <div className="min-w-0">
-                <Link
-                  to={`/batches/${batchId}/prompts/${prompt.id}`}
-                  className="inline-flex max-w-full items-center gap-1 text-base font-semibold text-primary hover:underline"
-                >
-                  <span className="truncate">{prompt.label}</span>
-                  <ExternalLink className="h-3.5 w-3.5 shrink-0" />
-                </Link>
-                <p className="mt-2 line-clamp-2 text-sm whitespace-pre-wrap text-muted-foreground">
-                  {prompt.userPrompt}
-                </p>
+              <div className="flex shrink-0 items-center gap-3 self-start rounded-xl bg-muted/15 px-3 py-2 text-sm font-medium text-foreground/80">
+                <span>{t('detail.expandPrompt', { ns: 'batch' })}</span>
+                <ArrowRight className="h-4 w-4 transition-transform group-aria-expanded/accordion-trigger:rotate-90" />
               </div>
             </div>
+          </AccordionTrigger>
 
-            <AccordionTrigger className="w-full shrink-0 justify-center rounded-lg border bg-background px-4 py-2 text-sm font-medium hover:no-underline lg:w-auto">
-              {t('detail.viewDetails', { ns: 'batch' })}
-            </AccordionTrigger>
-          </div>
-
-          <AccordionContent className="px-4 pt-4 pb-4">
+          <AccordionContent className="border-t border-border/60 px-4 pt-4 pb-4">
             <div className="space-y-4">
               <SectionBlock title={t('detail.sectionInput', { ns: 'batch' })}>
                 <Tabs defaultValue="text" className="flex w-full flex-col gap-3">
