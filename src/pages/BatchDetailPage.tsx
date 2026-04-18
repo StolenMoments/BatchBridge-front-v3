@@ -216,7 +216,7 @@ export function BatchDetailPage() {
       !batch ||
       !newPrompt.userPrompt ||
       (isTextType && isAttachmentPending) ||
-      (newPromptIsEditType && !newPrompt.referenceMediaUrl)
+      (newPromptIsEditType && !newPrompt.referenceMediaUrl.trim())
     )
       return
 
@@ -771,7 +771,7 @@ export function BatchDetailPage() {
                       disabled={
                         !newPrompt.userPrompt ||
                         (newPrompt.promptType === 'TEXT' && isAttachmentPending) ||
-                        (newPromptIsEditType && !newPrompt.referenceMediaUrl)
+                        (newPromptIsEditType && !newPrompt.referenceMediaUrl.trim())
                       }
                     >
                       <Plus className="mr-2 h-4 w-4" />
