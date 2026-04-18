@@ -212,10 +212,15 @@ export function BatchDetailPage() {
   const handleAddPrompt = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const isTextType = newPrompt.promptType === 'TEXT'
-    if (!batch || !newPrompt.userPrompt || (isTextType && isAttachmentPending)) return
+    if (
+      !batch ||
+      !newPrompt.userPrompt ||
+      (isTextType && isAttachmentPending) ||
+      (newPromptIsEditType && !newPrompt.referenceMediaUrl.trim())
+    )
+      return
 
-    const isEditType =
-      newPrompt.promptType === 'IMAGE_EDIT' || newPrompt.promptType === 'VIDEO_EDIT'
+    const isEditType = newPromptIsEditType
 
     try {
       const response = await batchService.addPrompt(batch.id, {
@@ -765,7 +770,8 @@ export function BatchDetailPage() {
                       className="w-full"
                       disabled={
                         !newPrompt.userPrompt ||
-                        (newPrompt.promptType === 'TEXT' && isAttachmentPending)
+                        (newPrompt.promptType === 'TEXT' && isAttachmentPending) ||
+                        (newPromptIsEditType && !newPrompt.referenceMediaUrl.trim())
                       }
                     >
                       <Plus className="mr-2 h-4 w-4" />

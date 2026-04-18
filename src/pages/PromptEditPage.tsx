@@ -187,14 +187,28 @@ export function PromptEditPage() {
     [prompt, editAttachments]
   )
   const recreationRequired = isTextType && attachmentsChanged
-  const isSaveReady = !!editUserPrompt.trim() && !(isTextType && isAttachmentPending) && !isUpdating
+  const isSaveReady =
+    !!editUserPrompt.trim() &&
+    !(isTextType && isAttachmentPending) &&
+    !(isEditType && !editReferenceMediaUrl.trim()) &&
+    !isUpdating
 
   const saveReadinessDescription = useMemo(() => {
     if (isUpdating) return t('edit.summary.saveUpdating')
     if (!editUserPrompt.trim()) return t('edit.summary.saveNeedsPrompt')
     if (isTextType && isAttachmentPending) return t('edit.summary.savePendingAttachments')
+    if (isEditType && !editReferenceMediaUrl.trim())
+      return t('edit.summary.saveNeedsReferenceMedia')
     return t('edit.summary.saveReadyDescription')
-  }, [editUserPrompt, isAttachmentPending, isTextType, isUpdating, t])
+  }, [
+    editReferenceMediaUrl,
+    editUserPrompt,
+    isAttachmentPending,
+    isEditType,
+    isTextType,
+    isUpdating,
+    t,
+  ])
 
   const referenceMediaValue = isEditType
     ? editReferenceMediaUrl.trim()

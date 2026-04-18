@@ -180,12 +180,19 @@ export function BatchCreatePage() {
   )
   const hasSystemInstruction = formData.systemPrompt.trim().length > 0
   const hasUserPrompt = formData.userPrompt.trim().length > 0
-  const canSubmit = Boolean(formData.model) && hasUserPrompt && !attachmentsPending && !submitting
+  const referenceMediaMissing = isEditType && !formData.referenceMediaUrl.trim()
+  const canSubmit =
+    Boolean(formData.model) &&
+    hasUserPrompt &&
+    !referenceMediaMissing &&
+    !attachmentsPending &&
+    !submitting
   const currentStep: 1 | 2 = formData.model ? 2 : 1
 
   const validationMessages = [
     !formData.model ? t('create.validationModelRequired', { ns: 'batch' }) : null,
     !hasUserPrompt ? t('create.validationPromptRequired', { ns: 'batch' }) : null,
+    referenceMediaMissing ? t('create.validationReferenceMediaRequired', { ns: 'batch' }) : null,
     attachmentsPending ? t('create.validationAttachmentsPending', { ns: 'batch' }) : null,
   ].filter((message): message is string => Boolean(message))
 

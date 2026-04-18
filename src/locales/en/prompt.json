@@ -66,7 +66,7 @@
       "referenceConfigured": "Configured",
       "referenceConfiguredDescription": "Reference media is available for the current edit-type prompt.",
       "referenceMissing": "Missing",
-      "referenceMissingDescription": "This edit-type prompt can still be saved, but reference media should be reviewed.",
+      "referenceMissingDescription": "Reference media is required for edit-type prompts. Add it before saving.",
       "referenceNotRequired": "Not required",
       "referenceNotRequiredDescription": "Reference media is only used for edit-type prompts.",
       "saveLabel": "Save Readiness",
@@ -75,6 +75,7 @@
       "saveReadyDescription": "Required input is complete and the save request can be sent now.",
       "saveNeedsPrompt": "Add user prompt content before saving.",
       "savePendingAttachments": "Wait for attachment processing to finish before saving.",
+      "saveNeedsReferenceMedia": "Reference media is required to save this edit-type prompt.",
       "saveUpdating": "A save request is already in progress."
     }
   },
