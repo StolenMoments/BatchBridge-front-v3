@@ -28,7 +28,7 @@
     "columns": {
       "batch": "배치 / 모델",
       "status": "상태",
-      "summary": "집계",
+      "summary": "상태 / 집계",
       "createdAt": "생성 시각",
       "actions": "행 액션"
     },
@@ -36,6 +36,7 @@
       "total": "전체",
       "inProgress": "진행 중",
       "failed": "실패",
+      "completed": "완료",
       "lastRefreshed": "마지막 새로고침 {{time}} · 2분마다 자동 갱신",
       "lastRefreshedPending": "마지막 새로고침 대기 중 · 2분마다 자동 갱신"
     }
