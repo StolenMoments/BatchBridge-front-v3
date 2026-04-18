@@ -12,11 +12,23 @@
     "empty": "No templates found.",
     "createFirst": "Create your first template",
     "createdAt": "Created",
+    "updatedAt": "Updated",
+    "hasSystemPrompt": "System",
+    "backToList": "Back to list",
     "editDialog": {
       "title": "Edit Template"
     },
     "createDialog": {
       "title": "New Template"
+    },
+    "editor": {
+      "createTitle": "New Template",
+      "editTitle": "Edit Template"
+    },
+    "preview": {
+      "empty": "Select a template from the list to preview its contents.",
+      "systemPrompt": "System Prompt",
+      "userPrompt": "User Prompt"
     },
     "fields": {
       "name": "Name",

@@ -12,11 +12,23 @@
     "empty": "템플릿이 없습니다.",
     "createFirst": "첫 번째 템플릿 만들기",
     "createdAt": "생성",
+    "updatedAt": "수정",
+    "hasSystemPrompt": "시스템",
+    "backToList": "목록으로",
     "editDialog": {
       "title": "템플릿 수정"
     },
     "createDialog": {
       "title": "새 템플릿"
+    },
+    "editor": {
+      "createTitle": "새 템플릿",
+      "editTitle": "템플릿 수정"
+    },
+    "preview": {
+      "empty": "목록에서 템플릿을 선택하면 내용을 미리볼 수 있습니다.",
+      "systemPrompt": "System Prompt",
+      "userPrompt": "User Prompt"
     },
     "fields": {
       "name": "이름",
