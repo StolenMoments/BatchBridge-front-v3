@@ -40,6 +40,7 @@ import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { usePromptTypeLabels } from '@/hooks/usePromptType'
 import { getApiErrorMessage, showApiErrorAlert } from '@/lib/api-error'
+import { isDraftBatchEditable } from '@/lib/prompt-editability'
 import { batchService } from '@/services/api'
 import { isMediaPromptType } from '@/types/api'
 
@@ -135,7 +136,7 @@ export function PromptDetailPage() {
     )
   }
 
-  const isDraftEditable = batchStatus === 'DRAFT' && prompt.status === 'PENDING'
+  const isDraftEditable = isDraftBatchEditable(batchStatus)
   const isCompleted = prompt.status === 'COMPLETED'
 
   const modelAnswerSection = (
@@ -254,7 +255,7 @@ export function PromptDetailPage() {
         title={prompt.label}
         meta={
           <>
-            <StatusBadge status={batchStatus === 'DRAFT' ? 'DRAFT' : prompt.status} size="sm" />
+            <StatusBadge status={prompt.status} size="sm" />
             {prompt.promptType && prompt.promptType !== 'TEXT' ? (
               <Badge variant="secondary" className="h-6 px-2 py-0.5 text-[10px] font-medium">
                 {promptTypeLabels[prompt.promptType]}
@@ -294,7 +295,14 @@ export function PromptDetailPage() {
                 <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   {t('detail.sidebarStatus', { ns: 'prompt' })}
                 </span>
-                <StatusBadge status={batchStatus === 'DRAFT' ? 'DRAFT' : prompt.status} size="sm" />
+                <StatusBadge status={prompt.status} size="sm" />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                  {t('detail.sidebarBatchStatus', { ns: 'prompt' })}
+                </span>
+                <StatusBadge status={batchStatus ?? 'DRAFT'} size="sm" />
               </div>
 
               {/* Type (TEXT 제외) */}
@@ -350,54 +358,61 @@ export function PromptDetailPage() {
               {isDraftEditable ? (
                 <>
                   <Separator />
-                  <div className="flex flex-col gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="w-full gap-2"
-                      onClick={() => navigate(`/batches/${batchId}/prompts/${promptId}/edit`)}
-                    >
-                      <Edit className="h-4 w-4" />
-                      {t('actions.edit', { ns: 'common' })}
-                    </Button>
+                  <div className="space-y-3">
+                    <p className="text-sm leading-6 text-muted-foreground">
+                      {t('detail.draftEditableHint', { ns: 'prompt' })}
+                    </p>
+                    <div className="flex flex-col gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full gap-2"
+                        onClick={() => navigate(`/batches/${batchId}/prompts/${promptId}/edit`)}
+                      >
+                        <Edit className="h-4 w-4" />
+                        {t('actions.edit', { ns: 'common' })}
+                      </Button>
 
-                    <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="w-full gap-2 text-destructive hover:text-destructive"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          {t('actions.delete', { ns: 'common' })}
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>{t('detail.deleteTitle', { ns: 'prompt' })}</DialogTitle>
-                        </DialogHeader>
-                        <div className="py-4 text-muted-foreground">
-                          {t('detail.deleteDescription', { ns: 'prompt' })}
-                        </div>
-                        <DialogFooter>
+                      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+                        <DialogTrigger asChild>
                           <Button
                             variant="outline"
-                            onClick={() => setIsDeleteDialogOpen(false)}
-                            disabled={isDeleting}
+                            size="sm"
+                            className="w-full gap-2 text-destructive hover:text-destructive"
                           >
-                            {t('actions.cancel', { ns: 'common' })}
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            onClick={handleDelete}
-                            disabled={isDeleting}
-                          >
-                            {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            <Trash2 className="h-4 w-4" />
                             {t('actions.delete', { ns: 'common' })}
                           </Button>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>{t('detail.deleteTitle', { ns: 'prompt' })}</DialogTitle>
+                          </DialogHeader>
+                          <div className="py-4 text-muted-foreground">
+                            {t('detail.deleteDescription', { ns: 'prompt' })}
+                          </div>
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsDeleteDialogOpen(false)}
+                              disabled={isDeleting}
+                            >
+                              {t('actions.cancel', { ns: 'common' })}
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              onClick={handleDelete}
+                              disabled={isDeleting}
+                            >
+                              {isDeleting ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              ) : null}
+                              {t('actions.delete', { ns: 'common' })}
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </div>
                   </div>
                 </>
               ) : null}
