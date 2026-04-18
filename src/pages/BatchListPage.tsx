@@ -271,7 +271,7 @@ export function BatchListPage() {
             <TableHead>{t('list.columns.batch', { ns: 'batch' })}</TableHead>
             <TableHead>{t('list.columns.status', { ns: 'batch' })}</TableHead>
             <TableHead>{t('list.columns.createdAt', { ns: 'batch' })}</TableHead>
-            <TableHead className="text-right">
+            <TableHead className="w-[1%] pr-4 text-left">
               {t('list.columns.actions', { ns: 'batch' })}
             </TableHead>
           </TableRow>
@@ -305,7 +305,7 @@ export function BatchListPage() {
               <TableCell className="py-4 text-sm text-muted-foreground">
                 {formatCreatedAt(batch.createdAt)}
               </TableCell>
-              <TableCell className="py-4">{renderRowActions(batch)}</TableCell>
+              <TableCell className="py-4 pr-4">{renderRowActions(batch)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
